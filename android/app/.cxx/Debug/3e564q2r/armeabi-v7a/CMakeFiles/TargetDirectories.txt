@@ -1,0 +1,2 @@
+C:/Users/edusa/Documents/GitHub/StatsfootPRO/android/app/.cxx/Debug/3e564q2r/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/edusa/Documents/GitHub/StatsfootPRO/android/app/.cxx/Debug/3e564q2r/armeabi-v7a/CMakeFiles/rebuild_cache.dir
