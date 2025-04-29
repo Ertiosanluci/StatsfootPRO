@@ -107,6 +107,7 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
           ),
         ),
         centerTitle: true,
+        leading: BackButton(color: Colors.white), // Cambiando el color de la flecha a blanco
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -694,6 +695,7 @@ class PlayerStatsScreen extends StatelessWidget {
           ),
         ),
         centerTitle: true,
+        leading: BackButton(color: Colors.white), // Cambiando el color de la flecha a blanco
       ),
       body: Container(
         height: MediaQuery.of(context).size.height,
@@ -1105,13 +1107,65 @@ class _PlayerEditScreenState extends State<PlayerEditScreen> {
 
   // Método para seleccionar una foto de perfil
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    try {
+      // Mostrar un diálogo para elegir entre la cámara o la galería
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Seleccionar foto', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: Icon(Icons.camera_alt, color: Colors.blue.shade700),
+                  title: Text('Tomar foto con la cámara'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _getImageFromSource(ImageSource.camera);
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.photo_library, color: Colors.green.shade700),
+                  title: Text('Seleccionar de la galería'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _getImageFromSource(ImageSource.gallery);
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancelar'),
+              style: TextButton.styleFrom(foregroundColor: Colors.grey.shade700),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al seleccionar imagen: $e')),
+      );
+    }
+  }
 
-    if (pickedFile != null) {
-      setState(() {
-        _profilePhoto = File(pickedFile.path);
-      });
+  // Método para obtener la imagen desde la cámara o galería
+  Future<void> _getImageFromSource(ImageSource source) async {
+    try {
+      final XFile? pickedFile = await ImagePicker().pickImage(source: source);
+      
+      if (pickedFile != null) {
+        setState(() {
+          _profilePhoto = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al obtener la imagen: $e')),
+      );
     }
   }
 
@@ -1216,6 +1270,7 @@ class _PlayerEditScreenState extends State<PlayerEditScreen> {
         backgroundColor: Colors.blue.shade900,
         centerTitle: true,
         elevation: 0,
+        leading: BackButton(color: Colors.white), // Cambiando el color de la flecha a blanco
         actions: [
           IconButton(
             onPressed: _updatePlayer,

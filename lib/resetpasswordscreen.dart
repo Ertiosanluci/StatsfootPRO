@@ -45,6 +45,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         ),
         backgroundColor: Colors.blue.shade800, // Color de la barra de navegación (azul oscuro)
         centerTitle: true,
+        leading: BackButton(color: Colors.white), // Cambiando el color de la flecha a blanco
       ),
       body: Container(
         decoration: BoxDecoration(

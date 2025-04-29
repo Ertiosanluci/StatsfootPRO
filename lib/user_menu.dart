@@ -174,6 +174,8 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
             letterSpacing: 0.5,
           ),
         ),
+        // Agregando flecha de navegación blanca (aunque en esta pantalla no se muestra por ser menú principal)
+        leading: BackButton(color: Colors.white),
         actions: [
           IconButton(
             onPressed: _signOut,

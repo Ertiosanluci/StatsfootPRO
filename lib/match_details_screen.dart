@@ -167,6 +167,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           fontSize: 20,
           fontWeight: FontWeight.bold,
         ),
+        leading: BackButton(color: Colors.white), // Cambiando el color de la flecha a blanco
         bottom: TabBar(
           controller: _tabController,
           tabs: [
@@ -1131,6 +1132,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
     // Valores iniciales para los contadores
     int goles = player['goles'] ?? 0;
     int asistencias = player['asistencias'] ?? 0;
+    int golesPropios = player['goles_propios'] ?? 0; // Contador para goles en propia puerta
     
     showDialog(
       context: context,
@@ -1244,6 +1246,74 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                           
                           SizedBox(height: 8),
                           
+                          // Goles en propia puerta
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.sports_soccer, color: Colors.red.shade700),
+                                    SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        'Goles en propia', 
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.red.shade700,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(
+                                    width: 36,
+                                    child: IconButton(
+                                      iconSize: 20,
+                                      padding: EdgeInsets.zero,
+                                      icon: Icon(Icons.remove_circle_outline),
+                                      color: Colors.red,
+                                      onPressed: golesPropios > 0 ? () {
+                                        setState(() => golesPropios--);
+                                      } : null,
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 30,
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '$golesPropios',
+                                      style: TextStyle(
+                                        fontSize: 16, 
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.red.shade700,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 36,
+                                    child: IconButton(
+                                      iconSize: 20,
+                                      padding: EdgeInsets.zero,
+                                      icon: Icon(Icons.add_circle_outline),
+                                      color: Colors.green,
+                                      onPressed: () {
+                                        setState(() => golesPropios++);
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          
+                          SizedBox(height: 8),
+                          
                           // Asistencias
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1318,7 +1388,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                         ),
                         child: Text('Guardar'),
                         onPressed: () {
-                          _updatePlayerStats(player['id'], goles, asistencias, isTeamClaro);
+                          _updatePlayerStats(player['id'], goles, asistencias, golesPropios, isTeamClaro);
                           Navigator.pop(context);
                         },
                       ),
@@ -1334,7 +1404,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
   }
   
   // Método para actualizar las estadísticas del jugador en la base de datos
-  Future<void> _updatePlayerStats(dynamic playerId, int goles, int asistencias, bool isTeamClaro) async {
+  Future<void> _updatePlayerStats(dynamic playerId, int goles, int asistencias, int golesPropios, bool isTeamClaro) async {
     try {
       // Convertir matchId a int si es necesario
       int matchIdInt;
@@ -1360,6 +1430,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           'partido_id': matchIdInt,
           'goles': goles,
           'asistencias': asistencias,
+          'goles_propios': golesPropios,
           'equipo': isTeamClaro ? 'team_claro' : 'team_oscuro',
         });
       } else {
@@ -1369,81 +1440,99 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
             .update({
               'goles': goles,
               'asistencias': asistencias,
+              'goles_propios': golesPropios,
             })
             .eq('jugador_id', playerId)
             .eq('partido_id', matchIdInt);
       }
       
-      // Actualizar el marcador del equipo en la base de datos
-      if (isTeamClaro) {
-        // Calcular total de goles para el equipo claro
-        final allTeamStats = await supabase
-            .from('estadisticas')
-            .select('goles')
-            .eq('partido_id', matchIdInt)
-            .eq('equipo', 'team_claro');
-        
-        int totalGoles = 0;
-        if (allTeamStats != null) {
-          for (var stat in allTeamStats) {
-            totalGoles += (stat['goles'] as int? ?? 0);
+      // Actualizar los marcadores de ambos equipos en la base de datos
+      // Primero, necesitamos obtener todos los datos de estadísticas
+      final allStats = await supabase
+          .from('estadisticas')
+          .select('goles, goles_propios, equipo')
+          .eq('partido_id', matchIdInt);
+      
+      // Calcular los goles para cada equipo
+      int golesEquipoClaro = 0;
+      int golesEquipoOscuro = 0;
+      
+      for (var stat in allStats) {
+        if (stat['equipo'] == 'team_claro') {
+          // Goles directos del equipo claro
+          golesEquipoClaro += (stat['goles'] as int? ?? 0);
+          // Goles en propia puerta del equipo oscuro
+          if (stat['equipo'] != 'team_claro') {
+            golesEquipoClaro += (stat['goles_propios'] as int? ?? 0);
+          }
+        } else if (stat['equipo'] == 'team_oscuro') {
+          // Goles directos del equipo oscuro
+          golesEquipoOscuro += (stat['goles'] as int? ?? 0);
+          // Goles en propia puerta del equipo claro
+          if (stat['equipo'] != 'team_oscuro') {
+            golesEquipoOscuro += (stat['goles_propios'] as int? ?? 0);
           }
         }
-        
-        // Actualizar el marcador del equipo claro
-        await supabase
-            .from('partidos')
-            .update({'resultado_claro': totalGoles})
-            .eq('id', matchIdInt);
-            
-        // Actualizar el dato local
-        setState(() {
-          _matchData['resultado_claro'] = totalGoles;
+      }
+      
+      // Sumar goles en propia puerta del equipo contrario
+      // Los goles en propia puerta del equipo claro suman para el equipo oscuro
+      final golesPropiosClaro = await supabase
+          .from('estadisticas')
+          .select('goles_propios')
+          .eq('partido_id', matchIdInt)
+          .eq('equipo', 'team_claro');
           
-          // Actualizar las estadísticas del jugador en la lista local
+      for (var stat in golesPropiosClaro) {
+        golesEquipoOscuro += (stat['goles_propios'] as int? ?? 0);
+      }
+      
+      // Los goles en propia puerta del equipo oscuro suman para el equipo claro
+      final golesPropiosOscuro = await supabase
+          .from('estadisticas')
+          .select('goles_propios')
+          .eq('partido_id', matchIdInt)
+          .eq('equipo', 'team_oscuro');
+          
+      for (var stat in golesPropiosOscuro) {
+        golesEquipoClaro += (stat['goles_propios'] as int? ?? 0);
+      }
+      
+      // Actualizar el marcador en la base de datos
+      await supabase
+          .from('partidos')
+          .update({
+            'resultado_claro': golesEquipoClaro,
+            'resultado_oscuro': golesEquipoOscuro
+          })
+          .eq('id', matchIdInt);
+          
+      // Actualizar los datos locales
+      setState(() {
+        _matchData['resultado_claro'] = golesEquipoClaro;
+        _matchData['resultado_oscuro'] = golesEquipoOscuro;
+        
+        // Actualizar las estadísticas del jugador en la lista local
+        if (isTeamClaro) {
           for (var i = 0; i < _teamClaro.length; i++) {
             if (_teamClaro[i]['id'] == playerId) {
               _teamClaro[i]['goles'] = goles;
               _teamClaro[i]['asistencias'] = asistencias;
+              _teamClaro[i]['goles_propios'] = golesPropios;
               break;
             }
           }
-        });
-      } else {
-        // Calcular total de goles para el equipo oscuro
-        final allTeamStats = await supabase
-            .from('estadisticas')
-            .select('goles')
-            .eq('partido_id', matchIdInt)
-            .eq('equipo', 'team_oscuro');
-        
-        int totalGoles = 0;
-        if (allTeamStats != null) {
-          for (var stat in allTeamStats) {
-            totalGoles += (stat['goles'] as int? ?? 0);
-          }
-        }
-        
-        // Actualizar el marcador del equipo oscuro
-        await supabase
-            .from('partidos')
-            .update({'resultado_oscuro': totalGoles})
-            .eq('id', matchIdInt);
-            
-        // Actualizar el dato local
-        setState(() {
-          _matchData['resultado_oscuro'] = totalGoles;
-          
-          // Actualizar las estadísticas del jugador en la lista local
+        } else {
           for (var i = 0; i < _teamOscuro.length; i++) {
             if (_teamOscuro[i]['id'] == playerId) {
               _teamOscuro[i]['goles'] = goles;
               _teamOscuro[i]['asistencias'] = asistencias;
+              _teamOscuro[i]['goles_propios'] = golesPropios;
               break;
             }
           }
-        });
-      }
+        }
+      });
       
       // Mostrar mensaje de éxito
       Fluttertoast.showToast(

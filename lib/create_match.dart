@@ -474,6 +474,7 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> with SingleTicker
         ),
         backgroundColor: const Color(0xFF1A237E), // Azul más oscuro y profesional
         elevation: 0, // Eliminar la sombra para un estilo más moderno
+        leading: BackButton(color: Colors.white), // Flecha de navegación blanca
         actions: [
           if (_selectedFormat.isNotEmpty)
             Container(

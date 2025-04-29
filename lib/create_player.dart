@@ -32,22 +32,82 @@ class _PlayerCreatorScreenState extends State<PlayerCreatorScreen> {
   // Método para seleccionar una foto de perfil
   Future<void> _pickImage() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-        allowMultiple: false,
+      // Mostrar un diálogo para elegir entre la cámara o la galería
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Seleccionar foto', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: Icon(Icons.camera_alt, color: Colors.blue.shade700),
+                  title: Text('Tomar foto con la cámara'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _getImageFromSource(ImageSource.camera);
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.photo_library, color: Colors.green.shade700),
+                  title: Text('Seleccionar de la galería'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _getImageFromSource(ImageSource.gallery);
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancelar'),
+              style: TextButton.styleFrom(foregroundColor: Colors.grey.shade700),
+            ),
+          ],
+        ),
       );
-
-      if (result != null) {
-        setState(() {
-          _webFile = result.files.first;
-          if (!kIsWeb) {
-            _profilePhoto = File(result.files.first.path!);
-          }
-        });
-      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al seleccionar imagen: $e')),
+      );
+    }
+  }
+
+  // Método para obtener la imagen desde la cámara o galería
+  Future<void> _getImageFromSource(ImageSource source) async {
+    try {
+      if (source == ImageSource.camera) {
+        // Usar ImagePicker para acceder a la cámara
+        final XFile? takenImage = await ImagePicker().pickImage(source: source);
+        
+        if (takenImage != null) {
+          setState(() {
+            _profilePhoto = File(takenImage.path);
+            // Para web no se usa _webFile cuando se usa la cámara
+          });
+        }
+      } else {
+        // Usar FilePicker para la galería (compatible con web)
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.image,
+          allowMultiple: false,
+        );
+
+        if (result != null) {
+          setState(() {
+            _webFile = result.files.first;
+            if (!kIsWeb) {
+              _profilePhoto = File(result.files.first.path!);
+            }
+          });
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al obtener la imagen: $e')),
       );
     }
   }

@@ -68,7 +68,118 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: MainScreen(),
+      home: SplashScreen(),
+    );
+  }
+}
+
+// Nueva clase SplashScreen para verificar la sesión al iniciar la app
+class SplashScreen extends StatefulWidget {
+  @override
+  _SplashScreenState createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _checkSession();
+  }
+
+  Future<void> _checkSession() async {
+    // Añadimos un pequeño retraso para mostrar la pantalla de splash
+    // y dar tiempo a que se cargue la sesión
+    await Future.delayed(Duration(milliseconds: 1500));
+    
+    // Verificar si hay una sesión activa
+    final Session? session = Supabase.instance.client.auth.currentSession;
+    
+    if (!mounted) return;
+    
+    if (session != null) {
+      // Si hay sesión activa, ir al menú de usuario
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => UserMenuScreen())
+      );
+    } else {
+      // Si no hay sesión, ir a la pantalla principal
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => MainScreen())
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF0D47A1), // Azul oscuro
+              Color(0xFF1976D2), // Azul medio
+              Color(0xFF2196F3), // Azul claro
+            ],
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Logo animado
+              TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: 0.8, end: 1.0),
+                duration: Duration(seconds: 1),
+                builder: (context, value, child) {
+                  return Transform.scale(
+                    scale: value,
+                    child: Hero(
+                      tag: 'app_logo',
+                      child: Container(
+                        height: 150,
+                        width: 150,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 15,
+                              offset: Offset(0, 5),
+                            )
+                          ],
+                        ),
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/habilidades.png',
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              SizedBox(height: 30),
+              // Indicador de carga
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+              SizedBox(height: 20),
+              // Texto de carga
+              Text(
+                "Cargando...",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -83,6 +194,7 @@ class MainScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: IconThemeData(color: Colors.white), // Cambiando el color de la flecha a blanco
       ),
       body: Stack(
         children: [

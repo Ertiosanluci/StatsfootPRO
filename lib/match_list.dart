@@ -229,7 +229,7 @@ Organizado con StatsFootA
             _buildActionButton(
               onPressed: () => _addToGoogleCalendar(match),
               icon: Icons.calendar_today_outlined,
-              label: 'Añadir Recordatorio',
+              label: '',
               backgroundColor: Colors.blue.shade50,
               textColor: Colors.blue.shade700,
               iconColor: Colors.blue.shade700,
@@ -239,7 +239,7 @@ Organizado con StatsFootA
             _buildActionButton(
               onPressed: () => _shareMatchDetails(match),
               icon: Icons.share_outlined,
-              label: 'Compartir Invitación',
+              label: '',
               backgroundColor: Colors.purple.shade50,
               textColor: Colors.purple.shade700,
               iconColor: Colors.purple.shade700,
@@ -273,6 +273,7 @@ Organizado con StatsFootA
           fontSize: 24,
           fontWeight: FontWeight.bold,
         ),
+        leading: BackButton(color: Colors.white), // Cambiando el color de la flecha a blanco
         bottom: TabBar(
           controller: _tabController,
           tabs: [
@@ -843,21 +844,24 @@ Organizado con StatsFootA
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 icon,
                 size: 16,
                 color: iconColor,
               ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: textColor,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
+              if (label.isNotEmpty) ...[
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
@@ -1153,35 +1157,16 @@ Organizado con StatsFootA
                               ),
                             ],
                           ),
-                          // CAMBIO AQUÍ: Mostrar estadísticas para todos los partidos (pendientes y finalizados)
+                          // Mostrar solo iconos con estadísticas sin botones de edición
                           SizedBox(height: 2),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              // Para partidos finalizados, mostrar estadísticas sin botones
-                              if (isFinished) ...[
-                                _buildStatDisplay('⚽', player['goles'] ?? 0),
-                                SizedBox(width: 2),
-                                _buildStatDisplay('👟', player['asistencias'] ?? 0),
-                              ]
-                              // Para partidos pendientes, mostrar botones interactivos
-                              else ...[
-                                _buildCompactStatCounter(
-                                    '⚽',
-                                    player['goles'] ?? 0,
-                                    'goles',
-                                    player['id'],
-                                    match['id']
-                                ),
-                                SizedBox(width: 2),
-                                _buildCompactStatCounter(
-                                    '👟',
-                                    player['asistencias'] ?? 0,
-                                    'asistencias',
-                                    player['id'],
-                                    match['id']
-                                ),
-                              ],
+                              _buildStatDisplay('⚽', player['goles'] ?? 0),
+                              SizedBox(width: 2),
+                              _buildStatDisplay('👟', player['asistencias'] ?? 0),
+                              SizedBox(width: 2),
+                              _buildStatDisplay('🥅', player['goles_propios'] ?? 0),
                             ],
                           ),
                           Divider(height: 8, thickness: 0.5),
@@ -1342,8 +1327,6 @@ Organizado con StatsFootA
     if (teamClaro.contains(playerId) || teamClaro.any((id) => id.toString() == playerIdStr)) {
       equipoJugador = 'team_claro';
     } else if (teamOscuro.contains(playerId) || teamOscuro.any((id) => id.toString() == playerIdStr)) {
-      equipoJugador = 'team_oscuro';
-    } else {
       return; // El jugador no está en ningún equipo
     }
 
