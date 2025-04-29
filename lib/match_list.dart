@@ -244,16 +244,6 @@ Organizado con StatsFootA
               textColor: Colors.purple.shade700,
               iconColor: Colors.purple.shade700,
             ),
-            
-            // Botón para ver detalles del partido y posiciones
-            _buildActionButton(
-              onPressed: () => _viewMatchDetails(match),
-              icon: Icons.sports_soccer_outlined,
-              label: 'Ver Formación',
-              backgroundColor: Colors.green.shade50,
-              textColor: Colors.green.shade700,
-              iconColor: Colors.green.shade700,
-            ),
           ],
         ),
 
@@ -530,29 +520,62 @@ Organizado con StatsFootA
                       width: 1,
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                  child: Column(
                     children: [
-                      // Equipo Claro
-                      _buildTeamColumn(
-                        'Equipo Claro',
-                        match['team_claro'],
-                        isPending ? Colors.blue.shade700 : Colors.blue.shade800,
-                        match,
-                        isFinished,
+                      // Fila de equipos y marcador
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Equipo Claro
+                          _buildTeamColumn(
+                            'Equipo Claro',
+                            match['team_claro'],
+                            isPending ? Colors.blue.shade700 : Colors.blue.shade800,
+                            match,
+                            isFinished,
+                          ),
+
+                          // Sección central: Marcador o editor de puntuación
+                          _buildCentralSection(isPending, isFinished, match),
+
+                          // Equipo Oscuro
+                          _buildTeamColumn(
+                            'Equipo Oscuro',
+                            match['team_oscuro'],
+                            isPending ? Colors.red.shade700 : Colors.red.shade800,
+                            match,
+                            isFinished,
+                          ),
+                        ],
                       ),
-
-                      // Sección central: Marcador o editor de puntuación
-                      _buildCentralSection(isPending, isFinished, match),
-
-                      // Equipo Oscuro
-                      _buildTeamColumn(
-                        'Equipo Oscuro',
-                        match['team_oscuro'],
-                        isPending ? Colors.red.shade700 : Colors.red.shade800,
-                        match,
-                        isFinished,
+                      
+                      // Único botón Ver Formación centrado debajo de ambas columnas
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: TextButton.icon(
+                          onPressed: () => _viewMatchDetails(match),
+                          icon: Icon(
+                            Icons.sports_soccer_outlined,
+                            size: 16,
+                            color: Colors.green.shade700,
+                          ),
+                          label: Text(
+                            'Ver Formación',
+                            style: TextStyle(
+                              color: Colors.green.shade700,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.green.shade50,
+                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -1086,14 +1109,6 @@ Organizado con StatsFootA
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-          ),
-          Text(
-            'Detalles', // Texto por defecto añadido
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-            ),
             textAlign: TextAlign.center,
           ),
           if (isFinished)
