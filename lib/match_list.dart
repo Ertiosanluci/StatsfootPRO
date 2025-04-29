@@ -182,35 +182,30 @@ Organizado con StatsFootA
         Divider(height: 1, color: Colors.grey.shade300),
         const SizedBox(height: 16),
 
-        // Botón finalizar partido
+        // Botón finalizar partido simplificado y minimalista
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(
-              width: 220,
-              child: ElevatedButton.icon(
-                onPressed: () => _finishMatch(match),
-                icon: const Icon(
-                  Icons.check_circle_outline_rounded,
-                  size: 20,
+            TextButton.icon(
+              onPressed: () => _finishMatch(match),
+              icon: Icon(
+                Icons.check_circle_outline_rounded,
+                size: 18,
+                color: Colors.orange.shade700,
+              ),
+              label: Text(
+                'Finalizar Partido',
+                style: TextStyle(
+                  color: Colors.orange.shade700,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                 ),
-                label: const Text(
-                  'Finalizar Partido',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade600,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  elevation: 4,
-                  shadowColor: Colors.green.withOpacity(0.4),
+              ),
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.orange.shade50,
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
             ),
