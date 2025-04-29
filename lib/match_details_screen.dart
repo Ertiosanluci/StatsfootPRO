@@ -22,6 +22,8 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
   Map<String, Offset> _teamClaroPositions = {};
   Map<String, Offset> _teamOscuroPositions = {};
   late TabController _tabController;
+  String? _mvpTeamClaro;
+  String? _mvpTeamOscuro;
   
   @override
   void initState() {
@@ -342,210 +344,514 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
   
   // Mostrar diálogo para finalizar el partido
   void _showFinalizarPartidoDialog() {
+    // Obtener la información actual del partido
     final int golesEquipoClaro = _matchData['resultado_claro'] ?? 0;
     final int golesEquipoOscuro = _matchData['resultado_oscuro'] ?? 0;
     
+    // Variables locales para controlar el estado dentro del diálogo
+    String? mvpClaroLocal = _mvpTeamClaro;
+    String? mvpOscuroLocal = _mvpTeamOscuro;
+
+    // Usar el contexto fuera del builder para evitar problemas con showDialog
+    BuildContext outerContext = context;
+    
+    // Mostrar el diálogo con builder para manejar el estado de manera adecuada
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              Icons.flag_outlined, 
-              color: Colors.white,
-              size: 24,
-            ),
-            SizedBox(width: 8),
-            Text(
-              'Finalizar Partido',
-              style: TextStyle(color: Colors.white),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.blue.shade900,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.white.withOpacity(0.2), width: 1),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '¿Estás seguro de que deseas finalizar el partido?',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white,
+      context: outerContext,
+      barrierDismissible: true,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setDialogState) {
+            return Dialog(
+              backgroundColor: Colors.blue.shade900,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Colors.white.withOpacity(0.2), width: 1),
               ),
-            ),
-            SizedBox(height: 16),
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.1),
-                  width: 1,
-                ),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    'Marcador Final',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.white,
+              child: Container(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Título
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.flag_outlined, 
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Finalizar Partido',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Column(
+                    SizedBox(height: 16),
+                    
+                    // Mensaje de confirmación
+                    Text(
+                      '¿Estás seguro de que deseas finalizar el partido?',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    
+                    // Marcador
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.1),
+                          width: 1,
+                        ),
+                      ),
+                      child: Column(
                         children: [
                           Text(
-                            'Equipo Claro',
+                            'Marcador Final',
                             style: TextStyle(
-                              color: Colors.blue.shade300,
                               fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                              fontSize: 16,
+                              color: Colors.white,
                             ),
                           ),
-                          SizedBox(height: 4),
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade700,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.3),
-                                  blurRadius: 4,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Center(
-                              child: Text(
-                                '$golesEquipoClaro',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
+                          SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Equipo Claro
+                              Column(
+                                children: [
+                                  Text(
+                                    'Equipo Claro',
+                                    style: TextStyle(
+                                      color: Colors.blue.shade300,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue.shade700,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.3),
+                                          blurRadius: 4,
+                                          offset: Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        '$golesEquipoClaro',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              
+                              // VS
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 12),
+                                child: Text(
+                                  'vs',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
                               ),
-                            ),
+                              
+                              // Equipo Oscuro
+                              Column(
+                                children: [
+                                  Text(
+                                    'Equipo Oscuro',
+                                    style: TextStyle(
+                                      color: Colors.red.shade300,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.shade700,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.3),
+                                          blurRadius: 4,
+                                          offset: Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        '$golesEquipoOscuro',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          'vs',
+                    ),
+                    
+                    SizedBox(height: 16),
+                    
+                    // MVP Equipo Claro - Título
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.emoji_events,
+                          color: Colors.amber,
+                          size: 20,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'MVP Equipo Claro:',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
                         ),
-                      ),
-                      Column(
-                        children: [
-                          Text(
-                            'Equipo Oscuro',
-                            style: TextStyle(
-                              color: Colors.red.shade300,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.red.shade700,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.3),
-                                  blurRadius: 4,
-                                  offset: Offset(0, 2),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    
+                    // MVP Equipo Claro - Selector
+                    Container(
+                      height: 100,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _teamClaro.length,
+                        itemBuilder: (context, index) {
+                          final player = _teamClaro[index];
+                          final playerId = player['id'].toString();
+                          final isSelected = mvpClaroLocal == playerId;
+                          
+                          return GestureDetector(
+                            onTap: () {
+                              setDialogState(() {
+                                mvpClaroLocal = playerId;
+                              });
+                            },
+                            child: Container(
+                              width: 80,
+                              margin: EdgeInsets.only(right: 8),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                color: isSelected ? Colors.blue.shade700 : Colors.black45,
+                                border: Border.all(
+                                  color: isSelected ? Colors.amber : Colors.transparent,
+                                  width: 2,
                                 ),
-                              ],
-                            ),
-                            child: Center(
-                              child: Text(
-                                '$golesEquipoOscuro',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
+                                boxShadow: isSelected ? [
+                                  BoxShadow(
+                                    color: Colors.amber.withOpacity(0.5),
+                                    blurRadius: 8,
+                                    spreadRadius: 1,
+                                  )
+                                ] : [],
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // Avatar
+                                  Container(
+                                    width: 50,
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: isSelected ? Colors.amber : Colors.blue.shade300,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: ClipOval(
+                                      child: player['foto_perfil'] != null
+                                          ? Image.network(
+                                              player['foto_perfil'],
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) => Center(
+                                                child: Text(
+                                                  player['nombre'][0].toUpperCase(),
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          : Center(
+                                              child: Text(
+                                                player['nombre'][0].toUpperCase(),
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  // Nombre
+                                  Text(
+                                    player['nombre'],
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      fontSize: 12,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  // Icono MVP
+                                  if (isSelected)
+                                    Icon(
+                                      Icons.emoji_events,
+                                      color: Colors.amber,
+                                      size: 14,
+                                    ),
+                                ],
                               ),
                             ),
-                          ),
-                        ],
+                          );
+                        },
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(
-                  Icons.warning_amber_rounded,
-                  color: Colors.orange.shade300,
-                  size: 16,
-                ),
-                SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    'Esta acción no se puede deshacer.',
-                    style: TextStyle(
-                      color: Colors.orange.shade300,
-                      fontStyle: FontStyle.italic,
-                      fontSize: 13,
                     ),
-                  ),
+                    
+                    SizedBox(height: 16),
+                    
+                    // MVP Equipo Oscuro - Título
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.emoji_events,
+                          color: Colors.amber,
+                          size: 20,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'MVP Equipo Oscuro:',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    
+                    // MVP Equipo Oscuro - Selector
+                    Container(
+                      height: 100,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _teamOscuro.length,
+                        itemBuilder: (context, index) {
+                          final player = _teamOscuro[index];
+                          final playerId = player['id'].toString();
+                          final isSelected = mvpOscuroLocal == playerId;
+                          
+                          return GestureDetector(
+                            onTap: () {
+                              setDialogState(() {
+                                mvpOscuroLocal = playerId;
+                              });
+                            },
+                            child: Container(
+                              width: 80,
+                              margin: EdgeInsets.only(right: 8),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                color: isSelected ? Colors.red.shade700 : Colors.black45,
+                                border: Border.all(
+                                  color: isSelected ? Colors.amber : Colors.transparent,
+                                  width: 2,
+                                ),
+                                boxShadow: isSelected ? [
+                                  BoxShadow(
+                                    color: Colors.amber.withOpacity(0.5),
+                                    blurRadius: 8,
+                                    spreadRadius: 1,
+                                  )
+                                ] : [],
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // Avatar
+                                  Container(
+                                    width: 50,
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: isSelected ? Colors.amber : Colors.red.shade300,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: ClipOval(
+                                      child: player['foto_perfil'] != null
+                                          ? Image.network(
+                                              player['foto_perfil'],
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) => Center(
+                                                child: Text(
+                                                  player['nombre'][0].toUpperCase(),
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          : Center(
+                                              child: Text(
+                                                player['nombre'][0].toUpperCase(),
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  // Nombre
+                                  Text(
+                                    player['nombre'],
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      fontSize: 12,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  // Icono MVP
+                                  if (isSelected)
+                                    Icon(
+                                      Icons.emoji_events,
+                                      color: Colors.amber,
+                                      size: 14,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    
+                    SizedBox(height: 12),
+                    
+                    // Advertencia
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          color: Colors.orange.shade300,
+                          size: 16,
+                        ),
+                        SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            'Esta acción no se puede deshacer.',
+                            style: TextStyle(
+                              color: Colors.orange.shade300,
+                              fontStyle: FontStyle.italic,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    SizedBox(height: 16),
+                    
+                    // Botones
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          child: Text(
+                            'Cancelar',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                          onPressed: () => Navigator.pop(dialogContext),
+                        ),
+                        SizedBox(width: 8),
+                        ElevatedButton.icon(
+                          icon: Icon(
+                            Icons.check_circle_outline,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                          label: Text('Finalizar'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green.shade700,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () {
+                            // Guardar las selecciones locales a las variables de la clase
+                            setState(() {
+                              _mvpTeamClaro = mvpClaroLocal;
+                              _mvpTeamOscuro = mvpOscuroLocal;
+                            });
+                            Navigator.pop(dialogContext);
+                            _finalizarPartido();
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            child: Text(
-              'Cancelar',
-              style: TextStyle(color: Colors.white70),
-            ),
-            onPressed: () => Navigator.pop(context),
-          ),
-          ElevatedButton.icon(
-            icon: Icon(
-              Icons.check_circle_outline,
-              color: Colors.white,
-              size: 18,
-            ),
-            label: Text('Finalizar'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.shade700,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
               ),
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-              _finalizarPartido();
-            },
-          ),
-        ],
-      ),
+            );
+          },
+        );
+      },
     );
   }
   
@@ -571,24 +877,67 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
         matchIdInt = int.parse(widget.matchId.toString());
       }
       
-      // Actualizar el estado del partido a "finalizado"
+      // Actualizar el estado del partido a "finalizado" y guardar los MVPs
       await supabase
           .from('partidos')
-          .update({'estado': 'finalizado'})
+          .update({
+            'estado': 'finalizado',
+            'mvp_team_claro': _mvpTeamClaro,
+            'mvp_team_oscuro': _mvpTeamOscuro
+          })
           .eq('id', matchIdInt);
       
       // Actualizar datos locales
       setState(() {
         _matchData['estado'] = 'finalizado';
+        _matchData['mvp_team_claro'] = _mvpTeamClaro;
+        _matchData['mvp_team_oscuro'] = _mvpTeamOscuro;
       });
       
       // Cerrar el indicador de carga
       Navigator.pop(context);
       
+      // Obtener los nombres de los MVP para mostrar en el mensaje (si se seleccionaron)
+      String mvpClaroNombre = '';
+      String mvpOscuroNombre = '';
+      
+      if (_mvpTeamClaro != null) {
+        for (var player in _teamClaro) {
+          if (player['id'].toString() == _mvpTeamClaro) {
+            mvpClaroNombre = player['nombre'];
+            break;
+          }
+        }
+      }
+      
+      if (_mvpTeamOscuro != null) {
+        for (var player in _teamOscuro) {
+          if (player['id'].toString() == _mvpTeamOscuro) {
+            mvpOscuroNombre = player['nombre'];
+            break;
+          }
+        }
+      }
+      
+      // Construir mensaje de éxito con información de MVPs
+      String successMessage = "Partido finalizado correctamente";
+      if (mvpClaroNombre.isNotEmpty || mvpOscuroNombre.isNotEmpty) {
+        successMessage += "\nMVPs: ";
+        if (mvpClaroNombre.isNotEmpty) {
+          successMessage += "$mvpClaroNombre (Claro)";
+        }
+        if (mvpClaroNombre.isNotEmpty && mvpOscuroNombre.isNotEmpty) {
+          successMessage += " y ";
+        }
+        if (mvpOscuroNombre.isNotEmpty) {
+          successMessage += "$mvpOscuroNombre (Oscuro)";
+        }
+      }
+      
       // Mostrar mensaje de éxito
       Fluttertoast.showToast(
-        msg: "Partido finalizado correctamente",
-        toastLength: Toast.LENGTH_SHORT,
+        msg: successMessage,
+        toastLength: Toast.LENGTH_LONG,
         gravity: ToastGravity.BOTTOM,
         backgroundColor: Colors.green,
         textColor: Colors.white,
@@ -1246,6 +1595,59 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                           
                           SizedBox(height: 8),
                           
+                          // Asistencias
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.sports, color: Colors.black87),
+                                  SizedBox(width: 8),
+                                  Text('Asistencias', style: TextStyle(fontSize: 16)),
+                                ],
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(
+                                    width: 36,
+                                    child: IconButton(
+                                      iconSize: 20,
+                                      padding: EdgeInsets.zero,
+                                      icon: Icon(Icons.remove_circle_outline),
+                                      color: Colors.red,
+                                      onPressed: asistencias > 0 ? () {
+                                        setState(() => asistencias--);
+                                      } : null,
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 30,
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '$asistencias',
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 36,
+                                    child: IconButton(
+                                      iconSize: 20,
+                                      padding: EdgeInsets.zero,
+                                      icon: Icon(Icons.add_circle_outline),
+                                      color: Colors.green,
+                                      onPressed: () {
+                                        setState(() => asistencias++);
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          
+                          SizedBox(height: 8),
+                          
                           // Goles en propia puerta
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1304,59 +1706,6 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                                       color: Colors.green,
                                       onPressed: () {
                                         setState(() => golesPropios++);
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          
-                          SizedBox(height: 8),
-                          
-                          // Asistencias
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.sports, color: Colors.black87),
-                                  SizedBox(width: 8),
-                                  Text('Asistencias', style: TextStyle(fontSize: 16)),
-                                ],
-                              ),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  SizedBox(
-                                    width: 36,
-                                    child: IconButton(
-                                      iconSize: 20,
-                                      padding: EdgeInsets.zero,
-                                      icon: Icon(Icons.remove_circle_outline),
-                                      color: Colors.red,
-                                      onPressed: asistencias > 0 ? () {
-                                        setState(() => asistencias--);
-                                      } : null,
-                                    ),
-                                  ),
-                                  Container(
-                                    width: 30,
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      '$asistencias',
-                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    width: 36,
-                                    child: IconButton(
-                                      iconSize: 20,
-                                      padding: EdgeInsets.zero,
-                                      icon: Icon(Icons.add_circle_outline),
-                                      color: Colors.green,
-                                      onPressed: () {
-                                        setState(() => asistencias++);
                                       },
                                     ),
                                   ),
