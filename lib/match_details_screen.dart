@@ -1016,11 +1016,16 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                         children: [
                           // Avatar del jugador
                           Positioned(
-                            left: posX - 25,
-                            top: posY - 25,
-                            child: GestureDetector(
-                              onTap: () => _showPlayerStatsDialog(player, isTeamClaro),
-                              child: _buildPlayerAvatar(player, isTeamClaro, posX, posY),
+                            left: posX - 70, // Aumentado significativamente para dar más espacio
+                            top: posY - 70,  // Aumentado significativamente para dar más espacio
+                            child: Container(
+                              width: 140, // Área mucho más amplia para el jugador
+                              height: 140, // Área mucho más amplia para el jugador
+                              alignment: Alignment.center,
+                              child: GestureDetector(
+                                onTap: () => _showPlayerStatsDialog(player, isTeamClaro),
+                                child: _buildPlayerAvatar(player, isTeamClaro, posX, posY),
+                              ),
                             ),
                           ),
                           
@@ -1151,6 +1156,12 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           : 0;
     }
     
+    // Verificar si el jugador es MVP
+    final String playerId = player['id'].toString();
+    final bool isMVP = (isTeamA && _matchData['mvp_team_claro'] == playerId) || 
+                      (!isTeamA && _matchData['mvp_team_oscuro'] == playerId);
+    final bool isFinished = _matchData['estado'] == 'finalizado';
+    
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -1168,10 +1179,17 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
               end: Alignment.bottomRight,
             ),
             border: Border.all(
-              color: Colors.white,
-              width: 2,
+              color: (isMVP && isFinished) ? Colors.amber : Colors.white,
+              width: (isMVP && isFinished) ? 3 : 2,
             ),
             boxShadow: [
+              if (isMVP && isFinished)
+                BoxShadow(
+                  color: Colors.amber.withOpacity(0.6),
+                  blurRadius: 15,
+                  spreadRadius: 2,
+                  offset: Offset(0, 0),
+                ),
               BoxShadow(
                 color: (isTeamA ? Colors.blue : Colors.red).withOpacity(0.3),
                 blurRadius: 12,
@@ -1239,8 +1257,8 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
         // Mostrar puntuación del jugador (si está disponible)
         if (average > 0)
           Positioned(
-            top: 0,
-            right: 0,
+            top: -5,
+            right: -5,
             child: Container(
               width: 20,
               height: 20,
@@ -1275,6 +1293,33 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+              ),
+            ),
+          ),
+          
+        // Estrella MVP (ahora en la parte inferior derecha y evitando solapamiento)
+        if (isMVP && isFinished)
+          Positioned(
+            bottom: -5,
+            right: -5,
+            child: Container(
+              padding: EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: Colors.amber,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black38,
+                    blurRadius: 3,
+                    offset: Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.star,
+                color: Colors.white,
+                size: 12,
               ),
             ),
           ),

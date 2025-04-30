@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:path/path.dart' as path;
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -13,6 +16,8 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _usernameController = TextEditingController();
+  final _posicionController = TextEditingController();
+  final _descripcionController = TextEditingController();
   
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -22,6 +27,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
   bool _acceptTerms = false;
+  File? _profileImage;
 
   @override
   void initState() {
@@ -58,93 +64,147 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _usernameController.dispose();
+    _posicionController.dispose();
+    _descripcionController.dispose();
     super.dispose();
   }
 
-  // Modificar el método _signUp() para guardar datos en la tabla 'usuarios'
-
-Future<void> _signUp() async {
-  // Validar el formulario primero
-  if (!_formKey.currentState!.validate()) {
-    return;
-  }
-  
-  if (!_acceptTerms) {
-    _showErrorSnackBar('Debes aceptar los términos y condiciones');
-    return;
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    
+    if (image != null) {
+      setState(() {
+        _profileImage = File(image.path);
+      });
+    }
   }
 
-  setState(() {
-    _isLoading = true;
-  });
-  
-  try {
-    // Ocultar el teclado
-    FocusScope.of(context).unfocus();
+  Future<String?> _uploadProfileImage(String userId) async {
+    if (_profileImage == null) return null;
     
-    // Mostrar diálogo de progreso
-    _showProgressDialog();
-    
-    // Intentar registro en Supabase
-    final response = await Supabase.instance.client.auth.signUp(
-      email: _emailController.text.trim(),
-      password: _passwordController.text.trim(),
-      data: {
-        'username': _usernameController.text.trim(),
-      },
-    );
-    
-    // Verificar respuesta
-    if (response.user == null) {
-      // Cerrar diálogo de progreso
-      Navigator.of(context, rootNavigator: true).pop();
-      _showErrorSnackBar('No se pudo crear la cuenta. Intente de nuevo más tarde.');
+    try {
+      final String fileExtension = path.extension(_profileImage!.path);
+      final String fileName = '$userId${DateTime.now().millisecondsSinceEpoch}$fileExtension';
+      final String filePath = 'images/$userId/$fileName';
+      
+      await Supabase.instance.client.storage
+          .from('avatars')
+          .upload(filePath, _profileImage!);
+      
+      // Get public URL
+      final String imageUrl = Supabase.instance.client.storage
+          .from('avatars')
+          .getPublicUrl(filePath);
+      
+      return imageUrl;
+    } catch (e) {
+      print('Error uploading profile image: $e');
+      return null;
+    }
+  }
+
+  Future<void> _signUp() async {
+    // Validar el formulario primero
+    if (!_formKey.currentState!.validate()) {
       return;
     }
     
-    // Guardar datos en la tabla 'perfiles' (mantener para compatibilidad)
-    try {
-      await Supabase.instance.client.from('usuarios').insert({
-        'id': response.user!.id,
-        'username': _usernameController.text.trim(),
-      });
-    } catch (profileError) {
-      print('Error al crear perfil: $profileError');
-      // Continuar aunque falle la creación del perfil
-    }
-    
-    // Guardar datos en la tabla 'usuarios'
-    try {
-      await Supabase.instance.client.from('usuarios').insert({
-        'id': response.user!.id,
-        'username': _usernameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'created_at': DateTime.now().toIso8601String(),
-      });
-      print('Usuario guardado exitosamente en la tabla usuarios');
-    } catch (userError) {
-      print('Error al guardar en tabla usuarios: $userError');
-      // Continuar aunque falle esta operación
+    if (!_acceptTerms) {
+      _showErrorSnackBar('Debes aceptar los términos y condiciones');
+      return;
     }
 
-    // Cerrar diálogo de progreso
-    Navigator.of(context, rootNavigator: true).pop();
-    
-    // Mostrar diálogo de éxito
-    _showSuccessDialog();
-    
-  } on AuthException catch (e) {
-    Navigator.of(context, rootNavigator: true).pop();
-    _showErrorSnackBar(_getReadableAuthError(e.message));
-  } catch (e) {
-    Navigator.of(context, rootNavigator: true).pop();
-    _showErrorSnackBar('Error: ${e.toString()}');
-  } finally {
     setState(() {
-      _isLoading = false;
+      _isLoading = true;
     });
+    
+    try {
+      // Ocultar el teclado
+      FocusScope.of(context).unfocus();
+      
+      // Mostrar diálogo de progreso
+      _showProgressDialog();
+      
+      // Intentar registro en Supabase
+      final response = await Supabase.instance.client.auth.signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+        data: {
+          'username': _usernameController.text.trim(),
+        },
+      );
+      
+      // Verificar respuesta
+      if (response.user == null) {
+        // Cerrar diálogo de progreso
+        Navigator.of(context, rootNavigator: true).pop();
+        _showErrorSnackBar('No se pudo crear la cuenta. Intente de nuevo más tarde.');
+        return;
+      }
+      
+      // Subir imagen de perfil si existe
+      String? avatarUrl = await _uploadProfileImage(response.user!.id);
+      
+      // Crear carpeta para imágenes del usuario
+      try {
+        // La carpeta se crea automáticamente al subir la imagen
+        print('Carpeta de imágenes creada para el usuario: ${response.user!.id}');
+      } catch (e) {
+        print('Error al crear carpeta de imágenes: $e');
+        // Continuar aunque falle la creación de la carpeta
+      }
+      
+      // Guardar datos en la tabla 'profiles'
+      try {
+        await Supabase.instance.client.from('profiles').insert({
+          'id': response.user!.id,
+          'nombre': _usernameController.text.trim(),
+          'email': _emailController.text.trim(),
+          'posición': _posicionController.text.trim(),
+          'descripción': _descripcionController.text.trim(),
+          'calificación': 0,
+          'avatar_url': avatarUrl,
+          'created_at': DateTime.now().toIso8601String(),
+        });
+        print('Perfil guardado exitosamente en la tabla profiles');
+      } catch (profileError) {
+        print('Error al crear perfil: $profileError');
+        // Continuar aunque falle la creación del perfil
+      }
+      
+      // Guardar datos en la tabla 'usuarios' (mantener para compatibilidad)
+      try {
+        await Supabase.instance.client.from('usuarios').insert({
+          'id': response.user!.id,
+          'username': _usernameController.text.trim(),
+          'email': _emailController.text.trim(),
+          'created_at': DateTime.now().toIso8601String(),
+        });
+        print('Usuario guardado exitosamente en la tabla usuarios');
+      } catch (userError) {
+        print('Error al guardar en tabla usuarios: $userError');
+        // Continuar aunque falle esta operación
+      }
+
+      // Cerrar diálogo de progreso
+      Navigator.of(context, rootNavigator: true).pop();
+      
+      // Mostrar diálogo de éxito
+      _showSuccessDialog();
+      
+    } on AuthException catch (e) {
+      Navigator.of(context, rootNavigator: true).pop();
+      _showErrorSnackBar(_getReadableAuthError(e.message));
+    } catch (e) {
+      Navigator.of(context, rootNavigator: true).pop();
+      _showErrorSnackBar('Error: ${e.toString()}');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
-}
   
   void _showProgressDialog() {
     showDialog(
@@ -333,38 +393,82 @@ Future<void> _signUp() async {
                     children: [
                       SizedBox(height: 20),
                       
-                      // Logo animado
+                      // Perfil y selector de imagen
                       Center(
-                        child: TweenAnimationBuilder<double>(
-                          tween: Tween<double>(begin: 0.0, end: 1.0),
-                          duration: Duration(milliseconds: 800),
-                          curve: Curves.elasticOut,
-                          builder: (context, value, child) {
-                            return Transform.scale(
-                              scale: value,
-                              child: child,
-                            );
-                          },
-                          child: Container(
-                            height: 100,
-                            width: 100,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 15,
-                                  offset: Offset(0, 8),
+                        child: Stack(
+                          children: [
+                            // Avatar con efecto de animación
+                            TweenAnimationBuilder<double>(
+                              tween: Tween<double>(begin: 0.0, end: 1.0),
+                              duration: Duration(milliseconds: 800),
+                              curve: Curves.elasticOut,
+                              builder: (context, value, child) {
+                                return Transform.scale(
+                                  scale: value,
+                                  child: child,
+                                );
+                              },
+                              child: Container(
+                                height: 120,
+                                width: 120,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withOpacity(0.2),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 15,
+                                      offset: Offset(0, 8),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                            child: ClipOval(
-                              child: Image.asset(
-                                'assets/habilidades.png',
-                                fit: BoxFit.cover,
+                                child: ClipOval(
+                                  child: _profileImage != null
+                                      ? Image.file(
+                                          _profileImage!,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Icon(
+                                          Icons.person,
+                                          size: 80,
+                                          color: Colors.white.withOpacity(0.9),
+                                        ),
+                                ),
                               ),
                             ),
-                          ),
+                            
+                            // Botón para cambiar imagen
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: _pickImage,
+                                child: Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.shade600,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black26,
+                                        blurRadius: 5,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       
@@ -426,6 +530,27 @@ Future<void> _signUp() async {
                           }
                           return null;
                         },
+                        textInputAction: TextInputAction.next,
+                      ),
+                      
+                      SizedBox(height: 20),
+                      
+                      // Campo de posición
+                      TextFormField(
+                        controller: _posicionController,
+                        style: TextStyle(color: Colors.white),
+                        decoration: _buildInputDecoration('Posición (Opcional)', Icons.sports_soccer),
+                        textInputAction: TextInputAction.next,
+                      ),
+                      
+                      SizedBox(height: 20),
+                      
+                      // Campo de descripción
+                      TextFormField(
+                        controller: _descripcionController,
+                        style: TextStyle(color: Colors.white),
+                        decoration: _buildInputDecoration('Descripción (Opcional)', Icons.description),
+                        maxLines: 2,
                         textInputAction: TextInputAction.next,
                       ),
                       
