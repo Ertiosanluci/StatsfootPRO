@@ -381,6 +381,11 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> {
   bool _matchCreated = false;
   int? _matchId;
   
+  // Added boolean variables for checkboxes
+  bool _isPrivateMatch = false;
+  bool _trackStats = true;
+  bool _notifyPlayers = true;
+  
   @override
   void initState() {
     super.initState();
@@ -476,14 +481,17 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> {
         throw Exception('Usuario no autenticado');
       }
 
-      // Crear partido pendiente en Supabase
+      // Crear partido pendiente en Supabase con campos según la estructura de la tabla
       final matchResponse = await supabase.from('matches').insert({
+        'creador_id': currentUser.id,
         'nombre': widget.matchData['nombre'],
         'formato': widget.matchData['formato'],
         'fecha': matchDateTime.toIso8601String(),
-        'creador_id': currentUser.id,
-        'created_at': DateTime.now().toIso8601String(),
         'estado': 'pendiente',
+        'created_at': DateTime.now().toIso8601String(),
+        'es_privado': _isPrivateMatch,
+        'registrar_stats': _trackStats,
+        'notificar_jugadores': _notifyPlayers,
       }).select();
 
       // Obtener el ID del partido recién creado
@@ -499,16 +507,29 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> {
       
       // Registrar al creador como organizador en match_participants
       try {
-        await supabase.from('match_participants').insert({
-          'match_id': matchId,
-          'user_id': currentUser.id,
-          'equipo': null, // Por ahora sin equipo asignado
-          'es_organizador': true,
-          'joined_at': DateTime.now().toIso8601String(),
-        });
+        if (matchId != null && currentUser.id != null) {
+          print('Intentando registrar organizador: matchId=$matchId, userId=${currentUser.id}');
+          
+          // Corrección: usar el nombre exacto de la tabla: match_participants (plural)
+          final participantData = {
+            'match_id': matchId,
+            'user_id': currentUser.id,
+            'equipo': null,
+            'es_organizador': true,
+            'joined_at': DateTime.now().toIso8601String(),
+          };
+          
+          // Inserción directa en la tabla match_participants (nombre correcto)
+          final result = await supabase.from('match_participants').insert(participantData);
+          
+          print('Resultado de registrar organizador: $result');
+        }
       } catch (participantError) {
         print('Error al registrar organizador: $participantError');
-        // Continue even if this fails, as the match was created successfully
+        print('Detalles del error: ${participantError.toString()}');
+        
+        // El partido se creó correctamente, por lo que continuamos
+        print('Continuando a pesar del error en match_participants');
       }
       
       setState(() {
@@ -834,231 +855,324 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> {
   }
   
   Widget _buildMatchDetailsContent() {
-    return Column(
-      children: [
-        // Información del partido
-        Padding(
-          padding: EdgeInsets.all(16),
-          child: Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Información del Partido',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue.shade800,
-                    ),
-                  ),
-                  Divider(),
-                  ListTile(
-                    leading: Icon(Icons.sports_soccer, color: Colors.orange.shade600),
-                    title: Text('Nombre'),
-                    subtitle: Text(
-                      widget.matchData['nombre'],
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.people, color: Colors.orange.shade600),
-                    title: Text('Formato'),
-                    subtitle: Text(
-                      widget.matchData['formato'],
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // Información del partido
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-            ),
-          ),
-        ),
-        
-        // Selección de fecha y hora
-        Padding(
-          padding: EdgeInsets.all(16),
-          child: Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Fecha y Hora del Partido',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue.shade800,
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Información del Partido',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue.shade800,
+                      ),
                     ),
-                  ),
-                  Divider(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          icon: Icon(Icons.calendar_today),
-                          label: Text(
-                            '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          onPressed: () => _selectDate(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue.shade700,
-                            padding: EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
+                    Divider(),
+                    ListTile(
+                      leading: Icon(Icons.sports_soccer, color: Colors.orange.shade600),
+                      title: Text('Nombre'),
+                      subtitle: Text(
+                        widget.matchData['nombre'],
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          icon: Icon(Icons.access_time),
-                          label: Text(
-                            _selectedTime.format(context),
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          onPressed: () => _selectTime(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange.shade600,
-                            padding: EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        
-        Padding(
-          padding: EdgeInsets.all(16),
-          child: Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.blue.shade700),
-                      SizedBox(width: 8),
-                      Text(
-                        'Información del Partido',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade800,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Divider(),
-                  Text(
-                    'Al crear el partido:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
                     ),
-                  ),
-                  SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Icon(Icons.check_circle, color: Colors.green, size: 16),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Se generará un enlace para compartir',
-                          style: TextStyle(fontSize: 14),
-                        ),
+                    ListTile(
+                      leading: Icon(Icons.people, color: Colors.orange.shade600),
+                      title: Text('Formato'),
+                      subtitle: Text(
+                        widget.matchData['formato'],
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.check_circle, color: Colors.green, size: 16),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Los jugadores podrán unirse usando el enlace',
-                          style: TextStyle(fontSize: 14),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.check_circle, color: Colors.green, size: 16),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Podrás gestionar los equipos una vez que los jugadores se hayan unido',
-                          style: TextStyle(fontSize: 14),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        
-        Spacer(),
-        
-        // Botón para guardar
-        Padding(
-          padding: EdgeInsets.all(16),
-          child: SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _saveMatch,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade600,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                    ),
+                  ],
                 ),
-                elevation: 4,
               ),
-              child: _isLoading
-                ? CircularProgressIndicator(color: Colors.white)
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.save),
-                      SizedBox(width: 10),
-                      Text(
-                        'CREAR PARTIDO',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
             ),
           ),
-        ),
-      ],
+          
+          // Selección de fecha y hora
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Fecha y Hora del Partido',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue.shade800,
+                      ),
+                    ),
+                    Divider(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            icon: Icon(Icons.calendar_today),
+                            label: Text(
+                              '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            onPressed: () => _selectDate(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue.shade700,
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            icon: Icon(Icons.access_time),
+                            label: Text(
+                              _selectedTime.format(context),
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            onPressed: () => _selectTime(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange.shade600,
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          
+          // Opciones del partido (checkboxes de selección)
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Opciones del Partido',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue.shade800,
+                      ),
+                    ),
+                    Divider(),
+                    
+                    // Checkboxes
+                    CheckboxListTile(
+                      title: Text(
+                        'Partido Privado',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      subtitle: Text('Solo visible para jugadores invitados'),
+                      secondary: Icon(Icons.lock, color: Colors.orange.shade600),
+                      value: _isPrivateMatch,
+                      onChanged: (value) {
+                        setState(() {
+                          _isPrivateMatch = value!;
+                        });
+                      },
+                      activeColor: Colors.orange.shade600,
+                      checkColor: Colors.white,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    
+                    CheckboxListTile(
+                      title: Text(
+                        'Registrar Estadísticas',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      subtitle: Text('Seguimiento de goles, asistencias y más'),
+                      secondary: Icon(Icons.insert_chart, color: Colors.orange.shade600),
+                      value: _trackStats,
+                      onChanged: (value) {
+                        setState(() {
+                          _trackStats = value!;
+                        });
+                      },
+                      activeColor: Colors.orange.shade600,
+                      checkColor: Colors.white,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    
+                    CheckboxListTile(
+                      title: Text(
+                        'Notificar a Jugadores',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      subtitle: Text('Enviar recordatorios automáticos'),
+                      secondary: Icon(Icons.notifications_active, color: Colors.orange.shade600),
+                      value: _notifyPlayers,
+                      onChanged: (value) {
+                        setState(() {
+                          _notifyPlayers = value!;
+                        });
+                      },
+                      activeColor: Colors.orange.shade600,
+                      checkColor: Colors.white,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          
+          // Información del partido
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.blue.shade700),
+                        SizedBox(width: 8),
+                        Text(
+                          'Información Adicional',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue.shade800,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Divider(),
+                    Text(
+                      'Al crear el partido:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.green, size: 16),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Se generará un enlace para compartir',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.green, size: 16),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Los jugadores podrán unirse usando el enlace',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.green, size: 16),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Podrás gestionar los equipos una vez que los jugadores se hayan unido',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          
+          // Botón para guardar
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _saveMatch,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade600,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 4,
+                ),
+                child: _isLoading
+                  ? CircularProgressIndicator(color: Colors.white)
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.save),
+                        SizedBox(width: 10),
+                        Text(
+                          'CREAR PARTIDO',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

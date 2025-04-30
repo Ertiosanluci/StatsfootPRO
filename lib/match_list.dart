@@ -6,6 +6,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'create_match.dart';
 import 'match_join_screen.dart';
 import 'match_details_screen.dart';
+import 'team_management_screen.dart';
 
 class MatchListScreen extends StatefulWidget {
   @override
@@ -49,35 +50,99 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
         return;
       }
 
+      // Primero, mostrar un log para depuración
+      print('Cargando partidos para usuario: ${currentUser.id}');
+
       // Fetch matches organized by the current user
-      final organizedMatchesResponse = await supabase
-          .from('matches')
-          .select('*, profiles!creator_id(*)')
-          .eq('creador_id', currentUser.id)
-          .order('fecha', ascending: false);
-
-      // Fetch matches where the user is a participant
-      final participantMatchesResponse = await supabase
-          .from('match_participants')
-          .select('match:matches(*, profiles!creator_id(*))')
-          .eq('user_id', currentUser.id)
-          .eq('es_organizador', false)
-          .order('match(fecha)', ascending: false);
-
-      // Extract the matches from the participant response
-      final List<Map<String, dynamic>> invitedMatches = [];
-      for (final item in participantMatchesResponse) {
-        if (item['match'] != null) {
-          invitedMatches.add(item['match']);
+      try {
+        // Versión simplificada de la consulta sin unión de tablas para evitar errores
+        final organizedMatchesResponse = await supabase
+            .from('matches')
+            .select('*')
+            .eq('creador_id', currentUser.id)
+            .order('fecha', ascending: false);
+        
+        print('Partidos organizados cargados: ${organizedMatchesResponse.length}');
+        
+        // Fetch matches where the user is a participant
+        final participantMatchesResponse = await supabase
+            .from('match_participants')
+            .select('match_id')
+            .eq('user_id', currentUser.id)
+            .eq('es_organizador', false);
+        
+        final List<Map<String, dynamic>> invitedMatches = [];
+        
+        // Si hay partidos donde el usuario es participante, cargarlos individualmente
+        if (participantMatchesResponse.isNotEmpty) {
+          for (final item in participantMatchesResponse) {
+            final int matchId = item['match_id'];
+            final matchData = await supabase
+                .from('matches')
+                .select('*')
+                .eq('id', matchId)
+                .maybeSingle();
+                
+            if (matchData != null) {
+              // Obtener datos del creador
+              try {
+                final creatorData = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', matchData['creador_id'])
+                    .maybeSingle();
+                    
+                if (creatorData != null) {
+                  matchData['profiles'] = creatorData;
+                }
+              } catch (e) {
+                print('Error al cargar perfil del creador: $e');
+              }
+              
+              invitedMatches.add(matchData);
+            }
+          }
         }
-      }
+        
+        print('Partidos invitados cargados: ${invitedMatches.length}');
 
-      setState(() {
-        _myMatches = List<Map<String, dynamic>>.from(organizedMatchesResponse);
-        _invitedMatches = invitedMatches;
-        _isLoading = false;
-      });
+        // Cargar también los datos de los perfiles para los partidos organizados
+        final List<Map<String, dynamic>> myMatchesWithProfiles = [];
+        for (final match in organizedMatchesResponse) {
+          final Map<String, dynamic> matchWithProfile = Map.from(match);
+          
+          // Para partidos creados por el usuario actual, usar su propio perfil
+          try {
+            final profileData = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', currentUser.id)
+                .maybeSingle();
+                
+            if (profileData != null) {
+              matchWithProfile['profiles'] = profileData;
+            }
+          } catch (e) {
+            print('Error al cargar perfil del usuario actual: $e');
+          }
+          
+          myMatchesWithProfiles.add(matchWithProfile);
+        }
+
+        setState(() {
+          _myMatches = myMatchesWithProfiles;
+          _invitedMatches = invitedMatches;
+          _isLoading = false;
+        });
+      } catch (e) {
+        print('Error en consulta específica: $e');
+        setState(() {
+          _isLoading = false;
+          _error = 'Error al cargar datos: $e';
+        });
+      }
     } catch (e) {
+      print('Error general: $e');
       setState(() {
         _isLoading = false;
         _error = 'Error al cargar partidos: $e';
@@ -152,66 +217,17 @@ Hora: $formattedTime
   }
 
   Future<void> _manageParticipants(Map<String, dynamic> match) async {
-    // Here you would navigate to a screen to manage participants
-    // For now, let's show a simple dialog with the participant count
-    try {
-      final participantsResponse = await supabase
-          .from('match_participants')
-          .select('profiles!user_id(*)')
-          .eq('match_id', match['id']);
-
-      final List<Map<String, dynamic>> participants = [];
-      for (final item in participantsResponse) {
-        if (item['profiles'] != null) {
-          participants.add(item['profiles']);
-        }
-      }
-
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Participantes'),
-          content: Container(
-            width: double.maxFinite,
-            height: 300,
-            child: participants.isEmpty
-                ? Center(
-                    child: Text('No hay participantes aún'),
-                  )
-                : ListView.builder(
-                    itemCount: participants.length,
-                    itemBuilder: (context, index) {
-                      final participant = participants[index];
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundImage: participant['avatar_url'] != null
-                              ? NetworkImage(participant['avatar_url'])
-                              : null,
-                          child: participant['avatar_url'] == null
-                              ? Icon(Icons.person)
-                              : null,
-                        ),
-                        title: Text(participant['nombre'] ?? 'Usuario'),
-                        subtitle: Text(participant['email'] ?? ''),
-                      );
-                    },
-                  ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cerrar'),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al cargar participantes: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    // Navegar a la pantalla de gestión de equipos
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TeamManagementScreen(match: match),
+      ),
+    );
+    
+    // Si se realizaron cambios, actualizamos la lista de partidos
+    if (result == true) {
+      _fetchMatches();
     }
   }
 
