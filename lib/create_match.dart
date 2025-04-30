@@ -374,17 +374,13 @@ class MatchDetailsScreen extends StatefulWidget {
 
 class _MatchDetailsScreenState extends State<MatchDetailsScreen> {
   final SupabaseClient supabase = Supabase.instance.client;
+  // Variables for date and time
   late TimeOfDay _selectedTime;
   late DateTime _selectedDate;
   String? _matchLink;
   bool _isLoading = false;
   bool _matchCreated = false;
   int? _matchId;
-  
-  // Added boolean variables for checkboxes
-  bool _isPrivateMatch = false;
-  bool _trackStats = true;
-  bool _notifyPlayers = true;
   
   @override
   void initState() {
@@ -489,9 +485,6 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> {
         'fecha': matchDateTime.toIso8601String(),
         'estado': 'pendiente',
         'created_at': DateTime.now().toIso8601String(),
-        'es_privado': _isPrivateMatch,
-        'registrar_stats': _trackStats,
-        'notificar_jugadores': _notifyPlayers,
       }).select();
 
       // Obtener el ID del partido recién creado
@@ -964,98 +957,6 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> {
             ),
           ),
           
-          // Opciones del partido (checkboxes de selección)
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Opciones del Partido',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade800,
-                      ),
-                    ),
-                    Divider(),
-                    
-                    // Checkboxes
-                    CheckboxListTile(
-                      title: Text(
-                        'Partido Privado',
-                        style: TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                      subtitle: Text('Solo visible para jugadores invitados'),
-                      secondary: Icon(Icons.lock, color: Colors.orange.shade600),
-                      value: _isPrivateMatch,
-                      onChanged: (value) {
-                        setState(() {
-                          _isPrivateMatch = value!;
-                        });
-                      },
-                      activeColor: Colors.orange.shade600,
-                      checkColor: Colors.white,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    
-                    CheckboxListTile(
-                      title: Text(
-                        'Registrar Estadísticas',
-                        style: TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                      subtitle: Text('Seguimiento de goles, asistencias y más'),
-                      secondary: Icon(Icons.insert_chart, color: Colors.orange.shade600),
-                      value: _trackStats,
-                      onChanged: (value) {
-                        setState(() {
-                          _trackStats = value!;
-                        });
-                      },
-                      activeColor: Colors.orange.shade600,
-                      checkColor: Colors.white,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    
-                    CheckboxListTile(
-                      title: Text(
-                        'Notificar a Jugadores',
-                        style: TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                      subtitle: Text('Enviar recordatorios automáticos'),
-                      secondary: Icon(Icons.notifications_active, color: Colors.orange.shade600),
-                      value: _notifyPlayers,
-                      onChanged: (value) {
-                        setState(() {
-                          _notifyPlayers = value!;
-                        });
-                      },
-                      activeColor: Colors.orange.shade600,
-                      checkColor: Colors.white,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          
           // Información del partido
           Padding(
             padding: EdgeInsets.all(16),
@@ -1125,6 +1026,19 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> {
                         Expanded(
                           child: Text(
                             'Podrás gestionar los equipos una vez que los jugadores se hayan unido',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.green, size: 16),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Las estadísticas se registrarán automáticamente',
                             style: TextStyle(fontSize: 14),
                           ),
                         ),

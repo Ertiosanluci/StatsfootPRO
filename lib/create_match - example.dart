@@ -324,82 +324,7 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> with SingleTicker
                                       ),
                                     ),
                                     onTap: () {
-                                      this.setState(() {
-                                        final playerId = player['id'].toString();
-                                        
-                                        // Si ya hay un jugador en esta posición, eliminarlo primero
-                                        if (isTeamA) {
-                                          // Verificar si la posición ya está ocupada
-                                          if (_teamAPositionIndices.containsKey(positionIndex)) {
-                                            // Obtener el ID del jugador que ocupa esta posición
-                                            String oldPlayerId = _teamAPositionIndices[positionIndex]!;
-                                            // Si el jugador seleccionado es el mismo que ya está en esta posición, no hacer nada
-                                            if (oldPlayerId == playerId) {
-                                              Navigator.pop(context);
-                                              return;
-                                            }
-                                            // Eliminar este jugador del equipo
-                                            _teamA.remove(oldPlayerId);
-                                            // Mantener su posición en el mapa de posiciones (por si se vuelve a añadir)
-                                          }
-                                          
-                                          // Si el jugador ya está en otro equipo, eliminarlo de ahí primero
-                                          if (_teamB.contains(playerId)) {
-                                            _teamB.remove(playerId);
-                                            // Eliminar cualquier referencia en el mapa de índices de posición del equipo B
-                                            _teamBPositionIndices.removeWhere((index, id) => id == playerId);
-                                          }
-                                          
-                                          // Añadir el nuevo jugador
-                                          _teamA.add(playerId);
-                                          // Registrar qué posición ocupa este jugador
-                                          _teamAPositionIndices[positionIndex] = playerId;
-                                          
-                                          // Asignar posición por defecto si no tenía una
-                                          if (!_teamAPositions.containsKey(playerId)) {
-                                            _teamAPositions[playerId] = _getDefaultPositions(
-                                              int.parse(_selectedFormat.split('v')[0]), 
-                                              positionIndex, 
-                                              true
-                                            );
-                                          }
-                                        } else {
-                                          // Verificar si la posición ya está ocupada
-                                          if (_teamBPositionIndices.containsKey(positionIndex)) {
-                                            // Obtener el ID del jugador que ocupa esta posición
-                                            String oldPlayerId = _teamBPositionIndices[positionIndex]!;
-                                            // Si el jugador seleccionado es el mismo que ya está en esta posición, no hacer nada
-                                            if (oldPlayerId == playerId) {
-                                              Navigator.pop(context);
-                                              return;
-                                            }
-                                            // Eliminar este jugador del equipo
-                                            _teamB.remove(oldPlayerId);
-                                            // Mantener su posición en el mapa de posiciones (por si se vuelve a añadir)
-                                          }
-                                          
-                                          // Si el jugador ya está en otro equipo, eliminarlo de ahí primero
-                                          if (_teamA.contains(playerId)) {
-                                            _teamA.remove(playerId);
-                                            // Eliminar cualquier referencia en el mapa de índices de posición del equipo A
-                                            _teamAPositionIndices.removeWhere((index, id) => id == playerId);
-                                          }
-                                          
-                                          // Añadir el nuevo jugador
-                                          _teamB.add(playerId);
-                                          // Registrar qué posición ocupa este jugador
-                                          _teamBPositionIndices[positionIndex] = playerId;
-                                          
-                                          // Asignar posición por defecto si no tenía una
-                                          if (!_teamBPositions.containsKey(playerId)) {
-                                            _teamBPositions[playerId] = _getDefaultPositions(
-                                              int.parse(_selectedFormat.split('v')[1]), 
-                                              positionIndex, 
-                                              false
-                                            );
-                                          }
-                                        }
-                                      });
+                                      _assignPlayerToPosition(player, isTeamA, positionIndex);
                                       Navigator.pop(context);
                                     },
                                   ),
@@ -458,6 +383,107 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> with SingleTicker
       textColor: Colors.white,
       fontSize: 16.0
     );
+  }
+
+  // Función para asignar un jugador a una posición específica
+  void _assignPlayerToPosition(Map<String, dynamic> player, bool isTeamA, int positionIndex) {
+    final String playerId = player['id'].toString();
+    
+    setState(() {
+      // 1. Primero verificar si el jugador ya está en algún equipo y eliminar su referencia anterior
+      bool wasInTeamA = _teamA.contains(playerId);
+      bool wasInTeamB = _teamB.contains(playerId);
+      
+      // Eliminar del equipo anterior si estaba en alguno
+      if (wasInTeamA) {
+        // Encontrar y guardar la posición anterior para liberarla
+        int? previousPositionIndex;
+        _teamAPositionIndices.forEach((index, id) {
+          if (id == playerId) {
+            previousPositionIndex = index;
+          }
+        });
+        
+        // Sólo eliminar el jugador, no la posición
+        _teamA.remove(playerId);
+        
+        // Liberar la posición anterior
+        if (previousPositionIndex != null) {
+          _teamAPositionIndices.remove(previousPositionIndex);
+        }
+      } else if (wasInTeamB) {
+        // Encontrar y guardar la posición anterior para liberarla
+        int? previousPositionIndex;
+        _teamBPositionIndices.forEach((index, id) {
+          if (id == playerId) {
+            previousPositionIndex = index;
+          }
+        });
+        
+        // Sólo eliminar el jugador, no la posición
+        _teamB.remove(playerId);
+        
+        // Liberar la posición anterior
+        if (previousPositionIndex != null) {
+          _teamBPositionIndices.remove(previousPositionIndex);
+        }
+      }
+      
+      // 2. Ahora añadir al jugador al nuevo equipo y posición
+      if (isTeamA) {
+        // Si la posición ya está ocupada, liberar primero
+        if (_teamAPositionIndices.containsKey(positionIndex)) {
+          String existingPlayerId = _teamAPositionIndices[positionIndex]!;
+          // Solo eliminar si no es el mismo jugador
+          if (existingPlayerId != playerId) {
+            _teamA.remove(existingPlayerId);
+          }
+        }
+        
+        // Añadir jugador al equipo si no está ya
+        if (!_teamA.contains(playerId)) {
+          _teamA.add(playerId);
+        }
+        
+        // Asignar la nueva posición
+        _teamAPositionIndices[positionIndex] = playerId;
+        
+        // Obtener la posición predeterminada para esa ubicación
+        List<List<double>> positions = _getFormationPositions(
+          int.parse(_selectedFormat.split('v')[0])
+        );
+        _teamAPositions[playerId] = Offset(
+          positions[positionIndex][0],
+          positions[positionIndex][1]
+        );
+      } else {
+        // Si la posición ya está ocupada, liberar primero
+        if (_teamBPositionIndices.containsKey(positionIndex)) {
+          String existingPlayerId = _teamBPositionIndices[positionIndex]!;
+          // Solo eliminar si no es el mismo jugador
+          if (existingPlayerId != playerId) {
+            _teamB.remove(existingPlayerId);
+          }
+        }
+        
+        // Añadir jugador al equipo si no está ya
+        if (!_teamB.contains(playerId)) {
+          _teamB.add(playerId);
+        }
+        
+        // Asignar la nueva posición
+        _teamBPositionIndices[positionIndex] = playerId;
+        
+        // Obtener la posición predeterminada para esa ubicación
+        List<List<double>> positions = _getFormationPositions(
+          int.parse(_selectedFormat.split('v')[1])
+        );
+        _teamBPositions[playerId] = Offset(
+          positions[positionIndex][0],
+          1.0 - positions[positionIndex][1]  // Invertir en el eje Y para el equipo B
+        );
+      }
+    });
   }
 
   @override
