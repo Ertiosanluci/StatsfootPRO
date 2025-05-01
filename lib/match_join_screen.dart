@@ -200,27 +200,8 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
         matchIdValue = widget.matchId;
       }
       
-      // Check if user profile exists
-      final profileResponse = await supabase
-          .from('profiles')
-          .select()
-          .eq('id', currentUser.id)
-          .maybeSingle();
-      
-      if (profileResponse == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('No se encontró tu perfil. Por favor, completa tu registro.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        setState(() {
-          _isJoining = false;
-        });
-        return;
-      }
-      
-      // Debug para mostrar los datos que se están insertando
+      // En lugar de verificar el perfil, simplemente procedemos con la unión al partido
+      // Esto evita la dependencia de la tabla "profiles" que no existe
       debugPrint('Intentando unirse al partido con ID: $matchIdValue');
       
       // Add user to match participants
@@ -249,12 +230,44 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
       _loadMatchData();
     } catch (e) {
       debugPrint('Error al unirse: $e');
+      
+      // Mostrar un mensaje más descriptivo y posible solución
+      String errorMessage = 'Error al unirse al partido: $e';
+      String? solutionMessage;
+      
+      // Detectar tipos específicos de error para dar recomendaciones útiles
+      if (e.toString().contains("does not exist")) {
+        errorMessage = 'Faltan algunas tablas necesarias en la base de datos.';
+        solutionMessage = 'Contacta al administrador para configurar la base de datos.';
+      } else if (e.toString().contains("duplicate key")) {
+        errorMessage = 'Ya parece que estás unido a este partido.';
+        solutionMessage = 'Intenta refrescar la pantalla.';
+        
+        // Establecer como unido si parece ser un error de clave duplicada
+        setState(() {
+          _alreadyJoined = true;
+        });
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al unirse al partido: $e'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(errorMessage),
+              if (solutionMessage != null) 
+                Text(
+                  solutionMessage,
+                  style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                ),
+            ],
+          ),
           backgroundColor: Colors.red,
+          duration: Duration(seconds: 5),
         ),
       );
+      
       setState(() {
         _isJoining = false;
       });
