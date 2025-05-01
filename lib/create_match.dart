@@ -439,9 +439,9 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> {
 
   // Genera un enlace único para compartir
   String _generateMatchLink(int matchId) {
-    final String baseUrl = "statsfoot://match/";
-    final String uniqueId = matchId.toString();
-    return baseUrl + uniqueId;
+    // Usar el mismo formato de enlace web compatible que en match_list.dart
+    final String shareableLink = "https://statsfoot.netlify.app/match/$matchId";
+    return shareableLink;
   }
   
   Future<void> _saveMatch() async {
@@ -560,8 +560,26 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> {
   
   void _shareMatchLink() {
     if (_matchLink != null) {
+      // Formatear fecha y hora del partido para el mensaje
+      final String formattedDate = '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
+      final String formattedTime = '${_selectedTime.format(context)}';
+      
+      // Crear un mensaje más atractivo para compartir
+      final String message = """
+🏆 ¡Únete a mi partido de fútbol! 🏆
+
+Partido: ${widget.matchData['nombre']}
+Formato: ${widget.matchData['formato']}
+Fecha: $formattedDate
+Hora: $formattedTime
+
+Únete usando este enlace: $_matchLink
+
+¡Te esperamos!
+      """;
+
       Share.share(
-        'Únete a mi partido de fútbol "${widget.matchData['nombre']}" usando este enlace: $_matchLink',
+        message,
         subject: 'Invitación a partido de fútbol',
       );
     }

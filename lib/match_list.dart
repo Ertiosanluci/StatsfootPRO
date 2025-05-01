@@ -151,22 +151,30 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
   }
 
   void _shareMatchLink(Map<String, dynamic> match) async {
-    final String? link = match['enlace'];
-    if (link == null || link.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Este partido no tiene un enlace para compartir'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
     try {
-      // Format match information for sharing
+      // Obtener información del partido
+      final int matchId = match['id'];
       final DateTime matchDate = DateTime.parse(match['fecha']);
       final String formattedDate = '${matchDate.day}/${matchDate.month}/${matchDate.year}';
       final String formattedTime = '${matchDate.hour.toString().padLeft(2, '0')}:${matchDate.minute.toString().padLeft(2, '0')}';
+
+      // Crear un enlace web compatible en lugar del esquema URI personalizado
+      // Opción 1: URL con dominio propio (ajustar a tu dominio real)
+      // final String shareableLink = "https://statsfoot.com/match/$matchId";
+
+      // Opción 2: URL con redirección dinámica (usando Firebase)
+      // Si tienes configurado Firebase Dynamic Links, puedes usar:
+      // final String shareableLink = "https://statsfoot.page.link/?link=https://statsfoot.com/match/$matchId&apn=com.statsfoot.app";
+
+      // Opción 3: Solución temporal con un dominio de redirección para pruebas
+      final String shareableLink = "https://statsfoot.netlify.app/match/$matchId";
+
+      // Si quieres mantener la compatibilidad con la app y tener un enlace web,
+      // puedes crear un enlace que funcione en ambos casos
+      final String universalLink = shareableLink;
+
+      // También puedes incluir un código QR en el mensaje para escanear
+      // final String qrLink = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=$universalLink";
 
       final String message = """
 🏆 ¡Únete a mi partido de fútbol! 🏆
@@ -176,10 +184,16 @@ Formato: ${match['formato']}
 Fecha: $formattedDate
 Hora: $formattedTime
 
-Únete usando este enlace: $link
+Únete usando este enlace: $universalLink
 
 ¡Te esperamos!
       """;
+
+      // Actualiza el enlace en la base de datos para mantenerlo actualizado
+      await supabase
+          .from('matches')
+          .update({'enlace': universalLink})
+          .eq('id', matchId);
 
       await Share.share(
         message,
@@ -196,24 +210,39 @@ Hora: $formattedTime
   }
 
   void _copyMatchLink(Map<String, dynamic> match) {
-    final String? link = match['enlace'];
-    if (link == null || link.isEmpty) {
+    try {
+      // Obtener el ID del partido
+      final int matchId = match['id'];
+      
+      // Usar el mismo formato de enlace web compatible que en _shareMatchLink
+      final String shareableLink = "https://statsfoot.netlify.app/match/$matchId";
+      
+      // Copiar el enlace al portapapeles
+      Clipboard.setData(ClipboardData(text: shareableLink));
+      
+      // Actualizar también el enlace en la base de datos para mantener consistencia
+      supabase
+          .from('matches')
+          .update({'enlace': shareableLink})
+          .eq('id', matchId)
+          .then((_) {
+            // Mostrar mensaje de éxito
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Enlace copiado al portapapeles'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          });
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Este partido no tiene un enlace para compartir'),
-          backgroundColor: Colors.orange,
+          content: Text('Error al copiar el enlace: $e'),
+          backgroundColor: Colors.red,
         ),
       );
-      return;
     }
-
-    Clipboard.setData(ClipboardData(text: link));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Enlace copiado al portapapeles'),
-        backgroundColor: Colors.green,
-      ),
-    );
   }
 
   Future<void> _manageParticipants(Map<String, dynamic> match) async {
