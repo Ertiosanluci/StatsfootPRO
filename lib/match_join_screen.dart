@@ -22,7 +22,10 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
   @override
   void initState() {
     super.initState();
-    _loadMatchData();
+    // Añadir un pequeño retraso para asegurarnos de que todo está inicializado
+    Future.delayed(Duration(milliseconds: 300), () {
+      _loadMatchData();
+    });
   }
   
   Future<void> _loadMatchData() async {
@@ -32,12 +35,36 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
         _errorMessage = null;
       });
       
-      // Check if match exists
+      // Debug para ver el ID recibido
+      debugPrint('Intentando cargar partido con ID: "${widget.matchId}"');
+      
+      // Asegurarnos de que el ID no está vacío
+      if (widget.matchId.isEmpty) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'ID de partido inválido';
+        });
+        return;
+      }
+      
+      // Convertir a entero para asegurarnos que es un ID válido si es numérico
+      int? matchIdInt;
+      try {
+        matchIdInt = int.parse(widget.matchId);
+        debugPrint('ID convertido a entero: $matchIdInt');
+      } catch (e) {
+        // Si no se puede convertir, puede ser que el ID tenga otro formato
+        debugPrint('No se pudo convertir el ID a entero: $e');
+      }
+      
+      // Check if match exists - usar el ID numérico si está disponible
       final matchResponse = await supabase
           .from('matches')
           .select('*, profiles!creator_id(*)')
-          .eq('id', widget.matchId)
+          .eq('id', matchIdInt ?? widget.matchId)
           .maybeSingle();
+      
+      debugPrint('Respuesta de la consulta: ${matchResponse != null ? 'Datos encontrados' : 'NULL'}');
       
       if (matchResponse == null) {
         setState(() {
@@ -53,7 +80,7 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
         final participantResponse = await supabase
             .from('match_participants')
             .select()
-            .eq('match_id', widget.matchId)
+            .eq('match_id', matchIdInt ?? widget.matchId)
             .eq('user_id', currentUserId)
             .maybeSingle();
         
@@ -71,6 +98,7 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
         _isLoading = false;
         _errorMessage = 'Error al cargar datos del partido: $e';
       });
+      debugPrint('Error detallado al cargar datos: $e');
     }
   }
   
@@ -93,6 +121,14 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
     });
     
     try {
+      // Convertir ID a entero si es posible
+      var matchIdValue;
+      try {
+        matchIdValue = int.parse(widget.matchId);
+      } catch (e) {
+        matchIdValue = widget.matchId;
+      }
+      
       // Check if user profile exists
       final profileResponse = await supabase
           .from('profiles')
@@ -113,9 +149,12 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
         return;
       }
       
+      // Debug para mostrar los datos que se están insertando
+      debugPrint('Intentando unirse al partido con ID: $matchIdValue');
+      
       // Add user to match participants
       await supabase.from('match_participants').insert({
-        'match_id': widget.matchId,
+        'match_id': matchIdValue,
         'user_id': currentUser.id,
         'equipo': null, // Team will be assigned by the organizer
         'es_organizador': false,
@@ -138,6 +177,7 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
       // Refresh match data to see updated participant list
       _loadMatchData();
     } catch (e) {
+      debugPrint('Error al unirse: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error al unirse al partido: $e'),
@@ -189,6 +229,15 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 16,
+              ),
+            ),
+            // Añadir el ID para depuración
+            SizedBox(height: 10),
+            Text(
+              'ID: ${widget.matchId}',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
               ),
             ),
           ],
