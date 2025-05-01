@@ -18,6 +18,7 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
   String? _errorMessage;
   bool _alreadyJoined = false;
   bool _isJoining = false;
+  String _creatorName = 'Desconocido';
   
   @override
   void initState() {
@@ -77,24 +78,61 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
       // Combinar los datos
       var completeMatchData = Map<String, dynamic>.from(matchResponse);
       
-      // Luego, obtener los datos del creador si existe creator_id
+      // Luego, buscar información del creador si existe creator_id
       if (matchResponse['creator_id'] != null) {
         try {
           String creatorId = matchResponse['creator_id'].toString();
-          final creatorResponse = await supabase
+          
+          // 1. Primero intentamos obtener el perfil directamente desde la tabla profiles
+          final creatorProfile = await supabase
               .from('profiles')
-              .select()
+              .select('nombre, apellido')
               .eq('id', creatorId)
               .maybeSingle();
+          
+          if (creatorProfile != null && creatorProfile['nombre'] != null) {
+            // Si encontramos el perfil, usamos ese nombre
+            String nombreCompleto = creatorProfile['nombre'];
+            if (creatorProfile['apellido'] != null) {
+              nombreCompleto += " " + creatorProfile['apellido'];
+            }
+            _creatorName = nombreCompleto;
+            debugPrint('Nombre del creador obtenido de profiles: $_creatorName');
+          } else {
+            // 2. Si no encontramos el perfil, intentamos obtener información del usuario directamente
+            try {
+              // Esta consulta podría no funcionar dependiendo de los permisos de Supabase
+              // pero lo intentamos como fallback
+              final adminClient = supabase.rest;
+              final response = await adminClient.from('profiles')
+                .select('nombre, apellido, email')
+                .eq('id', creatorId)
+                .maybeSingle();
               
-          completeMatchData['creator'] = creatorResponse ?? {'nombre': 'Desconocido'};
+              if (response != null) {
+                if (response['nombre'] != null) {
+                  String nombreCompleto = response['nombre'];
+                  if (response['apellido'] != null) {
+                    nombreCompleto += " " + response['apellido'];
+                  }
+                  _creatorName = nombreCompleto;
+                } else if (response['email'] != null) {
+                  _creatorName = response['email'];
+                }
+                debugPrint('Nombre del creador obtenido por método alternativo: $_creatorName');
+              }
+            } catch (e) {
+              debugPrint('No se pudo obtener información del usuario: $e');
+              _creatorName = 'Usuario #$creatorId';
+            }
+          }
         } catch (e) {
           debugPrint('Error al obtener datos del creador: $e');
-          completeMatchData['creator'] = {'nombre': 'Desconocido'};
+          _creatorName = 'Desconocido';
         }
       } else {
         debugPrint('No se encontró creator_id en los datos del partido');
-        completeMatchData['creator'] = {'nombre': 'Desconocido'};
+        _creatorName = 'Desconocido';
       }
       
       // Check if user is already in this match
@@ -361,11 +399,6 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
     // Validar el formato
     final String formato = _matchData!['formato']?.toString() ?? 'No especificado';
     
-    // Validar que creator no sea nulo
-    final creatorName = _matchData!['creator'] != null && 
-                       _matchData!['creator']['nombre'] != null ? 
-                       _matchData!['creator']['nombre'] : 'Desconocido';
-    
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -490,7 +523,7 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
                       _buildInfoRow(
                         icon: Icons.person,
                         title: 'Organizado por',
-                        value: creatorName,
+                        value: _creatorName,
                       ),
                     ],
                   ),
