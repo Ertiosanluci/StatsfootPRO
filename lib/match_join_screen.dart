@@ -74,33 +74,28 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
         return;
       }
       
-      // Luego, obtener los datos del creador separadamente
-      // Asegurarse de que creator_id no es nulo
-      if (matchResponse['creator_id'] == null) {
-        debugPrint('Error: creator_id es nulo en la respuesta');
-        setState(() {
-          _isLoading = false;
-          _errorMessage = 'Datos del partido incompletos: no se pudo identificar al creador';
-        });
-        return;
-      }
-      
-      String creatorId = matchResponse['creator_id'].toString();
-      Map<String, dynamic>? creatorResponse;
-      try {
-        creatorResponse = await supabase
-            .from('profiles')
-            .select()
-            .eq('id', creatorId)
-            .maybeSingle();
-      } catch (e) {
-        debugPrint('Error al obtener datos del creador: $e');
-        // Continuamos sin los datos del creador
-      }
-      
       // Combinar los datos
       var completeMatchData = Map<String, dynamic>.from(matchResponse);
-      completeMatchData['creator'] = creatorResponse ?? {'nombre': 'Desconocido'};
+      
+      // Luego, obtener los datos del creador si existe creator_id
+      if (matchResponse['creator_id'] != null) {
+        try {
+          String creatorId = matchResponse['creator_id'].toString();
+          final creatorResponse = await supabase
+              .from('profiles')
+              .select()
+              .eq('id', creatorId)
+              .maybeSingle();
+              
+          completeMatchData['creator'] = creatorResponse ?? {'nombre': 'Desconocido'};
+        } catch (e) {
+          debugPrint('Error al obtener datos del creador: $e');
+          completeMatchData['creator'] = {'nombre': 'Desconocido'};
+        }
+      } else {
+        debugPrint('No se encontró creator_id en los datos del partido');
+        completeMatchData['creator'] = {'nombre': 'Desconocido'};
+      }
       
       // Check if user is already in this match
       final currentUserId = supabase.auth.currentUser?.id;
