@@ -57,14 +57,14 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
         debugPrint('No se pudo convertir el ID a entero: $e');
       }
       
-      // Check if match exists - usar el ID numérico si está disponible
+      // Primero, obtener los datos básicos del partido
       final matchResponse = await supabase
           .from('matches')
-          .select('*, profiles!creator_id(*)')
+          .select()
           .eq('id', matchIdInt ?? widget.matchId)
           .maybeSingle();
       
-      debugPrint('Respuesta de la consulta: ${matchResponse != null ? 'Datos encontrados' : 'NULL'}');
+      debugPrint('Respuesta de la consulta matches: ${matchResponse != null ? 'Datos encontrados' : 'NULL'}');
       
       if (matchResponse == null) {
         setState(() {
@@ -73,6 +73,18 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
         });
         return;
       }
+      
+      // Luego, obtener los datos del creador separadamente
+      String creatorId = matchResponse['creator_id'];
+      final creatorResponse = await supabase
+          .from('profiles')
+          .select()
+          .eq('id', creatorId)
+          .maybeSingle();
+      
+      // Combinar los datos
+      var completeMatchData = Map<String, dynamic>.from(matchResponse);
+      completeMatchData['creator'] = creatorResponse;
       
       // Check if user is already in this match
       final currentUserId = supabase.auth.currentUser?.id;
@@ -90,7 +102,7 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
       }
       
       setState(() {
-        _matchData = matchResponse;
+        _matchData = completeMatchData;
         _isLoading = false;
       });
     } catch (e) {
@@ -443,8 +455,8 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
                       _buildInfoRow(
                         icon: Icons.person,
                         title: 'Organizado por',
-                        value: _matchData!['profiles'] != null ? 
-                          _matchData!['profiles']['nombre'] ?? 'Desconocido' : 
+                        value: _matchData!['creator'] != null ? 
+                          _matchData!['creator']['nombre'] ?? 'Desconocido' : 
                           'Desconocido',
                       ),
                     ],
