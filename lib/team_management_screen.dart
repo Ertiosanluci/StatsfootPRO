@@ -281,29 +281,44 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
   Future<void> _assignToTeam(Map<String, dynamic> participant, String? team) async {
     try {
       final String participantId = participant['id'].toString();
+      final String oldTeam = participant['equipo'];  // Guardamos el equipo anterior
       
-      // Actualizar localmente primero para mostrar el cambio inmediatamente
+      // Verificar si el jugador ya está en el equipo de destino
+      if (oldTeam == team) {
+        print('El jugador ya está en el equipo destino');
+        return;
+      }
+      
+      // Primero actualizar en la base de datos para evitar inconsistencias
+      await supabase
+          .from('match_participants')
+          .update({'equipo': team})
+          .eq('id', participantId);
+      
+      // Ahora actualizamos localmente los datos
       setState(() {
-        // Antes de remover al jugador, liberar su posición en el equipo actual
-        if (participant['equipo'] == 'claro') {
-          // Liberar la posición que ocupaba en el equipo claro
-          _teamClaroPositionIndices.removeWhere((index, id) => id == participantId);
-          // Remover de la lista del equipo claro
-          _teamClaro.removeWhere((p) => p['id'] == participantId);
-        } else if (participant['equipo'] == 'oscuro') {
-          // Liberar la posición que ocupaba en el equipo oscuro
-          _teamOscuroPositionIndices.removeWhere((index, id) => id == participantId);
-          // Remover de la lista del equipo oscuro
-          _teamOscuro.removeWhere((p) => p['id'] == participantId);
+        // Eliminar completamente al jugador de todas las estructuras
+        
+        // 1. Eliminar al jugador de su lista de equipo actual
+        if (oldTeam == 'claro') {
+          _teamClaro.removeWhere((p) => p['id'].toString() == participantId);
+        } else if (oldTeam == 'oscuro') {
+          _teamOscuro.removeWhere((p) => p['id'].toString() == participantId);
         } else {
-          // Remover de los no asignados
-          _unassignedParticipants.removeWhere((p) => p['id'] == participantId);
+          _unassignedParticipants.removeWhere((p) => p['id'].toString() == participantId);
         }
         
-        // Actualizar equipo en el objeto del participante
+        // 2. Eliminar todas las referencias de posiciones del jugador (independientemente del equipo)
+        _teamClaroPositionIndices.removeWhere((_, id) => id == participantId);
+        _teamOscuroPositionIndices.removeWhere((_, id) => id == participantId);
+        _teamClaroPositions.remove(participantId);
+        _teamOscuroPositions.remove(participantId);
+        _elevatedPlayers.remove(participantId);
+        
+        // 3. Actualizar el equipo en el objeto del participante
         participant['equipo'] = team;
         
-        // Añadir a la nueva lista según el equipo asignado
+        // 4. Añadir al jugador a su nuevo equipo/lista
         if (team == 'claro') {
           _teamClaro.add(participant);
           // Asignar posición predeterminada si no tiene una
@@ -318,20 +333,14 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
             _teamOscuroPositions[participantId] = 
                 _getDefaultPosition(_teamOscuro.length - 1, false);
           }
-        } else {
+        } else if (team == null) {
+          // Si el equipo es null, significa que el jugador va a "sin asignar"
           _unassignedParticipants.add(participant);
-          // Si el jugador se mueve a "sin asignar", también liberar sus posiciones
-          // de ambos equipos por si acaso
-          _teamClaroPositionIndices.removeWhere((index, id) => id == participantId);
-          _teamOscuroPositionIndices.removeWhere((index, id) => id == participantId);
         }
+        
+        // Forzar actualización para refrescar posiciones en el campo
+        _redrawPositionSlots();
       });
-      
-      // Actualizar en la base de datos
-      await supabase
-          .from('match_participants')
-          .update({'equipo': team})
-          .eq('id', participantId);
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -351,6 +360,16 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
       
       // Recargar participantes para recuperar el estado real
       _loadParticipants();
+    }
+  }
+  
+  // Método para forzar la actualización visual de todas las posiciones en el campo
+  void _redrawPositionSlots() {
+    // Este método no hace nada directamente, pero al llamarlo dentro de setState
+    // fuerza a Flutter a redibujar el widget, lo que actualiza las posiciones vacías
+    if (mounted) {
+      // Solo un truco para forzar actualización visual
+      _fieldKey = GlobalKey();
     }
   }
   
@@ -2022,47 +2041,112 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
     try {
       final String playerId = player['id'].toString();
       
-      // 1. Primero buscar y liberar la posición anterior si este jugador ya estaba asignado
-      int? previousPositionIndex;
-      if (isTeamA) {
-        _teamClaroPositionIndices.forEach((index, id) {
-          if (id == playerId) {
-            previousPositionIndex = index;
-          }
-        });
+      setState(() {
+        // 1. Primero verificar si el jugador ya está en algún equipo y eliminar su referencia anterior
+        bool wasInTeamA = _teamClaro.any((p) => p['id'].toString() == playerId);
+        bool wasInTeamB = _teamOscuro.any((p) => p['id'].toString() == playerId);
         
-        // Si el jugador ya tenía una posición, liberarla
-        if (previousPositionIndex != null) {
-          _teamClaroPositionIndices.remove(previousPositionIndex);
-        }
-      } else {
-        _teamOscuroPositionIndices.forEach((index, id) {
-          if (id == playerId) {
-            previousPositionIndex = index;
+        // 2. Liberar la posición anterior que ocupaba el jugador, si estaba en algún equipo
+        if (wasInTeamA) {
+          // Encontrar y guardar la posición anterior para liberarla
+          int? previousPositionIndex;
+          _teamClaroPositionIndices.forEach((index, id) {
+            if (id == playerId) {
+              previousPositionIndex = index;
+            }
+          });
+          
+          // Liberar la posición anterior
+          if (previousPositionIndex != null) {
+            _teamClaroPositionIndices.remove(previousPositionIndex);
           }
-        });
-        
-        // Si el jugador ya tenía una posición, liberarla
-        if (previousPositionIndex != null) {
-          _teamOscuroPositionIndices.remove(previousPositionIndex);
+        } else if (wasInTeamB) {
+          // Encontrar y guardar la posición anterior para liberarla
+          int? previousPositionIndex;
+          _teamOscuroPositionIndices.forEach((index, id) {
+            if (id == playerId) {
+              previousPositionIndex = index;
+            }
+          });
+          
+          // Liberar la posición anterior
+          if (previousPositionIndex != null) {
+            _teamOscuroPositionIndices.remove(previousPositionIndex);
+          }
         }
-      }
+      });
       
-      // 2. Verificar si la nueva posición ya está ocupada
-      String? currentOccupantId;
-      if (isTeamA && _teamClaroPositionIndices.containsKey(positionIndex)) {
-        currentOccupantId = _teamClaroPositionIndices[positionIndex];
-      } else if (!isTeamA && _teamOscuroPositionIndices.containsKey(positionIndex)) {
-        currentOccupantId = _teamOscuroPositionIndices[positionIndex];
-      }
+      // 3. Verificar si el jugador ya está en el equipo destino o necesita ser cambiado
+      String currentTeam = player['equipo'] ?? '';
+      String targetTeam = isTeamA ? 'claro' : 'oscuro';
       
-      // 3. Asignar al jugador al equipo si no está ya
-      await _assignToTeam(player, isTeamA ? 'claro' : 'oscuro');
+      if (currentTeam != targetTeam) {
+        // Actualizar directamente en la base de datos antes de actualizar localmente
+        await supabase
+          .from('match_participants')
+          .update({'equipo': targetTeam})
+          .eq('id', playerId);
+      }
       
       // 4. Actualizar los mapas de posiciones
       setState(() {
+        // Si el jugador estaba en el equipo contrario, eliminarlo de allí
+        if (isTeamA) {
+          _teamOscuro.removeWhere((p) => p['id'].toString() == playerId);
+        } else {
+          _teamClaro.removeWhere((p) => p['id'].toString() == playerId);
+        }
+        
+        // Actualizar el equipo en el objeto del jugador
+        player['equipo'] = targetTeam;
+        
+        // Si el jugador está en la lista de no asignados, eliminarlo de allí
+        _unassignedParticipants.removeWhere((p) => p['id'].toString() == playerId);
+        
+        // Verificar si la posición ya está ocupada
+        if (isTeamA && _teamClaroPositionIndices.containsKey(positionIndex)) {
+          String existingPlayerId = _teamClaroPositionIndices[positionIndex]!;
+          // Si la posición está ocupada por otro jugador, quitar ese jugador
+          if (existingPlayerId != playerId) {
+            // Buscar al jugador que ocupa esta posición
+            var existingPlayer = _teamClaro.firstWhere(
+              (p) => p['id'].toString() == existingPlayerId,
+              orElse: () => {}
+            );
+            
+            if (existingPlayer.isNotEmpty) {
+              // Moverlo a no asignados
+              existingPlayer['equipo'] = null;
+              _unassignedParticipants.add(existingPlayer);
+              _teamClaro.removeWhere((p) => p['id'].toString() == existingPlayerId);
+            }
+          }
+        } else if (!isTeamA && _teamOscuroPositionIndices.containsKey(positionIndex)) {
+          String existingPlayerId = _teamOscuroPositionIndices[positionIndex]!;
+          // Si la posición está ocupada por otro jugador, quitar ese jugador
+          if (existingPlayerId != playerId) {
+            // Buscar al jugador que ocupa esta posición
+            var existingPlayer = _teamOscuro.firstWhere(
+              (p) => p['id'].toString() == existingPlayerId,
+              orElse: () => {}
+            );
+            
+            if (existingPlayer.isNotEmpty) {
+              // Moverlo a no asignados
+              existingPlayer['equipo'] = null;
+              _unassignedParticipants.add(existingPlayer);
+              _teamOscuro.removeWhere((p) => p['id'].toString() == existingPlayerId);
+            }
+          }
+        }
+        
         // Asignar la nueva posición al jugador
         if (isTeamA) {
+          // Añadir jugador al equipo si no está ya
+          if (!_teamClaro.any((p) => p['id'].toString() == playerId)) {
+            _teamClaro.add(player);
+          }
+          
           _teamClaroPositionIndices[positionIndex] = playerId;
           
           // Obtener las posiciones predeterminadas según la formación
@@ -2075,6 +2159,11 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
             positions[positionIndex][1]
           );
         } else {
+          // Añadir jugador al equipo si no está ya
+          if (!_teamOscuro.any((p) => p['id'].toString() == playerId)) {
+            _teamOscuro.add(player);
+          }
+          
           _teamOscuroPositionIndices[positionIndex] = playerId;
           
           // Obtener las posiciones predeterminadas según la formación
@@ -2087,6 +2176,9 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
             (1.0 - positions[positionIndex][1]) // Invertir en el eje Y para el equipo oscuro
           );
         }
+        
+        // Forzar actualización visual
+        _redrawPositionSlots();
       });
       
       ScaffoldMessenger.of(context).showSnackBar(
