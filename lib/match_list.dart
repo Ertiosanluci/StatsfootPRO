@@ -158,24 +158,9 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
       final String formattedDate = '${matchDate.day}/${matchDate.month}/${matchDate.year}';
       final String formattedTime = '${matchDate.hour.toString().padLeft(2, '0')}:${matchDate.minute.toString().padLeft(2, '0')}';
 
-      // Crear un enlace web compatible en lugar del esquema URI personalizado
-      // Opción 1: URL con dominio propio (ajustar a tu dominio real)
-      // final String shareableLink = "https://statsfoot.com/match/$matchId";
-
-      // Opción 2: URL con redirección dinámica (usando Firebase)
-      // Si tienes configurado Firebase Dynamic Links, puedes usar:
-      // final String shareableLink = "https://statsfoot.page.link/?link=https://statsfoot.com/match/$matchId&apn=com.statsfoot.app";
-
-      // Opción 3: Solución temporal con un dominio de redirección para pruebas
-      final String shareableLink = "https://statsfoot.netlify.app/match/$matchId";
-
-      // Si quieres mantener la compatibilidad con la app y tener un enlace web,
-      // puedes crear un enlace que funcione en ambos casos
-      final String universalLink = shareableLink;
-
-      // También puedes incluir un código QR en el mensaje para escanear
-      // final String qrLink = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=$universalLink";
-
+      // Usar el dominio real de Netlify para el enlace
+      final String shareableLink = "https://statsfootpro.netlify.app/match/$matchId";
+      
       final String message = """
 🏆 ¡Únete a mi partido de fútbol! 🏆
 
@@ -184,7 +169,7 @@ Formato: ${match['formato']}
 Fecha: $formattedDate
 Hora: $formattedTime
 
-Únete usando este enlace: $universalLink
+Únete usando este enlace: $shareableLink
 
 ¡Te esperamos!
       """;
@@ -192,7 +177,7 @@ Hora: $formattedTime
       // Actualiza el enlace en la base de datos para mantenerlo actualizado
       await supabase
           .from('matches')
-          .update({'enlace': universalLink})
+          .update({'enlace': shareableLink})
           .eq('id', matchId);
 
       await Share.share(
@@ -214,8 +199,8 @@ Hora: $formattedTime
       // Obtener el ID del partido
       final int matchId = match['id'];
       
-      // Usar el mismo formato de enlace web compatible que en _shareMatchLink
-      final String shareableLink = "https://statsfoot.netlify.app/match/$matchId";
+      // Usar el dominio real de Netlify para el enlace
+      final String shareableLink = "https://statsfootpro.netlify.app/match/$matchId";
       
       // Copiar el enlace al portapapeles
       Clipboard.setData(ClipboardData(text: shareableLink));

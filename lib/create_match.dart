@@ -439,9 +439,10 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> {
 
   // Genera un enlace único para compartir
   String _generateMatchLink(int matchId) {
-    // Usar el mismo formato de enlace web compatible que en match_list.dart
-    final String shareableLink = "https://statsfoot.netlify.app/match/$matchId";
-    return shareableLink;
+    // Usar el dominio real de Netlify
+    final String baseUrl = "https://statsfootpro.netlify.app/match/";
+    final String uniqueId = matchId.toString();
+    return baseUrl + uniqueId;
   }
   
   Future<void> _saveMatch() async {

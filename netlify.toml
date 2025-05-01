@@ -1,0 +1,15 @@
+[build]
+  publish = "netlify-redirect"
+  command = "# No build command needed"
+
+# Redirecciones específicas para partidos
+[[redirects]]
+  from = "/match/*"
+  to = "/match.html"
+  status = 200
+
+# Redirección por defecto a la página principal
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
