@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:statsfoota/register.dart';
 import 'package:statsfoota/resetpasswordscreen.dart';
+import 'package:statsfoota/match_join_screen.dart'; // Añadido para la redirección
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
 
 class LoginScreen extends StatefulWidget {
+  // Añadir un parámetro opcional para el ID del partido para redirigir después del login
+  final String? redirectMatchId;
+  
+  const LoginScreen({Key? key, this.redirectMatchId}) : super(key: key);
+  
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -22,6 +28,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
+    
+    // Si hay un ID de partido para redireccionar, mostrar un mensaje
+    if (widget.redirectMatchId != null && widget.redirectMatchId!.isNotEmpty) {
+      // Programar el mensaje para después de que el widget se haya construido
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Inicia sesión para unirte al partido'),
+            backgroundColor: Colors.blue.shade700,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      });
+    }
     
     // Configurar animaciones
     _animationController = AnimationController(
@@ -84,7 +104,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           
           // Esperar a que se muestre el SnackBar antes de navegar
           Future.delayed(Duration(seconds: 1), () {
-            Navigator.pushReplacementNamed(context, '/user_menu');
+            // Si hay un ID de partido para redireccionar, navegar a esa pantalla
+            if (widget.redirectMatchId != null && widget.redirectMatchId!.isNotEmpty) {
+              Navigator.pushReplacement(
+                context, 
+                MaterialPageRoute(
+                  builder: (context) => MatchJoinScreen(matchId: widget.redirectMatchId!),
+                ),
+              );
+            } else {
+              // De lo contrario, ir al menú principal
+              Navigator.pushReplacementNamed(context, '/user_menu');
+            }
           });
         }
       }

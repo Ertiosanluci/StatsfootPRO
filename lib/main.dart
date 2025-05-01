@@ -6,8 +6,13 @@ import 'package:statsfoota/register.dart';
 import 'package:statsfoota/user_menu.dart';
 import 'package:statsfoota/match_list.dart';
 import 'package:statsfoota/ver_Jugadores.dart';
+import 'package:statsfoota/match_join_screen.dart'; // Añadido para manejar los deep links
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
+import 'package:uni_links/uni_links.dart'; // Añadir esta dependencia para manejar deep links
+import 'dart:async';
+
+bool _initialUriIsHandled = false;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,16 +36,143 @@ Future<void> main() async {
   runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  Uri? _initialUri;
+  Uri? _latestUri;
+  StreamSubscription? _sub;
+  final _navigatorKey = GlobalKey<NavigatorState>();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _handleIncomingLinks();
+    _handleInitialUri();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // La app vuelve a primer plano, verificamos de nuevo por enlaces
+      _handleIncomingLinks();
+    }
+  }
+
+  // Manejar enlaces que llegan mientras la app está en ejecución
+  void _handleIncomingLinks() {
+    // Es importante cancelar la suscripción previa para evitar duplicados
+    _sub?.cancel();
+
+    _sub = uriLinkStream.listen((Uri? uri) {
+      debugPrint('Recibido URI: $uri');
+      setState(() {
+        _latestUri = uri;
+        _processIncomingUri(uri);
+      });
+    }, onError: (Object err) {
+      debugPrint('Error en el manejo de enlaces: $err');
+    });
+  }
+
+  // Manejar el enlace inicial si la app se abre con un enlace
+  Future<void> _handleInitialUri() async {
+    if (!_initialUriIsHandled) {
+      _initialUriIsHandled = true;
+      try {
+        final uri = await getInitialUri();
+        debugPrint('Enlace inicial: $uri');
+        if (uri != null) {
+          setState(() {
+            _initialUri = uri;
+          });
+          // Esperar brevemente para asegurar que el navegador esté listo
+          Future.delayed(Duration(milliseconds: 500), () {
+            _processIncomingUri(uri);
+          });
+        }
+      } on PlatformException {
+        debugPrint('Error al obtener el enlace inicial');
+      }
+    }
+  }
+
+  void _processIncomingUri(Uri? uri) {
+    if (uri == null) return;
+
+    // Extraer datos del URI
+    try {
+      if (uri.scheme == 'statsfoot' && uri.host == 'match') {
+        // Es un Deep Link interno (statsfoot://match/ID)
+        _handleMatchLink(uri.pathSegments.last);
+      } else if ((uri.scheme == 'http' || uri.scheme == 'https') && 
+                 uri.host == 'statsfootpro.netlify.app' &&
+                 uri.pathSegments.isNotEmpty &&
+                 uri.pathSegments.first == 'match') {
+        // Es un enlace web (https://statsfootpro.netlify.app/match/ID)
+        if (uri.pathSegments.length > 1) {
+          _handleMatchLink(uri.pathSegments[1]);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error procesando el URI: $e');
+    }
+  }
+
+  // Navegar a la pantalla adecuada según el enlace
+  void _handleMatchLink(String matchId) {
+    debugPrint('Navegando al partido ID: $matchId');
+    
+    // Obtener el contexto del navegador actual
+    final NavigatorState? navigator = _navigatorKey.currentState;
+    
+    if (navigator != null) {
+      // Verificar si el usuario tiene sesión activa
+      final Session? session = Supabase.instance.client.auth.currentSession;
+      
+      if (session != null) {
+        // Si tiene sesión, navegar directamente a la pantalla de unirse al partido
+        navigator.pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => MatchJoinScreen(matchId: matchId),
+          ),
+          (route) => false, // Eliminar todas las rutas del stack
+        );
+      } else {
+        // Si no tiene sesión, mostrar la pantalla de login primero,
+        // pero guardar el ID para redirigir después del login
+        navigator.pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => LoginScreenWithMatchRedirect(matchId: matchId),
+          ),
+          (route) => false, // Eliminar todas las rutas del stack
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navigatorKey, // Añadido para manejar la navegación desde fuera de un BuildContext
       routes: {
         '/user_menu': (context) => UserMenuScreen(),
         '/create_player': (context) => PlayerCreatorScreen(),
         '/ver_Jugadores':(context) => PlayerListScreen(),
         '/create_match': (context) => CreateMatchScreen(),
         '/match_list': (context) => MatchListScreen(),
+        '/match_join': (context) => MatchJoinScreen(matchId: ''),
       },
       debugShowCheckedModeBanner: false,
       title: 'StatsFut',
@@ -70,6 +202,18 @@ class MyApp extends StatelessWidget {
       ),
       home: SplashScreen(),
     );
+  }
+}
+
+// Nueva versión del LoginScreen que recibe un ID de partido para redirigir después del login
+class LoginScreenWithMatchRedirect extends StatelessWidget {
+  final String matchId;
+  
+  const LoginScreenWithMatchRedirect({Key? key, required this.matchId}) : super(key: key);
+  
+  @override
+  Widget build(BuildContext context) {
+    return LoginScreen(redirectMatchId: matchId);
   }
 }
 

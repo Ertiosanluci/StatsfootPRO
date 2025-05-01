@@ -122,32 +122,118 @@
     </div>
 
     <script>
+        // Variables globales
+        let matchId;
+        let deepLink;
+        let hasAppOpened = false;
+        let appCheckTimeoutId;
+        
         document.addEventListener('DOMContentLoaded', function() {
             // Obtener el ID del partido de la URL (formato: /match/ID)
             const pathSegments = window.location.pathname.split('/');
-            const matchId = pathSegments[pathSegments.length - 1];
+            matchId = pathSegments[pathSegments.length - 1];
             
             // Mostrar el ID del partido
             document.getElementById('match-id').textContent = matchId;
             
             // Construir el deeplink para la aplicación
-            const deepLink = `statsfoot://match/${matchId}`;
+            deepLink = `statsfoot://match/${matchId}`;
             
             // Configurar el botón para abrir la aplicación
-            document.getElementById('open-app-link').href = deepLink;
+            const appButton = document.getElementById('open-app-link');
+            appButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                openApp();
+            });
             
             // Actualizar los enlaces de descarga según la plataforma
             setupDownloadLinks();
             
-            // Mostrar la información después de un breve retraso
+            // Intentar abrir la aplicación automáticamente después de un corto retraso
+            // para dar tiempo a que la página se cargue completamente
             setTimeout(function() {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('match-info').style.display = 'block';
-            }, 2000);
+                openApp();
+            }, 1000);
             
-            // Intentar abrir la aplicación automáticamente
-            tryOpenApp(deepLink);
+            // Si el usuario vuelve a esta página, es probable que la app no se haya abierto
+            window.addEventListener('focus', handlePageFocus);
+            
+            // También revisamos después de 3 segundos por si no se activó el evento focus
+            appCheckTimeoutId = setTimeout(handleAppTimeout, 3000);
         });
+        
+        // Función que se ejecuta cuando la página recupera el foco (vuelve del intento de abrir la app)
+        function handlePageFocus() {
+            if (!hasAppOpened) {
+                showFailUI();
+            }
+            // Limpiar el timeout ya que ya no es necesario
+            clearTimeout(appCheckTimeoutId);
+            // Eliminar el listener para evitar múltiples ejecuciones
+            window.removeEventListener('focus', handlePageFocus);
+        }
+        
+        // Función que se ejecuta si el timeout se cumple
+        function handleAppTimeout() {
+            if (!hasAppOpened) {
+                showFailUI();
+            }
+        }
+        
+        // Muestra la UI de fallo para descargar la app
+        function showFailUI() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('match-info').style.display = 'block';
+        }
+        
+        // Método mejorado para abrir la aplicación
+        function openApp() {
+            console.log('Intentando abrir la app con deeplink:', deepLink);
+            
+            // Marcar la UI como cargando
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('match-info').style.display = 'none';
+            
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            
+            // Diferentes técnicas según el dispositivo
+            if (/iPad|iPhone|iPod/.test(userAgent)) {
+                // iOS requiere un enfoque diferente
+                console.log('Detectado iOS, usando técnica específica');
+                attemptIframeRedirect();
+                
+                // Respaldo: después de un momento, intentar con location.href
+                setTimeout(() => {
+                    window.location.href = deepLink;
+                }, 100);
+            } 
+            else if (/android/i.test(userAgent)) {
+                // Android
+                console.log('Detectado Android, usando intent');
+                // Formato de intent para Android
+                // window.location.href = `intent://${deepLink.replace('://', '/')}#Intent;scheme=statsfoot;package=com.statsfootpro.app;end;`;
+                // Método directo
+                window.location.href = deepLink;
+            } 
+            else {
+                // Otros dispositivos
+                console.log('Dispositivo desconocido, usando método genérico');
+                window.location.href = deepLink;
+            }
+            
+            // El timeout y el event listener de focus se configuran al inicio
+        }
+        
+        // Método especial para iOS que usa un iframe oculto
+        function attemptIframeRedirect() {
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = deepLink;
+            document.body.appendChild(iframe);
+            setTimeout(() => {
+                document.body.removeChild(iframe);
+            }, 100);
+        }
         
         function setupDownloadLinks() {
             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -168,18 +254,12 @@
                 downloadButton.href = defaultLink;
                 downloadButton.textContent = "Opciones de descarga";
             }
-        }
-        
-        function tryOpenApp(deepLink) {
-            // Intentamos redirigir a la app
-            window.location.href = deepLink;
             
-            // Como respaldo, si después de 2 segundos seguimos en esta página,
-            // significa que probablemente la app no está instalada
-            setTimeout(function() {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('match-info').style.display = 'block';
-            }, 2000);
+            // También configurar el botón principal
+            document.getElementById('open-app-link').textContent = 
+                /android/i.test(userAgent) ? "Abrir en Android" : 
+                /iPad|iPhone|iPod/.test(userAgent) ? "Abrir en iPhone" : 
+                "Abrir en la aplicación";
         }
     </script>
 </body>
