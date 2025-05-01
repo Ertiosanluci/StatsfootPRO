@@ -19,6 +19,7 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
   bool _alreadyJoined = false;
   bool _isJoining = false;
   String _creatorName = 'Desconocido';
+  String? _creatorEmail;
   
   @override
   void initState() {
@@ -78,51 +79,55 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
       // Combinar los datos
       var completeMatchData = Map<String, dynamic>.from(matchResponse);
       
-      // Luego, buscar información del creador si existe creator_id
+      // Luego, obtener información del creador si existe creator_id
       if (matchResponse['creator_id'] != null) {
         try {
           String creatorId = matchResponse['creator_id'].toString();
           
-          // 1. Primero intentamos obtener el perfil directamente desde la tabla profiles
-          final creatorProfile = await supabase
+          // NUEVA IMPLEMENTACIÓN: Intentar obtener los datos directamente de la tabla profiles
+          // que está asociada con auth.users
+          final profileData = await supabase
               .from('profiles')
-              .select('nombre, apellido')
+              .select('id, nombre, apellido, email')
               .eq('id', creatorId)
               .maybeSingle();
           
-          if (creatorProfile != null && creatorProfile['nombre'] != null) {
-            // Si encontramos el perfil, usamos ese nombre
-            String nombreCompleto = creatorProfile['nombre'];
-            if (creatorProfile['apellido'] != null) {
-              nombreCompleto += " " + creatorProfile['apellido'];
+          if (profileData != null) {
+            // Construir el nombre completo
+            String nombre = profileData['nombre'] ?? '';
+            String apellido = profileData['apellido'] ?? '';
+            
+            if (nombre.isNotEmpty) {
+              _creatorName = nombre;
+              if (apellido.isNotEmpty) {
+                _creatorName += ' ' + apellido;
+              }
+            } else {
+              // Si no tiene nombre, usar email como fallback
+              _creatorName = profileData['email'] ?? 'Usuario #$creatorId';
             }
-            _creatorName = nombreCompleto;
-            debugPrint('Nombre del creador obtenido de profiles: $_creatorName');
+            
+            _creatorEmail = profileData['email'];
+            debugPrint('Información de creador obtenida: $_creatorName');
           } else {
-            // 2. Si no encontramos el perfil, intentamos obtener información del usuario directamente
+            // Intentar un segundo método si el primero falla
+            // Esta es una consulta RPC si tienes una función específica en Supabase
             try {
-              // Esta consulta podría no funcionar dependiendo de los permisos de Supabase
-              // pero lo intentamos como fallback
-              final adminClient = supabase.rest;
-              final response = await adminClient.from('profiles')
-                .select('nombre, apellido, email')
-                .eq('id', creatorId)
-                .maybeSingle();
-              
+              final response = await supabase
+                  .rpc('get_user_info', params: {'user_id': creatorId})
+                  .maybeSingle();
+                  
               if (response != null) {
-                if (response['nombre'] != null) {
-                  String nombreCompleto = response['nombre'];
-                  if (response['apellido'] != null) {
-                    nombreCompleto += " " + response['apellido'];
-                  }
-                  _creatorName = nombreCompleto;
-                } else if (response['email'] != null) {
-                  _creatorName = response['email'];
-                }
-                debugPrint('Nombre del creador obtenido por método alternativo: $_creatorName');
+                _creatorName = response['name'] ?? response['email'] ?? 'Usuario #$creatorId';
+                _creatorEmail = response['email'];
+                debugPrint('Info de creador obtenida por RPC: $_creatorName');
+              } else {
+                _creatorName = 'Usuario #$creatorId';
+                debugPrint('No se pudo obtener info del creador, usando ID como nombre');
               }
             } catch (e) {
-              debugPrint('No se pudo obtener información del usuario: $e');
+              debugPrint('Error en la función RPC: $e');
+              // Tercer intento - usar el ID directo como nombre de usuario
               _creatorName = 'Usuario #$creatorId';
             }
           }
@@ -525,6 +530,14 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
                         title: 'Organizado por',
                         value: _creatorName,
                       ),
+                      
+                      // Mostrar email si está disponible
+                      if (_creatorEmail != null && _creatorEmail!.isNotEmpty)
+                        _buildInfoRow(
+                          icon: Icons.email,
+                          title: 'Contacto',
+                          value: _creatorEmail!,
+                        ),
                     ],
                   ),
                 ),
