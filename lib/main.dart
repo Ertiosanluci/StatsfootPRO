@@ -9,7 +9,7 @@ import 'package:statsfoota/ver_Jugadores.dart';
 import 'package:statsfoota/match_join_screen.dart'; // Añadido para manejar los deep links
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
-import 'package:uni_links/uni_links.dart'; // Añadir esta dependencia para manejar deep links
+import 'package:app_links/app_links.dart'; // Cambiado de uni_links a app_links
 import 'dart:async';
 
 bool _initialUriIsHandled = false;
@@ -42,70 +42,53 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
-  Uri? _initialUri;
-  Uri? _latestUri;
-  StreamSubscription? _sub;
+  late AppLinks _appLinks;
+  StreamSubscription<Uri>? _linkSubscription;
   final _navigatorKey = GlobalKey<NavigatorState>();
-
+  
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _handleIncomingLinks();
-    _handleInitialUri();
+    initAppLinks();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _sub?.cancel();
+    _linkSubscription?.cancel();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // La app vuelve a primer plano, verificamos de nuevo por enlaces
-      _handleIncomingLinks();
+      // La app vuelve a primer plano
+      _appLinks.getLatestAppLink().then(_processIncomingUri);
     }
   }
 
-  // Manejar enlaces que llegan mientras la app está en ejecución
-  void _handleIncomingLinks() {
-    // Es importante cancelar la suscripción previa para evitar duplicados
-    _sub?.cancel();
+  // Inicializar app_links y configurar listeners
+  Future<void> initAppLinks() async {
+    _appLinks = AppLinks();
 
-    _sub = uriLinkStream.listen((Uri? uri) {
-      debugPrint('Recibido URI: $uri');
-      setState(() {
-        _latestUri = uri;
-        _processIncomingUri(uri);
+    // Maneja los enlaces que llegan cuando la app está en segundo plano/cerrada
+    final appLink = await _appLinks.getInitialAppLink();
+    if (appLink != null) {
+      debugPrint('Enlace inicial: $appLink');
+      // Esperar brevemente para asegurar que el navegador esté listo
+      Future.delayed(Duration(milliseconds: 500), () {
+        _processIncomingUri(appLink);
       });
-    }, onError: (Object err) {
-      debugPrint('Error en el manejo de enlaces: $err');
-    });
-  }
-
-  // Manejar el enlace inicial si la app se abre con un enlace
-  Future<void> _handleInitialUri() async {
-    if (!_initialUriIsHandled) {
-      _initialUriIsHandled = true;
-      try {
-        final uri = await getInitialUri();
-        debugPrint('Enlace inicial: $uri');
-        if (uri != null) {
-          setState(() {
-            _initialUri = uri;
-          });
-          // Esperar brevemente para asegurar que el navegador esté listo
-          Future.delayed(Duration(milliseconds: 500), () {
-            _processIncomingUri(uri);
-          });
-        }
-      } on PlatformException {
-        debugPrint('Error al obtener el enlace inicial');
-      }
     }
+
+    // Escucha nuevos enlaces mientras la app está en ejecución
+    _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
+      debugPrint('Recibido URI: $uri');
+      _processIncomingUri(uri);
+    }, onError: (e) {
+      debugPrint('Error en el manejo de enlaces: $e');
+    });
   }
 
   void _processIncomingUri(Uri? uri) {

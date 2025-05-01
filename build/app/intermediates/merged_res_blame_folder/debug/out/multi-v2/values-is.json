@@ -4,41 +4,7 @@
             "outputFile": "com.example.statsfoota.app-mergeDebugResources-41:/values-is/values-is.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\5d2a042ca02066e06af609799bc7ccd5\\transformed\\preference-1.2.1\\res\\values-is\\values-is.xml",
-                    "from": {
-                        "startLines": "2,3,4,5,6,7,8",
-                        "startColumns": "4,4,4,4,4,4,4",
-                        "startOffsets": "105,175,262,340,475,644,727",
-                        "endColumns": "69,86,77,134,168,82,79",
-                        "endOffsets": "170,257,335,470,639,722,802"
-                    },
-                    "to": {
-                        "startLines": "37,39,43,44,47,48,49",
-                        "startColumns": "4,4,4,4,4,4,4",
-                        "startOffsets": "3684,3858,4253,4331,4647,4816,4899",
-                        "endColumns": "69,86,77,134,168,82,79",
-                        "endOffsets": "3749,3940,4326,4461,4811,4894,4974"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\f59681c3f561379483faad55b56f9e81\\transformed\\browser-1.8.0\\res\\values-is\\values-is.xml",
-                    "from": {
-                        "startLines": "2,3,4,5",
-                        "startColumns": "4,4,4,4",
-                        "startOffsets": "55,159,260,366",
-                        "endColumns": "103,100,105,100",
-                        "endOffsets": "154,255,361,462"
-                    },
-                    "to": {
-                        "startLines": "38,40,41,42",
-                        "startColumns": "4,4,4,4",
-                        "startOffsets": "3754,3945,4046,4152",
-                        "endColumns": "103,100,105,100",
-                        "endOffsets": "3853,4041,4147,4248"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\94dd0e3af6d1f45f41855c3e56863676\\transformed\\jetified-play-services-basement-17.0.0\\res\\values-is\\values.xml",
+                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\140aa1b517be5aaa585eb3b67e0a7eac\\transformed\\jetified-play-services-basement-17.0.0\\res\\values-is\\values.xml",
                     "from": {
                         "startLines": "4",
                         "startColumns": "0",
@@ -55,7 +21,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\176302ff7a13feb8588261cf6064aa80\\transformed\\core-1.13.1\\res\\values-is\\values-is.xml",
+                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\f8dfdb2ff6a85caef0b41c8ae7e8420d\\transformed\\core-1.13.1\\res\\values-is\\values-is.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",
@@ -72,7 +38,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\c80a39de563b099ae462a56e59cbfe7b\\transformed\\appcompat-1.1.0\\res\\values-is\\values-is.xml",
+                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\14bf2473ed1bb55bcf4c1060aa418d0d\\transformed\\appcompat-1.1.0\\res\\values-is\\values-is.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -86,6 +52,40 @@
                         "startOffsets": "105,205,302,414,499,600,714,795,875,966,1058,1151,1245,1352,1445,1540,1635,1726,1820,1900,2010,2117,2214,2323,2423,2526,2681,4466",
                         "endColumns": "99,96,111,84,100,113,80,79,90,91,92,93,106,92,94,94,90,93,79,109,106,96,108,99,102,154,97,79",
                         "endOffsets": "200,297,409,494,595,709,790,870,961,1053,1146,1240,1347,1440,1535,1630,1721,1815,1895,2005,2112,2209,2318,2418,2521,2676,2774,4541"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\0fe539a430f6b93da39d3200a92474d3\\transformed\\preference-1.2.1\\res\\values-is\\values-is.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8",
+                        "startColumns": "4,4,4,4,4,4,4",
+                        "startOffsets": "105,175,262,340,475,644,727",
+                        "endColumns": "69,86,77,134,168,82,79",
+                        "endOffsets": "170,257,335,470,639,722,802"
+                    },
+                    "to": {
+                        "startLines": "37,39,43,44,47,48,49",
+                        "startColumns": "4,4,4,4,4,4,4",
+                        "startOffsets": "3684,3858,4253,4331,4647,4816,4899",
+                        "endColumns": "69,86,77,134,168,82,79",
+                        "endOffsets": "3749,3940,4326,4461,4811,4894,4974"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\e550b8f87835415acf02f79b075a77d6\\transformed\\browser-1.8.0\\res\\values-is\\values-is.xml",
+                    "from": {
+                        "startLines": "2,3,4,5",
+                        "startColumns": "4,4,4,4",
+                        "startOffsets": "55,159,260,366",
+                        "endColumns": "103,100,105,100",
+                        "endOffsets": "154,255,361,462"
+                    },
+                    "to": {
+                        "startLines": "38,40,41,42",
+                        "startColumns": "4,4,4,4",
+                        "startOffsets": "3754,3945,4046,4152",
+                        "endColumns": "103,100,105,100",
+                        "endOffsets": "3853,4041,4147,4248"
                     }
                 }
             ]

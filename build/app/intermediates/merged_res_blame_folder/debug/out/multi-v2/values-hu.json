@@ -4,41 +4,24 @@
             "outputFile": "com.example.statsfoota.app-mergeDebugResources-41:/values-hu/values-hu.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\5d2a042ca02066e06af609799bc7ccd5\\transformed\\preference-1.2.1\\res\\values-hu\\values-hu.xml",
+                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\e550b8f87835415acf02f79b075a77d6\\transformed\\browser-1.8.0\\res\\values-hu\\values-hu.xml",
                     "from": {
-                        "startLines": "2,3,4,5,6,7,8",
-                        "startColumns": "4,4,4,4,4,4,4",
-                        "startOffsets": "105,176,264,346,483,652,731",
-                        "endColumns": "70,87,81,136,168,78,75",
-                        "endOffsets": "171,259,341,478,647,726,802"
+                        "startLines": "2,3,4,5",
+                        "startColumns": "4,4,4,4",
+                        "startOffsets": "55,151,252,367",
+                        "endColumns": "95,100,114,103",
+                        "endOffsets": "146,247,362,466"
                     },
                     "to": {
-                        "startLines": "37,39,43,44,47,48,49",
-                        "startColumns": "4,4,4,4,4,4,4",
-                        "startOffsets": "3817,3984,4392,4474,4795,4964,5043",
-                        "endColumns": "70,87,81,136,168,78,75",
-                        "endOffsets": "3883,4067,4469,4606,4959,5038,5114"
+                        "startLines": "38,40,41,42",
+                        "startColumns": "4,4,4,4",
+                        "startOffsets": "3888,4072,4173,4288",
+                        "endColumns": "95,100,114,103",
+                        "endOffsets": "3979,4168,4283,4387"
                     }
                 },
                 {
-                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\94dd0e3af6d1f45f41855c3e56863676\\transformed\\jetified-play-services-basement-17.0.0\\res\\values-hu\\values.xml",
-                    "from": {
-                        "startLines": "4",
-                        "startColumns": "0",
-                        "startOffsets": "247",
-                        "endColumns": "235",
-                        "endOffsets": "482"
-                    },
-                    "to": {
-                        "startLines": "36",
-                        "startColumns": "4",
-                        "startOffsets": "3581",
-                        "endColumns": "235",
-                        "endOffsets": "3812"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\c80a39de563b099ae462a56e59cbfe7b\\transformed\\appcompat-1.1.0\\res\\values-hu\\values-hu.xml",
+                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\14bf2473ed1bb55bcf4c1060aa418d0d\\transformed\\appcompat-1.1.0\\res\\values-hu\\values-hu.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -55,7 +38,24 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\176302ff7a13feb8588261cf6064aa80\\transformed\\core-1.13.1\\res\\values-hu\\values-hu.xml",
+                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\140aa1b517be5aaa585eb3b67e0a7eac\\transformed\\jetified-play-services-basement-17.0.0\\res\\values-hu\\values.xml",
+                    "from": {
+                        "startLines": "4",
+                        "startColumns": "0",
+                        "startOffsets": "247",
+                        "endColumns": "235",
+                        "endOffsets": "482"
+                    },
+                    "to": {
+                        "startLines": "36",
+                        "startColumns": "4",
+                        "startOffsets": "3581",
+                        "endColumns": "235",
+                        "endOffsets": "3812"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\f8dfdb2ff6a85caef0b41c8ae7e8420d\\transformed\\core-1.13.1\\res\\values-hu\\values-hu.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",
@@ -72,20 +72,20 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\f59681c3f561379483faad55b56f9e81\\transformed\\browser-1.8.0\\res\\values-hu\\values-hu.xml",
+                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\0fe539a430f6b93da39d3200a92474d3\\transformed\\preference-1.2.1\\res\\values-hu\\values-hu.xml",
                     "from": {
-                        "startLines": "2,3,4,5",
-                        "startColumns": "4,4,4,4",
-                        "startOffsets": "55,151,252,367",
-                        "endColumns": "95,100,114,103",
-                        "endOffsets": "146,247,362,466"
+                        "startLines": "2,3,4,5,6,7,8",
+                        "startColumns": "4,4,4,4,4,4,4",
+                        "startOffsets": "105,176,264,346,483,652,731",
+                        "endColumns": "70,87,81,136,168,78,75",
+                        "endOffsets": "171,259,341,478,647,726,802"
                     },
                     "to": {
-                        "startLines": "38,40,41,42",
-                        "startColumns": "4,4,4,4",
-                        "startOffsets": "3888,4072,4173,4288",
-                        "endColumns": "95,100,114,103",
-                        "endOffsets": "3979,4168,4283,4387"
+                        "startLines": "37,39,43,44,47,48,49",
+                        "startColumns": "4,4,4,4,4,4,4",
+                        "startOffsets": "3817,3984,4392,4474,4795,4964,5043",
+                        "endColumns": "70,87,81,136,168,78,75",
+                        "endOffsets": "3883,4067,4469,4606,4959,5038,5114"
                     }
                 }
             ]

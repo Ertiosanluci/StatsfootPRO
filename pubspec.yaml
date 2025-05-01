@@ -45,7 +45,7 @@ dependencies:
   share_plus: ^10.1.4
   url_launcher: ^6.2.6
   flutter_launcher_icons: ^0.13.1
-  uni_links: ^0.5.1   # Añadido para manejar enlaces profundos (deep links)
+  app_links: ^3.5.0   # Reemplazado uni_links por app_links
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -4,41 +4,7 @@
             "outputFile": "com.example.statsfoota.app-mergeDebugResources-41:/values-zh-rHK/values-zh-rHK.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\c80a39de563b099ae462a56e59cbfe7b\\transformed\\appcompat-1.1.0\\res\\values-zh-rHK\\values-zh-rHK.xml",
-                    "from": {
-                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29",
-                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "105,200,293,393,475,572,680,757,833,925,1018,1109,1205,1301,1395,1491,1583,1675,1767,1844,1940,2035,2130,2227,2323,2421,2572,2666",
-                        "endColumns": "94,92,99,81,96,107,76,75,91,92,90,95,95,93,95,91,91,91,76,95,94,94,96,95,97,150,93,77",
-                        "endOffsets": "195,288,388,470,567,675,752,828,920,1013,1104,1200,1296,1390,1486,1578,1670,1762,1839,1935,2030,2125,2222,2318,2416,2567,2661,2739"
-                    },
-                    "to": {
-                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,45",
-                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "105,200,293,393,475,572,680,757,833,925,1018,1109,1205,1301,1395,1491,1583,1675,1767,1844,1940,2035,2130,2227,2323,2421,2572,4199",
-                        "endColumns": "94,92,99,81,96,107,76,75,91,92,90,95,95,93,95,91,91,91,76,95,94,94,96,95,97,150,93,77",
-                        "endOffsets": "195,288,388,470,567,675,752,828,920,1013,1104,1200,1296,1390,1486,1578,1670,1762,1839,1935,2030,2125,2222,2318,2416,2567,2661,4272"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\176302ff7a13feb8588261cf6064aa80\\transformed\\core-1.13.1\\res\\values-zh-rHK\\values-zh-rHK.xml",
-                    "from": {
-                        "startLines": "2,3,4,5,6,7,8,9",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "55,147,246,340,434,527,620,716",
-                        "endColumns": "91,98,93,93,92,92,95,100",
-                        "endOffsets": "142,241,335,429,522,615,711,812"
-                    },
-                    "to": {
-                        "startLines": "29,30,31,32,33,34,35,46",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "2666,2758,2857,2951,3045,3138,3231,4277",
-                        "endColumns": "91,98,93,93,92,92,95,100",
-                        "endOffsets": "2753,2852,2946,3040,3133,3226,3322,4373"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\5d2a042ca02066e06af609799bc7ccd5\\transformed\\preference-1.2.1\\res\\values-zh-rHK\\values-zh-rHK.xml",
+                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\0fe539a430f6b93da39d3200a92474d3\\transformed\\preference-1.2.1\\res\\values-zh-rHK\\values-zh-rHK.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8",
                         "startColumns": "4,4,4,4,4,4,4",
@@ -55,7 +21,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\94dd0e3af6d1f45f41855c3e56863676\\transformed\\jetified-play-services-basement-17.0.0\\res\\values-zh-rHK\\values.xml",
+                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\140aa1b517be5aaa585eb3b67e0a7eac\\transformed\\jetified-play-services-basement-17.0.0\\res\\values-zh-rHK\\values.xml",
                     "from": {
                         "startLines": "4",
                         "startColumns": "0",
@@ -72,7 +38,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\f59681c3f561379483faad55b56f9e81\\transformed\\browser-1.8.0\\res\\values-zh-rHK\\values-zh-rHK.xml",
+                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\e550b8f87835415acf02f79b075a77d6\\transformed\\browser-1.8.0\\res\\values-zh-rHK\\values-zh-rHK.xml",
                     "from": {
                         "startLines": "2,3,4,5",
                         "startColumns": "4,4,4,4",
@@ -86,6 +52,40 @@
                         "startOffsets": "3560,3724,3816,3917",
                         "endColumns": "82,91,100,92",
                         "endOffsets": "3638,3811,3912,4005"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\f8dfdb2ff6a85caef0b41c8ae7e8420d\\transformed\\core-1.13.1\\res\\values-zh-rHK\\values-zh-rHK.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,147,246,340,434,527,620,716",
+                        "endColumns": "91,98,93,93,92,92,95,100",
+                        "endOffsets": "142,241,335,429,522,615,711,812"
+                    },
+                    "to": {
+                        "startLines": "29,30,31,32,33,34,35,46",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "2666,2758,2857,2951,3045,3138,3231,4277",
+                        "endColumns": "91,98,93,93,92,92,95,100",
+                        "endOffsets": "2753,2852,2946,3040,3133,3226,3322,4373"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\edusa\\.gradle\\caches\\transforms-3\\14bf2473ed1bb55bcf4c1060aa418d0d\\transformed\\appcompat-1.1.0\\res\\values-zh-rHK\\values-zh-rHK.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,200,293,393,475,572,680,757,833,925,1018,1109,1205,1301,1395,1491,1583,1675,1767,1844,1940,2035,2130,2227,2323,2421,2572,2666",
+                        "endColumns": "94,92,99,81,96,107,76,75,91,92,90,95,95,93,95,91,91,91,76,95,94,94,96,95,97,150,93,77",
+                        "endOffsets": "195,288,388,470,567,675,752,828,920,1013,1104,1200,1296,1390,1486,1578,1670,1762,1839,1935,2030,2125,2222,2318,2416,2567,2661,2739"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,45",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,200,293,393,475,572,680,757,833,925,1018,1109,1205,1301,1395,1491,1583,1675,1767,1844,1940,2035,2130,2227,2323,2421,2572,4199",
+                        "endColumns": "94,92,99,81,96,107,76,75,91,92,90,95,95,93,95,91,91,91,76,95,94,94,96,95,97,150,93,77",
+                        "endOffsets": "195,288,388,470,567,675,752,828,920,1013,1104,1200,1296,1390,1486,1578,1670,1762,1839,1935,2030,2125,2222,2318,2416,2567,2661,4272"
                     }
                 }
             ]

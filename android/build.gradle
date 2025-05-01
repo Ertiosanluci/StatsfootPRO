@@ -1,28 +1,40 @@
 buildscript {
-    ext.kotlin_version = '1.7.10'
+    ext.kotlin_version = '2.1.20'
     repositories {
         google()
         mavenCentral()
     }
+
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.2'
+        classpath 'com.android.tools.build:gradle:8.2.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath 'com.google.gms:google-services:4.3.10'
     }
 }
+
 allprojects {
     repositories {
         google()
         mavenCentral()
     }
+    
+    // Solución para el problema de namespace en uni_links
+    afterEvaluate { project ->
+        if (project.hasProperty('android')) {
+            if (project.name == 'uni_links') {
+                project.android {
+                    namespace = "io.flutter.plugins.uni_links"
+                }
+            }
+        }
+    }
 }
 
-rootProject.buildDir = "../build"
+rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
 subprojects {
-    project.evaluationDependsOn(":app")
+    project.evaluationDependsOn(':app')
 }
 
 tasks.register("clean", Delete) {

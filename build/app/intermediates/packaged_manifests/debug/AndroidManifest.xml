@@ -81,6 +81,35 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- Deep Link para manejar los enlaces statsfoot:// -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Esquema URI personalizado para los partidos -->
+                <data
+                    android:host="match"
+                    android:scheme="statsfoot" />
+            </intent-filter>
+
+            <!-- Deep Links para enlaces web desde statsfootpro.netlify.app -->
+            <intent-filter android:autoVerify="true" >
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- URLs desde el sitio web -->
+                <data
+                    android:host="statsfootpro.netlify.app"
+                    android:pathPattern="/match/.*"
+                    android:scheme="https" />
+                <data
+                    android:host="statsfootpro.netlify.app"
+                    android:pathPattern="/match/.*"
+                    android:scheme="http" />
+            </intent-filter>
         </activity>
         <!--
              Don't delete the meta-data below.
