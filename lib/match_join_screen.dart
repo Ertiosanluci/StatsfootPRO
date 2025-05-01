@@ -75,30 +75,51 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
       }
       
       // Luego, obtener los datos del creador separadamente
-      String creatorId = matchResponse['creator_id'];
-      final creatorResponse = await supabase
-          .from('profiles')
-          .select()
-          .eq('id', creatorId)
-          .maybeSingle();
+      // Asegurarse de que creator_id no es nulo
+      if (matchResponse['creator_id'] == null) {
+        debugPrint('Error: creator_id es nulo en la respuesta');
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Datos del partido incompletos: no se pudo identificar al creador';
+        });
+        return;
+      }
+      
+      String creatorId = matchResponse['creator_id'].toString();
+      Map<String, dynamic>? creatorResponse;
+      try {
+        creatorResponse = await supabase
+            .from('profiles')
+            .select()
+            .eq('id', creatorId)
+            .maybeSingle();
+      } catch (e) {
+        debugPrint('Error al obtener datos del creador: $e');
+        // Continuamos sin los datos del creador
+      }
       
       // Combinar los datos
       var completeMatchData = Map<String, dynamic>.from(matchResponse);
-      completeMatchData['creator'] = creatorResponse;
+      completeMatchData['creator'] = creatorResponse ?? {'nombre': 'Desconocido'};
       
       // Check if user is already in this match
       final currentUserId = supabase.auth.currentUser?.id;
       if (currentUserId != null) {
-        final participantResponse = await supabase
-            .from('match_participants')
-            .select()
-            .eq('match_id', matchIdInt ?? widget.matchId)
-            .eq('user_id', currentUserId)
-            .maybeSingle();
-        
-        setState(() {
-          _alreadyJoined = participantResponse != null;
-        });
+        try {
+          final participantResponse = await supabase
+              .from('match_participants')
+              .select()
+              .eq('match_id', matchIdInt ?? widget.matchId)
+              .eq('user_id', currentUserId)
+              .maybeSingle();
+          
+          setState(() {
+            _alreadyJoined = participantResponse != null;
+          });
+        } catch (e) {
+          debugPrint('Error al verificar participación: $e');
+          // Continuamos asumiendo que no está unido
+        }
       }
       
       setState(() {
@@ -327,9 +348,28 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
   Widget _buildMatchView() {
     if (_matchData == null) return SizedBox();
     
-    final DateTime matchDate = DateTime.parse(_matchData!['fecha']);
-    final String formattedDate = '${matchDate.day}/${matchDate.month}/${matchDate.year}';
-    final String formattedTime = '${matchDate.hour.toString().padLeft(2, '0')}:${matchDate.minute.toString().padLeft(2, '0')}';
+    // Asegurarnos de que la fecha no es nula
+    DateTime matchDate;
+    String formattedDate = 'No disponible';
+    String formattedTime = 'No disponible';
+    
+    try {
+      if (_matchData!['fecha'] != null) {
+        matchDate = DateTime.parse(_matchData!['fecha']);
+        formattedDate = '${matchDate.day}/${matchDate.month}/${matchDate.year}';
+        formattedTime = '${matchDate.hour.toString().padLeft(2, '0')}:${matchDate.minute.toString().padLeft(2, '0')}';
+      }
+    } catch (e) {
+      debugPrint('Error al formatear fecha: $e');
+    }
+    
+    // Validar el formato
+    final String formato = _matchData!['formato']?.toString() ?? 'No especificado';
+    
+    // Validar que creator no sea nulo
+    final creatorName = _matchData!['creator'] != null && 
+                       _matchData!['creator']['nombre'] != null ? 
+                       _matchData!['creator']['nombre'] : 'Desconocido';
     
     return Container(
       decoration: BoxDecoration(
@@ -387,7 +427,7 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: Text(
-                        _matchData!['nombre'],
+                        _matchData!['nombre']?.toString() ?? 'Partido sin nombre',
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -437,7 +477,7 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
                       _buildInfoRow(
                         icon: Icons.format_list_numbered,
                         title: 'Formato',
-                        value: _matchData!['formato'],
+                        value: formato,
                       ),
                       
                       _buildInfoRow(
@@ -455,9 +495,7 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
                       _buildInfoRow(
                         icon: Icons.person,
                         title: 'Organizado por',
-                        value: _matchData!['creator'] != null ? 
-                          _matchData!['creator']['nombre'] ?? 'Desconocido' : 
-                          'Desconocido',
+                        value: creatorName,
                       ),
                     ],
                   ),
