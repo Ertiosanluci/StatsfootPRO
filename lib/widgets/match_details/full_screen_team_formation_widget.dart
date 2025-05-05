@@ -303,7 +303,7 @@ class FullScreenTeamFormationWidget extends StatelessWidget {
         ),
         
         // Efecto de brillo
-        const Positioned.fill(
+        Positioned.fill(
           child: ClipOval(
             child: CustomPaint(
               painter: AvatarGlowPainter(),
