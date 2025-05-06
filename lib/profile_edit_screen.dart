@@ -52,8 +52,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     super.dispose();
   }
 
-  // Cargar datos del perfil del usuario usando la misma lógica que en user_menu.dart
+  // Cargar datos del perfil del usuario - SIMPLIFICADO
   Future<void> _loadUserProfile() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
     try {
       final user = Supabase.instance.client.auth.currentUser;
       
@@ -65,92 +69,32 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         return;
       }
       
-      // Primero intentamos obtener el nombre y la foto de perfil
-      try {
-        final profileData = await Supabase.instance.client
-            .from('profiles')
-            .select('username, avatar_url, position, description')
-            .eq('id', user.id)
-            .single();
-
-        if (profileData != null && mounted) {
-          setState(() {
-            _username = profileData['username'] ?? "Usuario";
-            _usernameController.text = profileData['username'] ?? '';
-            _currentImageUrl = profileData['avatar_url'];
-            _selectedPosition = profileData['position'];
-            _descriptionController.text = profileData['description'] ?? '';
-            _isLoading = false;
-          });
-          return; // Terminamos aquí si encontramos datos en 'profiles'
-        }
-      } catch (profileError) {
-        print('Error al buscar en tabla profiles: $profileError');
-        // Continuamos con el siguiente intento
-      }
-
-      // Si no hay datos en profiles, intentamos con metadatos de usuario
-      final displayName = user.userMetadata?["username"];
-
-      if (displayName != null) {
-        // Si existe en los metadatos, lo usamos
-        if (mounted) {
-          setState(() {
-            _username = displayName;
-            _usernameController.text = displayName;
-            _isLoading = false;
-          });
-        }
-        return; // Terminamos aquí si encontramos el display_name
-      }
-
-      // Si no hay username en metadatos, usamos el email cortado en @
-      if (user.email != null && user.email!.isNotEmpty) {
-        final emailUsername = user.email!.split('@')[0]; // Obtiene la parte antes del @
-
-        if (mounted) {
-          setState(() {
-            _username = emailUsername;
-            _usernameController.text = emailUsername;
-            _isLoading = false;
-          });
-        }
-        return; // Terminamos aquí si pudimos extraer el nombre del email
-      }
-
-      // Como último recurso, intentamos con la tabla 'usuarios'
-      try {
-        final userResponse = await Supabase.instance.client
-            .from('usuarios')
-            .select('username')
-            .eq('id', user.id)
-            .single();
-
-        if (userResponse != null && mounted) {
-          setState(() {
-            _username = userResponse['username'] ?? "Usuario";
-            _usernameController.text = userResponse['username'] ?? "Usuario";
-            _isLoading = false;
-          });
-        }
-      } catch (userError) {
-        print('Error al buscar en tabla usuarios: $userError');
-        if (mounted) {
-          setState(() {
-            _username = "Usuario";
-            _usernameController.text = "Usuario";
-            _isLoading = false;
-          });
-        }
-      }
-    } catch (e) {
-      print('Error general al cargar datos del usuario: $e');
+      // Obtener datos del perfil
+      final profileData = await Supabase.instance.client
+          .from('profiles')
+          .select('username, avatar_url, position, description')
+          .eq('id', user.id)
+          .single();
+      
       if (mounted) {
         setState(() {
-          _username = "Usuario";
-          _usernameController.text = "Usuario";
+          _username = profileData['username'] ?? "Usuario";
+          _usernameController.text = profileData['username'] ?? '';
+          _currentImageUrl = profileData['avatar_url'];
+          _selectedPosition = profileData['position'];
+          _descriptionController.text = profileData['description'] ?? '';
           _isLoading = false;
         });
+      }
+    } catch (e) {
+      print('Error al cargar perfil: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cargar perfil: $e')),
+        );
       }
     }
   }
@@ -414,7 +358,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           ),
                         ),
                         SizedBox(height: 40),
-                        // Campo oculto para nombre de usuario (se mantiene para guardar cambios)
+                        // Campo oculto para nombre de usuario
                         SizedBox(
                           height: 0,
                           child: Opacity(
@@ -461,7 +405,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             height: 140,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.1),
               border: Border.all(color: Colors.white, width: 3),
               boxShadow: [
                 BoxShadow(
@@ -493,6 +436,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         );
                       },
                       errorBuilder: (context, error, stackTrace) {
+                        print("Error cargando imagen: $error");
                         return Container(
                           color: Colors.blue.shade400,
                           child: Icon(
