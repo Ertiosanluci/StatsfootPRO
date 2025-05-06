@@ -11,6 +11,7 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
   late AnimationController _animationController;
   String _username = "Usuario";
   bool _isLoading = true;
+  String? _profileImageUrl;
   
   @override
   void initState() {
@@ -34,7 +35,28 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
       final user = Supabase.instance.client.auth.currentUser;
 
       if (user != null) {
-        // Primero intentamos obtener el nombre de los metadatos de usuario (Auth)
+        // Primero intentamos obtener el nombre y la foto de perfil
+        try {
+          final profileData = await Supabase.instance.client
+              .from('profiles')
+              .select('username, avatar_url')
+              .eq('id', user.id)
+              .single();
+
+          if (profileData != null && mounted) {
+            setState(() {
+              _username = profileData['username'] ?? "Usuario";
+              _profileImageUrl = profileData['avatar_url'];
+              _isLoading = false;
+            });
+            return; // Terminamos aquí si encontramos datos en 'profiles'
+          }
+        } catch (profileError) {
+          print('Error al buscar en tabla profiles: $profileError');
+          // Continuamos con el siguiente intento
+        }
+
+        // Si no hay datos en profiles, intentamos con metadatos de usuario
         final displayName = user.userMetadata?["username"];
 
         if (displayName != null) {
@@ -61,7 +83,7 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
           return; // Terminamos aquí si pudimos extraer el nombre del email
         }
 
-        // Si no hay email o no pudimos extraer un nombre, intentamos con la tabla 'usuarios'
+        // Como último recurso, intentamos con la tabla 'usuarios'
         try {
           final userResponse = await Supabase.instance.client
               .from('usuarios')
@@ -74,29 +96,9 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
               _username = userResponse['username'] ?? "Usuario";
               _isLoading = false;
             });
-            return; // Terminamos aquí si encontramos el nombre en 'usuarios'
           }
-        } catch (dbError) {
-          print('Error al buscar en tabla usuarios: $dbError');
-          // Continuamos con el siguiente intento
-        }
-
-        // Como último recurso, intentamos con la tabla 'perfiles'
-        try {
-          final perfilResponse = await Supabase.instance.client
-              .from('perfiles')
-              .select('username')
-              .eq('id', user.id)
-              .single();
-
-          if (perfilResponse != null && mounted) {
-            setState(() {
-              _username = perfilResponse['username'] ?? "Usuario";
-              _isLoading = false;
-            });
-          }
-        } catch (perfilError) {
-          print('Error al buscar en tabla perfiles: $perfilError');
+        } catch (userError) {
+          print('Error al buscar en tabla usuarios: $userError');
           if (mounted) {
             setState(() {
               _username = "Usuario";
@@ -125,31 +127,49 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
   }
   
   Future<void> _signOut() async {
-    showDialog(
+    try {
+      await Supabase.instance.client.auth.signOut();
+      // Navegar directamente a la pantalla de inicio sin mostrar diálogo
+      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+    } catch (e) {
+      print('Error al cerrar sesión: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al cerrar sesión. Inténtalo de nuevo.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showUserMenu() {
+    showMenu<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Cerrar sesión"),
-        content: Text("¿Estás seguro de que quieres salir?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("Cancelar", style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await Supabase.instance.client.auth.signOut();
-              Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-            ),
-            child: Text("Salir", style: TextStyle(color: Colors.white)),
-          ),
-        ],
+      position: RelativeRect.fromLTRB(
+        MediaQuery.of(context).size.width, 
+        kToolbarHeight + MediaQuery.of(context).padding.top, 
+        0, 
+        0
       ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      items: [
+        PopupMenuItem<String>(
+          value: 'logout',
+          child: Row(
+            children: [
+              Icon(Icons.logout, color: Colors.red.shade600),
+              SizedBox(width: 10),
+              Text('Cerrar sesión'),
+            ],
+          ),
+          onTap: () {
+            // Llamar directamente a _signOut después de que el menú se cierre
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _signOut();
+            });
+          },
+        ),
+      ],
     );
   }
 
@@ -177,10 +197,61 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
         // Agregando flecha de navegación blanca (aunque en esta pantalla no se muestra por ser menú principal)
         leading: BackButton(color: Colors.white),
         actions: [
-          IconButton(
-            onPressed: _signOut,
-            icon: Icon(Icons.logout_rounded, color: Colors.white),
-            tooltip: "Cerrar sesión",
+          // Botón de perfil con imagen de usuario
+          GestureDetector(
+            onTap: _showUserMenu,
+            child: Container(
+              margin: EdgeInsets.only(right: 16),
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ClipOval(
+                child: _profileImageUrl != null && _profileImageUrl!.isNotEmpty
+                    ? Image.network(
+                        _profileImageUrl!,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: Colors.blue.shade400,
+                            child: Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.blue.shade400,
+                            child: Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        color: Colors.blue.shade400,
+                        child: Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+              ),
+            ),
           ),
         ],
         centerTitle: true,
@@ -262,47 +333,40 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          // Mensaje de bienvenida (sin el avatar)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildAnimatedAvatar(),
-              SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    FadeTransition(
-                      opacity: Tween<double>(begin: 0, end: 1).animate(
-                        CurvedAnimation(
-                          parent: _animationController,
-                          curve: Interval(0.3, 0.7, curve: Curves.easeOut),
-                        ),
-                      ),
-                      child: Text(
-                        "Bienvenido de nuevo,",
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white.withOpacity(0.8),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    FadeTransition(
-                      opacity: Tween<double>(begin: 0, end: 1).animate(
-                        CurvedAnimation(
-                          parent: _animationController,
-                          curve: Interval(0.4, 0.8, curve: Curves.easeOut),
-                        ),
-                      ),
-                      child: Text(
-                        _isLoading ? "Cargando..." : _username,
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
+              FadeTransition(
+                opacity: Tween<double>(begin: 0, end: 1).animate(
+                  CurvedAnimation(
+                    parent: _animationController,
+                    curve: Interval(0.3, 0.7, curve: Curves.easeOut),
+                  ),
+                ),
+                child: Text(
+                  "Bienvenido de nuevo,",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+                ),
+              ),
+              SizedBox(height: 4),
+              FadeTransition(
+                opacity: Tween<double>(begin: 0, end: 1).animate(
+                  CurvedAnimation(
+                    parent: _animationController,
+                    curve: Interval(0.4, 0.8, curve: Curves.easeOut),
+                  ),
+                ),
+                child: Text(
+                  _isLoading ? "Cargando..." : _username,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],

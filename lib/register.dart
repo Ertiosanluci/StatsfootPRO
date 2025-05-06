@@ -84,22 +84,44 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     if (_profileImage == null) return null;
     
     try {
+      final String username = _usernameController.text.trim();
       final String fileExtension = path.extension(_profileImage!.path);
-      final String fileName = '$userId${DateTime.now().millisecondsSinceEpoch}$fileExtension';
-      final String filePath = 'images/$userId/$fileName';
+      // Crear la estructura de carpetas con uuid+nombre de usuario
+      final String folderName = '$userId-$username';
+      final String fileName = '$folderName/${DateTime.now().millisecondsSinceEpoch}$fileExtension';
       
+      // Borrar archivo anterior si existe (por si acaso)
+      try {
+        await Supabase.instance.client.storage
+            .from('images')
+            .remove([fileName]); // Intenta eliminar el archivo si ya existe
+      } catch (e) {
+        print("No se encontró un archivo previo para eliminar: $e");
+        // Si no existe el archivo, no hay problema, continuamos
+      }
+      
+      // Subir archivo nuevo
       await Supabase.instance.client.storage
-          .from('avatars')
-          .upload(filePath, _profileImage!);
+          .from('images')
+          .upload(fileName, _profileImage!, fileOptions: const FileOptions(
+            cacheControl: '3600',
+            upsert: true
+          ));
       
-      // Get public URL
+      // Obtener la URL pública de la foto subida
       final String imageUrl = Supabase.instance.client.storage
-          .from('avatars')
-          .getPublicUrl(filePath);
+          .from('images')
+          .getPublicUrl(fileName);
       
+      print('Imagen de perfil subida exitosamente: $imageUrl');
       return imageUrl;
     } catch (e) {
-      print('Error uploading profile image: $e');
+      print('Error al subir imagen de perfil: $e');
+      if (e.toString().contains('bucket not found')) {
+        print('Error: El bucket "images" no existe en Supabase');
+      } else if (e.toString().contains('permission denied')) {
+        print('Error: Permisos insuficientes para subir al bucket');
+      }
       return null;
     }
   }
@@ -143,27 +165,17 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         return;
       }
       
-      // Subir imagen de perfil si existe
-      String? avatarUrl = await _uploadProfileImage(response.user!.id);
+      String? avatarUrl; // Inicialmente null
       
-      // Crear carpeta para imágenes del usuario
-      try {
-        // La carpeta se crea automáticamente al subir la imagen
-        print('Carpeta de imágenes creada para el usuario: ${response.user!.id}');
-      } catch (e) {
-        print('Error al crear carpeta de imágenes: $e');
-        // Continuar aunque falle la creación de la carpeta
-      }
-      
-      // Guardar datos en la tabla 'profiles'
+      // Primero guardar datos en la tabla 'profiles' sin la URL de la imagen
       try {
         await Supabase.instance.client.from('profiles').insert({
           'id': response.user!.id,
           'username': _usernameController.text.trim(),
           'created_at': DateTime.now().toIso8601String(),
-          'avatar_url': avatarUrl,
+          'avatar_url': null, // Inicialmente sin imagen
         });
-        print('Perfil guardado exitosamente en la tabla profiles');
+        print('Perfil guardado exitosamente en la tabla profiles (sin imagen)');
       } catch (profileError) {
         print('Error al crear perfil: $profileError');
         // Continuar aunque falle la creación del perfil
@@ -181,6 +193,25 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       } catch (userError) {
         print('Error al guardar en tabla usuarios: $userError');
         // Continuar aunque falle esta operación
+      }
+      
+      // Si hay una imagen de perfil, subirla después de crear el usuario
+      if (_profileImage != null) {
+        try {
+          avatarUrl = await _uploadProfileImage(response.user!.id);
+          
+          if (avatarUrl != null) {
+            // Actualizar el perfil con la URL de la imagen
+            await Supabase.instance.client.from('profiles')
+                .update({'avatar_url': avatarUrl})
+                .eq('id', response.user!.id);
+            
+            print('Perfil actualizado con imagen de perfil');
+          }
+        } catch (imageError) {
+          print('Error al subir o actualizar imagen de perfil: $imageError');
+          // Continuar aunque falle la subida de la imagen
+        }
       }
 
       // Cerrar diálogo de progreso
