@@ -46,6 +46,8 @@ dependencies:
   url_launcher: ^6.2.6
   flutter_launcher_icons: ^0.13.1
   app_links: ^3.5.0   # Reemplazado uni_links por app_links
+  uuid: ^4.3.3       # Añadido para generar ID únicos
+  path: ^1.9.0       # Añadido para trabajar con rutas de archivos
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -7,6 +7,7 @@ import 'package:statsfoota/user_menu.dart';
 import 'package:statsfoota/match_list.dart';
 import 'package:statsfoota/ver_Jugadores.dart';
 import 'package:statsfoota/match_join_screen.dart'; // Añadido para manejar los deep links
+import 'package:statsfoota/profile_edit_screen.dart'; // Importamos la pantalla de edición de perfil
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:app_links/app_links.dart'; // Cambiado de uni_links a app_links
@@ -156,6 +157,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/create_match': (context) => CreateMatchScreen(),
         '/match_list': (context) => MatchListScreen(),
         '/match_join': (context) => MatchJoinScreen(matchId: ''),
+        '/profile_edit': (context) => ProfileEditScreen(), // Añadido para manejar la edición de perfil
       },
       debugShowCheckedModeBanner: false,
       title: 'StatsFut',

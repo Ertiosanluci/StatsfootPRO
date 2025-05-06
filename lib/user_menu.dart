@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:statsfoota/profile_edit_screen.dart'; // Importación para la pantalla de edición de perfil
 
 class UserMenuScreen extends StatefulWidget {
   @override
@@ -153,6 +154,28 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       items: [
+        PopupMenuItem<String>(
+          value: 'edit_profile',
+          child: Row(
+            children: [
+              Icon(Icons.edit, color: Colors.blue.shade600),
+              SizedBox(width: 10),
+              Text('Editar perfil'),
+            ],
+          ),
+          onTap: () {
+            // Navegar a la pantalla de edición de perfil después de que el menú se cierre
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.push(
+                context, 
+                MaterialPageRoute(builder: (context) => ProfileEditScreen())
+              ).then((_) {
+                // Actualizar datos después de volver de la pantalla de edición
+                _loadUserData();
+              });
+            });
+          },
+        ),
         PopupMenuItem<String>(
           value: 'logout',
           child: Row(
