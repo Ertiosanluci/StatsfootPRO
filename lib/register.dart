@@ -159,13 +159,9 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       try {
         await Supabase.instance.client.from('profiles').insert({
           'id': response.user!.id,
-          'nombre': _usernameController.text.trim(),
-          'email': _emailController.text.trim(),
-          'posición': _posicionController.text.trim(),
-          'descripción': _descripcionController.text.trim(),
-          'calificación': 0,
-          'avatar_url': avatarUrl,
+          'username': _usernameController.text.trim(),
           'created_at': DateTime.now().toIso8601String(),
+          'avatar_url': avatarUrl,
         });
         print('Perfil guardado exitosamente en la tabla profiles');
       } catch (profileError) {

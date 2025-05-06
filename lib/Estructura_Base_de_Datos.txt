@@ -1,0 +1,38 @@
+CREATE TABLE profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id),
+    username TEXT,
+    created_at TIMESTAMPTZ,
+    avatar_url TEXT
+);
+
+CREATE TABLE matches (
+    id SERIAL PRIMARY KEY,
+    creador_id UUID REFERENCES auth.users(id),
+    nombre TEXT,
+    formato TEXT,
+    fecha TIMESTAMPTZ,
+    estado TEXT,
+    enlace TEXT,
+    created_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ
+);
+
+CREATE TABLE match_participants (
+    id SERIAL PRIMARY KEY,
+    match_id INTEGER REFERENCES matches(id),
+    user_id UUID REFERENCES auth.users(id),
+    equipo TEXT,
+    es_organizador BOOLEAN,
+    joined_at TIMESTAMPTZ
+);
+
+CREATE TABLE match_stats (
+    id SERIAL PRIMARY KEY,
+    match_id INTEGER REFERENCES matches(id),
+    user_id UUID REFERENCES auth.users(id),
+    goles INTEGER,
+    asistencias INTEGER,
+    tarjetas_amarillas INTEGER,
+    tarjetas_rojas INTEGER,
+    equipo TEXT
+);
