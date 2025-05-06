@@ -82,13 +82,8 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
         });
       }
       
-      // Cargar información de los jugadores del equipo claro
-      List<dynamic> teamClaroIds = _matchData['team_claro'] ?? [];
-      await _fetchTeamPlayers(teamClaroIds, true);
-      
-      // Cargar información de los jugadores del equipo oscuro
-      List<dynamic> teamOscuroIds = _matchData['team_oscuro'] ?? [];
-      await _fetchTeamPlayers(teamOscuroIds, false);
+      // Recuperar los participantes del partido con la información de profiles
+      await _fetchMatchParticipants(matchIdInt);
       
       setState(() => _isLoading = false);
     } catch (e) {
@@ -107,16 +102,183 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
     }
   }
   
+  // Nuevo método para obtener los participantes del partido usando un JOIN entre match_participants y profiles
+  Future<void> _fetchMatchParticipants(int matchId) async {
+    try {
+      // Obtener todos los participantes del partido con sus usernames desde profiles
+      final response = await supabase
+          .rpc('get_match_participants_with_profiles', params: {'match_id_param': matchId});
+      
+      if (response == null) {
+        print('No se encontraron participantes para el partido $matchId');
+        return;
+      }
+      
+      List<dynamic> participants = response;
+      List<Map<String, dynamic>> teamClaro = [];
+      List<Map<String, dynamic>> teamOscuro = [];
+      
+      // Procesar los resultados y dividir en equipos
+      for (var participant in participants) {
+        Map<String, dynamic> playerData = {
+          'id': participant['user_id'],
+          'nombre': participant['username'] ?? 'Usuario sin nombre',
+          'foto_perfil': participant['avatar_url'],
+          'es_organizador': participant['es_organizador'] ?? false,
+        };
+        
+        // Obtener estadísticas del jugador en este partido
+        final statsResponse = await supabase
+            .from('estadisticas')
+            .select('*')
+            .eq('jugador_id', playerData['id'])
+            .eq('partido_id', matchId)
+            .maybeSingle();
+        
+        // Añadir estadísticas si existen
+        if (statsResponse != null) {
+          playerData['goles'] = statsResponse['goles'] ?? 0;
+          playerData['asistencias'] = statsResponse['asistencias'] ?? 0;
+          playerData['goles_propios'] = statsResponse['goles_propios'] ?? 0;
+        } else {
+          playerData['goles'] = 0;
+          playerData['asistencias'] = 0;
+          playerData['goles_propios'] = 0;
+        }
+        
+        // Agregar al equipo correspondiente según el valor de 'equipo'
+        if (participant['equipo'] == 'team_claro') {
+          teamClaro.add(playerData);
+        } else if (participant['equipo'] == 'team_oscuro') {
+          teamOscuro.add(playerData);
+        } else {
+          // Si no tiene equipo asignado, simplemente se ignora por ahora
+          print('Jugador sin equipo asignado: ${playerData['nombre']}');
+        }
+      }
+      
+      // Actualizar estado con los equipos
+      setState(() {
+        _teamClaro = teamClaro;
+        _teamOscuro = teamOscuro;
+      });
+      
+    } catch (e) {
+      print('Error al cargar participantes del partido: $e');
+      
+      // Intentar método de respaldo si falla la función RPC
+      await _fetchParticipantsFallback(matchId);
+    }
+  }
+  
+  // Método de respaldo por si falla la función RPC
+  Future<void> _fetchParticipantsFallback(int matchId) async {
+    try {
+      final response = await supabase
+          .from('match_participants')
+          .select('''
+            match_id, 
+            user_id, 
+            equipo, 
+            es_organizador, 
+            joined_at,
+            profiles!inner(id, username, avatar_url)
+          ''')
+          .eq('match_id', matchId);
+      
+      List<Map<String, dynamic>> teamClaro = [];
+      List<Map<String, dynamic>> teamOscuro = [];
+      
+      for (var item in response) {
+        // Extraer los datos de profiles que están anidados
+        final profile = item['profiles'];
+        
+        Map<String, dynamic> playerData = {
+          'id': item['user_id'],
+          'nombre': profile['username'] ?? 'Usuario sin nombre',
+          'foto_perfil': profile['avatar_url'],
+          'es_organizador': item['es_organizador'] ?? false,
+        };
+        
+        // Obtener estadísticas
+        final statsResponse = await supabase
+            .from('estadisticas')
+            .select('*')
+            .eq('jugador_id', playerData['id'])
+            .eq('partido_id', matchId)
+            .maybeSingle();
+        
+        if (statsResponse != null) {
+          playerData['goles'] = statsResponse['goles'] ?? 0;
+          playerData['asistencias'] = statsResponse['asistencias'] ?? 0;
+          playerData['goles_propios'] = statsResponse['goles_propios'] ?? 0;
+        } else {
+          playerData['goles'] = 0;
+          playerData['asistencias'] = 0;
+          playerData['goles_propios'] = 0;
+        }
+        
+        if (item['equipo'] == 'team_claro') {
+          teamClaro.add(playerData);
+        } else if (item['equipo'] == 'team_oscuro') {
+          teamOscuro.add(playerData);
+        }
+      }
+      
+      setState(() {
+        _teamClaro = teamClaro;
+        _teamOscuro = teamOscuro;
+      });
+      
+    } catch (e) {
+      print('Error en método de respaldo para cargar participantes: $e');
+      
+      // Si todo falla, intentar con el método original
+      List<dynamic> teamClaroIds = _matchData['team_claro'] ?? [];
+      await _fetchTeamPlayers(teamClaroIds, true);
+      
+      List<dynamic> teamOscuroIds = _matchData['team_oscuro'] ?? [];
+      await _fetchTeamPlayers(teamOscuroIds, false);
+    }
+  }
+  
   Future<void> _fetchTeamPlayers(List<dynamic> playerIds, bool isTeamClaro) async {
     List<Map<String, dynamic>> players = [];
     
     for (var playerId in playerIds) {
       try {
-        final playerResponse = await supabase
-            .from('jugadores')
-            .select('*')
+        // Primero, obtener información de la tabla profiles usando el user_id
+        final profileResponse = await supabase
+            .from('profiles')
+            .select('id, username, avatar_url')
             .eq('id', playerId)
             .single();
+            
+        Map<String, dynamic> playerData = {
+          'id': profileResponse['id'],
+          'nombre': profileResponse['username'],  // Usar username de profiles
+          'foto_perfil': profileResponse['avatar_url'],  // Usar avatar_url de profiles
+        };
+        
+        // Verificar si existe en la tabla jugadores para información adicional
+        try {
+          final playerInfoResponse = await supabase
+              .from('jugadores')
+              .select('*')
+              .eq('id', playerId)
+              .maybeSingle();
+          
+          // Combinar con información adicional si existe
+          if (playerInfoResponse != null) {
+            playerInfoResponse.forEach((key, value) {
+              if (!playerData.containsKey(key) || playerData[key] == null) {
+                playerData[key] = value;
+              }
+            });
+          }
+        } catch (e) {
+          print('Info adicional no disponible para el jugador $playerId: $e');
+        }
         
         // Obtener estadísticas del jugador en este partido
         final statsResponse = await supabase
@@ -125,8 +287,6 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
             .eq('jugador_id', playerId)
             .eq('partido_id', widget.matchId)
             .maybeSingle();
-        
-        Map<String, dynamic> playerData = Map<String, dynamic>.from(playerResponse);
         
         // Añadir estadísticas si existen
         if (statsResponse != null) {
@@ -140,6 +300,25 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
         players.add(playerData);
       } catch (e) {
         print('Error al cargar jugador $playerId: $e');
+        
+        // En caso de error al obtener de profiles, intentar obtener datos de la tabla jugadores
+        try {
+          final fallbackResponse = await supabase
+              .from('jugadores')
+              .select('*')
+              .eq('id', playerId)
+              .single();
+          
+          Map<String, dynamic> playerData = Map<String, dynamic>.from(fallbackResponse);
+          
+          // Establecer valores predeterminados para estadísticas
+          playerData['goles'] = 0;
+          playerData['asistencias'] = 0;
+          
+          players.add(playerData);
+        } catch (fallbackError) {
+          print('Error también al cargar fallback para jugador $playerId: $fallbackError');
+        }
       }
     }
     

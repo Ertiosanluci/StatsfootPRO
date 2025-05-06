@@ -93,24 +93,33 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
           String userEmail = '';
           String? avatarUrl;
           
-          // Si es el usuario actual, podemos obtener su email directamente
-          if (userId == currentUserId && supabase.auth.currentUser?.email != null) {
-            userEmail = supabase.auth.currentUser!.email!;
-            userName = userEmail.split('@')[0]; // Usar parte del email como nombre
-          } else {
-            // Para otros usuarios, intentar consultar datos básicos
-            try {
-              // Intentar obtener información de user_metadata (opcional)
-              final userMetadata = await supabase.auth.admin.getUserById(userId);
-              if (userMetadata != null) {
-                userEmail = userMetadata.user?.email ?? '';
-                // Intentar extraer un nombre del email
-                userName = userEmail.split('@')[0];
+          try {
+            // Si es el usuario actual, podemos obtener su email directamente
+            if (userId == currentUserId && supabase.auth.currentUser?.email != null) {
+              userEmail = supabase.auth.currentUser!.email!;
+              userName = userEmail.split('@')[0]; // Usar parte del email como nombre
+            } else {
+              // Para otros usuarios, intentar consultar datos básicos
+              try {
+                // Intentar obtener el perfil desde la tabla profiles sin incluir 'email' que no existe
+                final profileData = await supabase
+                    .from('profiles')
+                    .select('username, avatar_url')
+                    .eq('id', userId)
+                    .maybeSingle();
+                
+                if (profileData != null) {
+                  userName = profileData['username'] ?? 'Usuario';
+                  avatarUrl = profileData['avatar_url'];
+                }
+              } catch (e) {
+                print('No se pudo obtener metadata para usuario $userId: $e');
+                // Continuar con valores predeterminados
               }
-            } catch (e) {
-              print('No se pudo obtener metadata para usuario $userId: $e');
-              // Continuar con valores predeterminados
             }
+          } catch (e) {
+            print('No se pudo obtener metadata para usuario $userId: $e');
+            // Continuar con valores predeterminados
           }
           
           final participant = {

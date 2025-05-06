@@ -200,20 +200,41 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
         matchIdValue = widget.matchId;
       }
       
-      // En lugar de verificar el perfil, simplemente procedemos con la unión al partido
-      // Esto evita la dependencia de la tabla "profiles" que no existe
+      // Verificar si el usuario ya tiene un perfil en la tabla profiles
+      final profileExists = await supabase
+          .from('profiles')
+          .select('id, username')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+      
+      // Si no existe un perfil, intentamos crearlo
+      if (profileExists == null) {
+        try {
+          // Intentar crear un perfil básico
+          await supabase.from('profiles').insert({
+            'id': currentUser.id,
+            'username': currentUser.email?.split('@')[0] ?? 'user_${currentUser.id.substring(0, 8)}',
+            'created_at': DateTime.now().toIso8601String(),
+          });
+          print('Perfil creado automáticamente para el usuario que se une al partido');
+        } catch (profileError) {
+          print('Error al crear perfil automático: $profileError');
+          // Continuamos aunque falle la creación del perfil
+        }
+      }
+      
       debugPrint('Intentando unirse al partido con ID: $matchIdValue');
       
-      // Add user to match participants
+      // Añadir usuario a match_participants
       await supabase.from('match_participants').insert({
         'match_id': matchIdValue,
         'user_id': currentUser.id,
-        'equipo': null, // Team will be assigned by the organizer
+        'equipo': null, // El equipo será asignado por el organizador
         'es_organizador': false,
         'joined_at': DateTime.now().toIso8601String(),
       });
       
-      // Show success message
+      // Mostrar mensaje de éxito
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('¡Te has unido al partido correctamente!'),
@@ -226,7 +247,7 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
         _isJoining = false;
       });
       
-      // Refresh match data to see updated participant list
+      // Refrescar datos del partido para ver la lista actualizada de participantes
       _loadMatchData();
     } catch (e) {
       debugPrint('Error al unirse: $e');
