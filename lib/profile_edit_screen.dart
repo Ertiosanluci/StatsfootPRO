@@ -19,8 +19,16 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController(); // Solo lectura
+  final TextEditingController _birthdateController = TextEditingController();
   
   String? _selectedPosition;
+  String? _selectedFrequency;
+  String? _selectedGender;
+  String? _selectedLevel;
+  
+  DateTime? _birthdate;
+  
   File? _imageFile;
   String? _currentImageUrl;
   String _username = "Usuario";
@@ -39,6 +47,33 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     'Segundo delantero', 
     'Delantero centro'
   ];
+  
+  // Frecuencia con la que juega
+  final List<String> _frequencies = [
+    'Rara vez',
+    '1 vez a la semana',
+    '2-3 veces a la semana',
+    'Más de 3 veces a la semana',
+    'Todos los días'
+  ];
+  
+  // Opciones de género
+  final List<String> _genders = [
+    'Masculino',
+    'Femenino',
+    'Otro',
+    'Prefiero no decir'
+  ];
+  
+  // Niveles de juego
+  final List<String> _levels = [
+    'Principiante',
+    'Aficionado',
+    'Intermedio',
+    'Avanzado',
+    'Semi-profesional',
+    'Profesional'
+  ];
 
   @override
   void initState() {
@@ -50,10 +85,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   void dispose() {
     _usernameController.dispose();
     _descriptionController.dispose();
+    _emailController.dispose();
+    _birthdateController.dispose();
     super.dispose();
   }
 
-  // Cargar datos del perfil del usuario - SIMPLIFICADO
+  // Cargar datos del perfil del usuario
   Future<void> _loadUserProfile() async {
     setState(() {
       _isLoading = true;
@@ -73,17 +110,35 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       // Obtener datos del perfil
       final profileData = await Supabase.instance.client
           .from('profiles')
-          .select('username, avatar_url, position, description')
+          .select('username, avatar_url, position, description, birthdate, frequency, gender, level')
           .eq('id', user.id)
           .single();
       
       if (mounted) {
         setState(() {
+          // Cargar el email del usuario (que viene de auth)
+          _emailController.text = user.email ?? 'No disponible';
+          
+          // Cargar datos básicos
           _username = profileData['username'] ?? "Usuario";
           _usernameController.text = profileData['username'] ?? '';
           _currentImageUrl = profileData['avatar_url'];
-          _selectedPosition = profileData['position'];
           _descriptionController.text = profileData['description'] ?? '';
+          
+          // Cargar posición
+          _selectedPosition = profileData['position'];
+          
+          // Cargar fecha de nacimiento
+          if (profileData['birthdate'] != null) {
+            _birthdate = DateTime.parse(profileData['birthdate']);
+            _birthdateController.text = _formatDate(_birthdate!);
+          }
+          
+          // Cargar otros campos nuevos
+          _selectedFrequency = profileData['frequency'];
+          _selectedGender = profileData['gender'];
+          _selectedLevel = profileData['level'];
+          
           _isLoading = false;
         });
       }
@@ -98,6 +153,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         );
       }
     }
+  }
+  
+  // Formatear fecha para mostrar
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
   
   // Seleccionar imagen desde la galería
@@ -264,6 +324,48 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     }
   }
   
+  // Seleccionar fecha de nacimiento
+  Future<void> _selectBirthdate() async {
+    final DateTime now = DateTime.now();
+    final DateTime initialDate = _birthdate ?? DateTime(now.year - 18, now.month, now.day);
+    final DateTime firstDate = DateTime(1940);
+    final DateTime lastDate = DateTime(now.year - 10, now.month, now.day);
+    
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            primaryColor: Colors.blue.shade800,
+            colorScheme: ColorScheme.light(
+              primary: Colors.blue.shade800,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+            buttonTheme: ButtonThemeData(
+              textTheme: ButtonTextTheme.primary,
+              colorScheme: ColorScheme.light(
+                primary: Colors.blue.shade800,
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    
+    if (picked != null && picked != _birthdate) {
+      setState(() {
+        _birthdate = picked;
+        _birthdateController.text = _formatDate(_birthdate!);
+      });
+    }
+  }
+  
   // Guardar perfil actualizado
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
@@ -291,7 +393,15 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         'position': _selectedPosition,
         'description': _descriptionController.text.trim(),
         'updated_at': DateTime.now().toIso8601String(),
+        'frequency': _selectedFrequency,
+        'gender': _selectedGender,
+        'level': _selectedLevel,
       };
+      
+      // Incluir fecha de nacimiento si se ha seleccionado
+      if (_birthdate != null) {
+        updatedData['birthdate'] = _birthdate!.toIso8601String();
+      }
       
       // Solo incluir avatar_url si no es nulo
       if (avatarUrl != null) {
@@ -346,6 +456,209 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     }
   }
 
+  // Widget para los campos de selección (género, frecuencia, nivel)
+  Widget _buildDropdown({
+    required String label,
+    required String hint,
+    required IconData icon,
+    required List<String> items,
+    String? value,
+    required Function(String?) onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+        ),
+        SizedBox(height: 10),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: Colors.white24),
+          ),
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: DropdownButtonFormField<String>(
+            value: value,
+            hint: Text(
+              hint,
+              style: TextStyle(color: Colors.white.withOpacity(0.5)),
+            ),
+            style: TextStyle(color: Colors.white),
+            dropdownColor: Colors.blue.shade800,
+            icon: Icon(Icons.arrow_drop_down, color: Colors.white),
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              prefixIcon: Icon(icon, color: Colors.white70),
+              prefixIconConstraints: BoxConstraints(minWidth: 45),
+              contentPadding: EdgeInsets.zero,
+            ),
+            items: items.map((String item) {
+              return DropdownMenuItem<String>(
+                value: item,
+                child: Text(
+                  item,
+                  style: TextStyle(color: Colors.white),
+                ),
+              );
+            }).toList(),
+            onChanged: onChanged,
+          ),
+        ),
+      ],
+    );
+  }
+  
+  // Widget para el selector de fecha
+  Widget _buildDateField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Fecha de nacimiento',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+        ),
+        SizedBox(height: 10),
+        GestureDetector(
+          onTap: _selectBirthdate,
+          child: AbsorbPointer(
+            child: TextFormField(
+              controller: _birthdateController,
+              style: TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Selecciona tu fecha de nacimiento',
+                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                prefixIcon: Icon(Icons.calendar_today, color: Colors.white70),
+                suffixIcon: Icon(Icons.arrow_drop_down, color: Colors.white),
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.1),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide(color: Colors.white24),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+  
+  // Widget para campo de solo lectura como el email
+  Widget _buildReadonlyField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+        ),
+        SizedBox(height: 10),
+        TextFormField(
+          controller: controller,
+          style: TextStyle(color: Colors.white),
+          readOnly: true,
+          decoration: InputDecoration(
+            prefixIcon: Icon(icon, color: Colors.white70),
+            filled: true,
+            fillColor: Colors.white.withOpacity(0.1),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30),
+              borderSide: BorderSide(color: Colors.white24),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30),
+              borderSide: BorderSide(color: Colors.white),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+  
+  // Widget para cambiar contraseña
+  Widget _buildChangePasswordButton() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Cambiar contraseña',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+        ),
+        SizedBox(height: 10),
+        Container(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              // Obtener el correo del usuario autenticado
+              final user = Supabase.instance.client.auth.currentUser;
+              if (user != null && user.email != null) {
+                try {
+                  // Enviar email de recuperación de contraseña
+                  await Supabase.instance.client.auth.resetPasswordForEmail(
+                    user.email!,
+                    redirectTo: 'io.supabase.flutterquickstart://login-callback/',
+                  );
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Se ha enviado un enlace para cambiar la contraseña a tu correo'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } catch (e) {
+                  print('Error al enviar email de recuperación: $e');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error al enviar email de recuperación: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            icon: Icon(Icons.lock),
+            label: Text('Cambiar contraseña'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.deepOrange.shade800,
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(vertical: 15),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -394,6 +707,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     key: _formKey,
                     child: Column(
                       children: [
+                        // Imagen y nombre de perfil
                         Center(
                           child: Column(
                             children: [
@@ -425,6 +739,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           ),
                         ),
                         SizedBox(height: 40),
+                        
                         // Campo oculto para nombre de usuario
                         SizedBox(
                           height: 0,
@@ -441,8 +756,69 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             ),
                           ),
                         ),
+                        
+                        // Email (campo de solo lectura)
+                        _buildReadonlyField(
+                          controller: _emailController,
+                          label: 'Correo electrónico',
+                          icon: Icons.email,
+                        ),
+                        SizedBox(height: 20),
+                        
+                        // Fecha de nacimiento
+                        _buildDateField(),
+                        SizedBox(height: 20),
+                        
+                        // Género
+                        _buildDropdown(
+                          label: 'Género',
+                          hint: 'Selecciona tu género',
+                          icon: Icons.person,
+                          items: _genders,
+                          value: _selectedGender,
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedGender = value;
+                            });
+                          },
+                        ),
+                        SizedBox(height: 20),
+                        
+                        // Posición en el campo
                         _buildPositionDropdown(),
                         SizedBox(height: 20),
+                        
+                        // Frecuencia de juego
+                        _buildDropdown(
+                          label: 'Frecuencia de juego entre semana',
+                          hint: 'Selecciona con qué frecuencia juegas',
+                          icon: Icons.sports_soccer,
+                          items: _frequencies,
+                          value: _selectedFrequency,
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedFrequency = value;
+                            });
+                          },
+                        ),
+                        SizedBox(height: 20),
+                        
+                        // Nivel de juego
+                        _buildDropdown(
+                          label: 'Nivel de juego',
+                          hint: 'Selecciona tu nivel',
+                          icon: Icons.trending_up,
+                          items: _levels,
+                          value: _selectedLevel,
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedLevel = value;
+                            });
+                          },
+                        ),
+                        SizedBox(height: 20),
+                        
+                        // Descripción
                         _buildTextField(
                           controller: _descriptionController,
                           label: 'Descripción',
@@ -450,7 +826,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           icon: Icons.description,
                           maxLines: 4,
                         ),
-                        SizedBox(height: 40),
+                        SizedBox(height: 30),
+                        
+                        // Cambiar contraseña
+                        _buildChangePasswordButton(),
+                        SizedBox(height: 30),
+                        
+                        // Botón guardar
                         _buildSaveButton(),
                         SizedBox(height: 20),
                       ],
