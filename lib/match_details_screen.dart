@@ -59,31 +59,11 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
       
       _matchData = response;
       
-      // Procesar las posiciones de los jugadores (convertir de JSON a Offset)
-      if (_matchData['team_claro_positions'] != null) {
-        Map<String, dynamic> positions = Map<String, dynamic>.from(_matchData['team_claro_positions']);
-        positions.forEach((playerId, position) {
-          if (position is Map) {
-            double dx = (position['dx'] is num) ? (position['dx'] as num).toDouble() : 0.5;
-            double dy = (position['dy'] is num) ? (position['dy'] as num).toDouble() : 0.3;
-            _teamClaroPositions[playerId] = Offset(dx, dy);
-          }
-        });
-      }
-      
-      if (_matchData['team_oscuro_positions'] != null) {
-        Map<String, dynamic> positions = Map<String, dynamic>.from(_matchData['team_oscuro_positions']);
-        positions.forEach((playerId, position) {
-          if (position is Map) {
-            double dx = (position['dx'] is num) ? (position['dx'] as num).toDouble() : 0.5;
-            double dy = (position['dy'] is num) ? (position['dy'] as num).toDouble() : 0.7;
-            _teamOscuroPositions[playerId] = Offset(dx, dy);
-          }
-        });
-      }
-      
       // Recuperar los participantes del partido con la información de profiles
       await _fetchMatchParticipants(matchIdInt);
+      
+      // Cargar posiciones de los jugadores
+      _loadPlayerPositions();
       
       setState(() => _isLoading = false);
     } catch (e) {
@@ -2128,6 +2108,147 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
         textColor: Colors.white,
       );
     }
+  }
+
+  // Método para cargar las posiciones de los jugadores desde JSON a Offset
+  void _loadPlayerPositions() {
+    try {
+      // Procesar las posiciones de los jugadores del equipo claro
+      if (_matchData['team_claro_positions'] != null) {
+        Map<String, dynamic> positions = Map<String, dynamic>.from(_matchData['team_claro_positions']);
+        positions.forEach((playerId, position) {
+          if (position is Map) {
+            double dx = (position['dx'] is num) ? (position['dx'] as num).toDouble() : 0.5;
+            double dy = (position['dy'] is num) ? (position['dy'] as num).toDouble() : 0.3;
+            _teamClaroPositions[playerId] = Offset(dx, dy);
+          }
+        });
+      }
+      
+      // Procesar las posiciones de los jugadores del equipo oscuro
+      if (_matchData['team_oscuro_positions'] != null) {
+        Map<String, dynamic> positions = Map<String, dynamic>.from(_matchData['team_oscuro_positions']);
+        positions.forEach((playerId, position) {
+          if (position is Map) {
+            double dx = (position['dx'] is num) ? (position['dx'] as num).toDouble() : 0.5;
+            double dy = (position['dy'] is num) ? (position['dy'] as num).toDouble() : 0.7;
+            _teamOscuroPositions[playerId] = Offset(dx, dy);
+          }
+        });
+      }
+      
+      // Asignar posiciones predeterminadas a jugadores sin posición
+      _assignDefaultPositions();
+    } catch (e) {
+      print('Error al cargar posiciones de jugadores: $e');
+    }
+  }
+  
+  // Método para asignar posiciones predeterminadas a jugadores que no tienen una posición asignada
+  void _assignDefaultPositions() {
+    // Obtener el formato del partido para determinar cuántos jugadores por equipo
+    String formato = _matchData['formato'] ?? '5v5';
+    List<String> partes = formato.split('v');
+    int numJugadoresClaros = int.tryParse(partes[0]) ?? 5;
+    int numJugadoresOscuros = int.tryParse(partes.length > 1 ? partes[1] : partes[0]) ?? 5;
+    
+    // Generar posiciones predeterminadas
+    List<Offset> defaultPosClaro = _getDefaultPositions(numJugadoresClaros, true);
+    List<Offset> defaultPosOscuro = _getDefaultPositions(numJugadoresOscuros, false);
+    
+    // Asignar posiciones al equipo claro
+    for (int i = 0; i < _teamClaro.length; i++) {
+      String playerId = _teamClaro[i]['id'].toString();
+      if (!_teamClaroPositions.containsKey(playerId)) {
+        // Asignar posición predeterminada o una posición central si no hay suficientes predeterminadas
+        _teamClaroPositions[playerId] = i < defaultPosClaro.length
+            ? defaultPosClaro[i]
+            : Offset(0.5, 0.3); // Posición por defecto
+      }
+    }
+    
+    // Asignar posiciones al equipo oscuro
+    for (int i = 0; i < _teamOscuro.length; i++) {
+      String playerId = _teamOscuro[i]['id'].toString();
+      if (!_teamOscuroPositions.containsKey(playerId)) {
+        // Asignar posición predeterminada o una posición central si no hay suficientes predeterminadas
+        _teamOscuroPositions[playerId] = i < defaultPosOscuro.length
+            ? defaultPosOscuro[i]
+            : Offset(0.5, 0.7); // Posición por defecto
+      }
+    }
+  }
+  
+  // Método para obtener posiciones predeterminadas según la formación
+  List<Offset> _getDefaultPositions(int totalPlayers, bool isTeamA) {
+    List<List<double>> positions;
+    
+    // Posiciones relativas (x, y) donde x e y están entre 0 y 1
+    switch (totalPlayers) {
+      case 5:
+        positions = [
+          [0.5, 0.15],   // Delantero
+          [0.2, 0.3],    // Mediocampista izquierdo
+          [0.5, 0.4],    // Mediocampista central
+          [0.8, 0.3],    // Mediocampista derecho
+          [0.5, 0.7],    // Defensa / Portero
+        ];
+        break;
+      case 6:
+        positions = [
+          [0.5, 0.15],   // Delantero
+          [0.2, 0.3],    // Mediocampista izquierdo
+          [0.5, 0.3],    // Mediocampista central
+          [0.8, 0.3],    // Mediocampista derecho
+          [0.3, 0.6],    // Defensa izquierdo
+          [0.7, 0.6],    // Defensa derecho
+        ];
+        break;
+      case 7:
+        positions = [
+          [0.5, 0.15],   // Delantero
+          [0.2, 0.25],   // Extremo izquierdo
+          [0.5, 0.3],    // Mediocampista central
+          [0.8, 0.25],   // Extremo derecho
+          [0.3, 0.5],    // Mediocampista defensivo izquierdo
+          [0.7, 0.5],    // Mediocampista defensivo derecho
+          [0.5, 0.7],    // Defensa central / Portero
+        ];
+        break;
+      case 8:
+        positions = [
+          [0.3, 0.15],   // Delantero izquierdo
+          [0.7, 0.15],   // Delantero derecho
+          [0.2, 0.3],    // Extremo izquierdo
+          [0.5, 0.3],    // Mediocampista central
+          [0.8, 0.3],    // Extremo derecho
+          [0.3, 0.5],    // Mediocampista defensivo
+          [0.7, 0.5],    // Defensa central
+          [0.5, 0.7],    // Portero
+        ];
+        break;
+      default:
+        // Para otros formatos que no estén definidos, distribuir uniformemente
+        positions = List.generate(totalPlayers, (index) {
+          double y = 0.15 + (0.6 * index / (totalPlayers - 1 > 0 ? totalPlayers - 1 : 1));
+          double x = 0.5;
+          if (index % 2 == 1) {
+            x = 0.3 + (0.4 * (index / totalPlayers));
+          } else if (index % 2 == 0 && index > 0) {
+            x = 0.7 - (0.4 * (index / totalPlayers));
+          }
+          return [x, y];
+        });
+    }
+    
+    // Convertir a lista de Offset
+    List<Offset> offsets = positions.map((pos) {
+      // Si es el equipo oscuro, invertir la posición vertical
+      double dy = isTeamA ? pos[1] : 1.0 - pos[1];
+      return Offset(pos[0], dy);
+    }).toList();
+    
+    return offsets;
   }
 }
 

@@ -1384,22 +1384,60 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
     );
   }
   
-  void _saveAndExit() {
-    // Ya hemos guardado los cambios en la base de datos al asignar jugadores
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Equipos guardados correctamente'),
-        backgroundColor: Colors.green,
+  void _saveAndExit() async {
+    // Mostrar indicador de carga
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: CircularProgressIndicator(
+          color: Colors.blue,
+        ),
       ),
     );
-    Navigator.pop(context, true); // Regresamos con resultado para actualizar
+
+    try {
+      // Guardar las posiciones de los jugadores
+      await _saveTeamPositions();
+
+      // Cerrar el indicador de carga
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      // Mostrar mensaje de éxito
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Equipos y posiciones guardados correctamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
+      // Volver a la pantalla anterior
+      Navigator.pop(context, true); // Regresamos con resultado para actualizar
+    } catch (e) {
+      // Cerrar el indicador de carga
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      // Mostrar mensaje de error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al guardar: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      
+      print('Error al guardar equipos: $e');
+    }
   }
   
   // Método para cargar el marcador del partido desde la base de datos
   Future<void> _loadMatchScore() async {
     try {
       final matchData = await supabase
-          .from('partidos')
+          .from('matches')
           .select('resultado_claro, resultado_oscuro')
           .eq('id', widget.match['id'])
           .single();
@@ -1411,7 +1449,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
         });
       }
     } catch (e) {
-      print('Error al cargar el marcador: $e');
+      print('Error al cargar el marcador desde matches: $e');
       // Mantener los valores por defecto (0-0)
     }
   }
@@ -1420,7 +1458,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
   Future<void> _updateMatchScore() async {
     try {
       await supabase
-          .from('partidos')
+          .from('matches')
           .update({
             'resultado_claro': _resultadoClaro,
             'resultado_oscuro': _resultadoOscuro,
@@ -1435,7 +1473,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
         ),
       );
     } catch (e) {
-      print('Error al actualizar el marcador: $e');
+      print('Error al actualizar el marcador en matches: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error al actualizar el marcador: $e'),
@@ -2212,6 +2250,61 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  // Método para guardar las posiciones de los jugadores en la base de datos
+  Future<void> _saveTeamPositions() async {
+    try {
+      // Convertir las posiciones de cada equipo a formato JSON para guardar en la base de datos
+      final Map<String, dynamic> teamClaroPositionsJson = {};
+      final Map<String, dynamic> teamOscuroPositionsJson = {};
+      
+      // Para cada jugador en equipo claro, guardar su posición
+      _teamClaroPositions.forEach((playerId, position) {
+        teamClaroPositionsJson[playerId] = {
+          'dx': position.dx,
+          'dy': position.dy
+        };
+      });
+      
+      // Para cada jugador en equipo oscuro, guardar su posición
+      _teamOscuroPositions.forEach((playerId, position) {
+        teamOscuroPositionsJson[playerId] = {
+          'dx': position.dx,
+          'dy': position.dy
+        };
+      });
+      
+      // Actualizar en la tabla matches en lugar de partidos
+      await supabase
+          .from('matches')
+          .update({
+            'team_claro_positions': teamClaroPositionsJson,
+            'team_oscuro_positions': teamOscuroPositionsJson
+          })
+          .eq('id', widget.match['id']);
+      
+      print('Posiciones guardadas con éxito en matches: ${teamClaroPositionsJson.length} jugadores en equipo claro, ${teamOscuroPositionsJson.length} en equipo oscuro');
+      
+      // También actualizar los IDs de los equipos
+      final List<String> teamClaroIds = _teamClaro.map((p) => p['user_id'].toString()).toList();
+      final List<String> teamOscuroIds = _teamOscuro.map((p) => p['user_id'].toString()).toList();
+      
+      // Actualizar en la tabla matches
+      await supabase
+          .from('matches')
+          .update({
+            'team_claro': teamClaroIds,
+            'team_oscuro': teamOscuroIds
+          })
+          .eq('id', widget.match['id']);
+      
+      print('IDs de equipos guardados con éxito en matches: ${teamClaroIds.length} jugadores en equipo claro, ${teamOscuroIds.length} en equipo oscuro');
+      
+    } catch (e) {
+      print('Error al guardar posiciones de equipo en matches: $e');
+      throw e; // Re-lanzar el error para manejarlo en el método que llama
     }
   }
 }
