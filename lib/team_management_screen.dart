@@ -66,6 +66,9 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
     });
     
     try {
+      // Primero, cargar las posiciones guardadas del partido
+      await _loadSavedPositions();
+      
       // Obtener el ID del usuario actual
       final currentUserId = supabase.auth.currentUser?.id;
       
@@ -153,18 +156,8 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
           // Asignar al equipo correspondiente
           if (item['equipo'] == 'claro') {
             teamClaro.add(participant);
-            // Asignar posición predeterminada si no tiene una
-            if (!_teamClaroPositions.containsKey(participant['id'].toString())) {
-              _teamClaroPositions[participant['id'].toString()] = 
-                  _getDefaultPosition(teamClaro.length - 1, true);
-            }
           } else if (item['equipo'] == 'oscuro') {
             teamOscuro.add(participant);
-            // Asignar posición predeterminada si no tiene una
-            if (!_teamClaroPositions.containsKey(participant['id'].toString())) {
-              _teamOscuroPositions[participant['id'].toString()] = 
-                  _getDefaultPosition(teamOscuro.length - 1, false);
-            }
           } else {
             unassigned.add(participant);
           }
@@ -173,11 +166,21 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
         }
       }
       
+      // Actualizar los datos de los equipos
       setState(() {
         _participants = allParticipants;
         _teamClaro = teamClaro;
         _teamOscuro = teamOscuro;
         _unassignedParticipants = unassigned;
+      });
+      
+      // Calcular los índices de posición para ambos equipos
+      _calculatePositionIndices();
+      
+      // Asignar automáticamente jugadores sin posición a posiciones disponibles en el campo
+      _autoAssignPlayersToPositions();
+      
+      setState(() {
         _isLoading = false;
       });
     } catch (e) {
@@ -2305,6 +2308,328 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
     } catch (e) {
       print('Error al guardar posiciones de equipo en matches: $e');
       throw e; // Re-lanzar el error para manejarlo en el método que llama
+    }
+  }
+
+  // Método para cargar las posiciones guardadas del partido
+  Future<void> _loadSavedPositions() async {
+    try {
+      // Cargar datos del partido, incluyendo las posiciones de los jugadores
+      final matchData = await supabase
+          .from('matches')
+          .select('team_claro_positions, team_oscuro_positions')
+          .eq('id', widget.match['id'])
+          .single();
+      
+      // Limpiar los mapas de posiciones
+      _teamClaroPositions.clear();
+      _teamOscuroPositions.clear();
+      
+      // Procesar las posiciones del equipo claro
+      if (matchData['team_claro_positions'] != null) {
+        Map<String, dynamic> positions = Map<String, dynamic>.from(matchData['team_claro_positions']);
+        
+        positions.forEach((playerId, position) {
+          // Formato 1: { playerId: { dx: 0.5, dy: 0.3 } }
+          if (position is Map && position.containsKey('dx') && position.containsKey('dy')) {
+            double dx = (position['dx'] is num) ? (position['dx'] as num).toDouble() : 0.5;
+            double dy = (position['dy'] is num) ? (position['dy'] as num).toDouble() : 0.3;
+            _teamClaroPositions[playerId] = Offset(dx, dy);
+            print('Cargada posición del equipo claro: $playerId en ($dx, $dy)');
+          }
+          // Formato 2: { playerId: { x: 0.5, y: 0.3 } }
+          else if (position is Map && position.containsKey('x') && position.containsKey('y')) {
+            double dx = (position['x'] is num) ? (position['x'] as num).toDouble() : 0.5;
+            double dy = (position['y'] is num) ? (position['y'] as num).toDouble() : 0.3;
+            _teamClaroPositions[playerId] = Offset(dx, dy);
+            print('Cargada posición alternativa del equipo claro: $playerId en ($dx, $dy)');
+          }
+        });
+      }
+      
+      // Procesar las posiciones del equipo oscuro
+      if (matchData['team_oscuro_positions'] != null) {
+        Map<String, dynamic> positions = Map<String, dynamic>.from(matchData['team_oscuro_positions']);
+        
+        positions.forEach((playerId, position) {
+          // Formato 1: { playerId: { dx: 0.5, dy: 0.7 } }
+          if (position is Map && position.containsKey('dx') && position.containsKey('dy')) {
+            double dx = (position['dx'] is num) ? (position['dx'] as num).toDouble() : 0.5;
+            double dy = (position['dy'] is num) ? (position['dy'] as num).toDouble() : 0.7;
+            _teamOscuroPositions[playerId] = Offset(dx, dy);
+            print('Cargada posición del equipo oscuro: $playerId en ($dx, $dy)');
+          }
+          // Formato 2: { playerId: { x: 0.5, y: 0.7 } }
+          else if (position is Map && position.containsKey('x') && position.containsKey('y')) {
+            double dx = (position['x'] is num) ? (position['x'] as num).toDouble() : 0.5;
+            double dy = (position['y'] is num) ? (position['y'] as num).toDouble() : 0.7;
+            _teamOscuroPositions[playerId] = Offset(dx, dy);
+            print('Cargada posición alternativa del equipo oscuro: $playerId en ($dx, $dy)');
+          }
+        });
+      }
+      
+      print('Posiciones cargadas: ${_teamClaroPositions.length} para equipo claro, ${_teamOscuroPositions.length} para equipo oscuro');
+    } catch (e) {
+      print('Error al cargar las posiciones guardadas: $e');
+    }
+  }
+
+  // Calcular los índices de posición basado en las posiciones guardadas
+  void _calculatePositionIndices() {
+    // Limpiar los mapas de índices actuales
+    _teamClaroPositionIndices.clear();
+    _teamOscuroPositionIndices.clear();
+    
+    // Obtener el formato del partido para determinar las posiciones predefinidas
+    final String format = widget.match['formato'] ?? '5v5';
+    final int teamClaroSize = int.tryParse(format.split('v')[0]) ?? 5;
+    final int teamOscuroSize = int.tryParse(format.split('v')[1] ?? format.split('v')[0]) ?? 5;
+    
+    // Obtener las posiciones predefinidas para ambos equipos
+    List<List<double>> teamClaroFormationPositions = _getFormationPositions(teamClaroSize);
+    List<List<double>> teamOscuroFormationPositions = _getFormationPositions(teamOscuroSize);
+    
+    print('Calculando índices de posición para ${_teamClaro.length} jugadores del equipo claro y ${_teamOscuro.length} del equipo oscuro');
+    
+    // Para cada jugador en el equipo claro, encontrar su posición más cercana en la formación
+    for (var player in _teamClaro) {
+      final String playerId = player['id'].toString();
+      
+      // Si el jugador tiene una posición guardada, encontrar el índice más cercano
+      if (_teamClaroPositions.containsKey(playerId)) {
+        Offset position = _teamClaroPositions[playerId]!;
+        int closestIndex = _findClosestFormationPosition(position, teamClaroFormationPositions, true);
+        
+        // Si esa posición ya está ocupada, buscar la siguiente disponible
+        if (_teamClaroPositionIndices.containsValue(playerId)) {
+          // Ya está asignado, podemos dejarlo como está
+          continue;
+        } else if (_teamClaroPositionIndices.containsKey(closestIndex)) {
+          // La posición más cercana ya está ocupada, buscar una libre
+          closestIndex = _findFirstAvailableIndex(_teamClaroPositionIndices, teamClaroSize);
+        }
+        
+        // Asignar la posición
+        _teamClaroPositionIndices[closestIndex] = playerId;
+        print('Asignado jugador $playerId a posición $closestIndex en equipo claro');
+      }
+      // Si no tiene posición, asignar a una posición disponible
+      else {
+        final int availableIndex = _findFirstAvailableIndex(_teamClaroPositionIndices, teamClaroSize);
+        _teamClaroPositionIndices[availableIndex] = playerId;
+        
+        // Asignar posición predeterminada
+        _teamClaroPositions[playerId] = _getDefaultPosition(availableIndex, true);
+        print('Asignada posición predeterminada $availableIndex a jugador $playerId en equipo claro');
+      }
+    }
+    
+    // Para cada jugador en el equipo oscuro, encontrar su posición más cercana en la formación
+    for (var player in _teamOscuro) {
+      final String playerId = player['id'].toString();
+      
+      // Si el jugador tiene una posición guardada, encontrar el índice más cercano
+      if (_teamOscuroPositions.containsKey(playerId)) {
+        Offset position = _teamOscuroPositions[playerId]!;
+        int closestIndex = _findClosestFormationPosition(position, teamOscuroFormationPositions, false);
+        
+        // Si esa posición ya está ocupada, buscar la siguiente disponible
+        if (_teamOscuroPositionIndices.containsValue(playerId)) {
+          // Ya está asignado, podemos dejarlo como está
+          continue;
+        } else if (_teamOscuroPositionIndices.containsKey(closestIndex)) {
+          // La posición más cercana ya está ocupada, buscar una libre
+          closestIndex = _findFirstAvailableIndex(_teamOscuroPositionIndices, teamOscuroSize);
+        }
+        
+        // Asignar la posición
+        _teamOscuroPositionIndices[closestIndex] = playerId;
+        print('Asignado jugador $playerId a posición $closestIndex en equipo oscuro');
+      }
+      // Si no tiene posición, asignar a una posición disponible
+      else {
+        final int availableIndex = _findFirstAvailableIndex(_teamOscuroPositionIndices, teamOscuroSize);
+        _teamOscuroPositionIndices[availableIndex] = playerId;
+        
+        // Asignar posición predeterminada
+        _teamOscuroPositions[playerId] = _getDefaultPosition(availableIndex, false);
+        print('Asignada posición predeterminada $availableIndex a jugador $playerId en equipo oscuro');
+      }
+    }
+    
+    print('Índices calculados: ${_teamClaroPositionIndices.length} para equipo claro, ${_teamOscuroPositionIndices.length} para equipo oscuro');
+  }
+
+  // Encuentra el índice de posición más cercano a una posición dada
+  int _findClosestFormationPosition(Offset position, List<List<double>> formationPositions, bool isTeamA) {
+    double minDistance = double.infinity;
+    int closestIndex = 0;
+    
+    for (int i = 0; i < formationPositions.length; i++) {
+      // Para el equipo oscuro, debemos comparar con la posición invertida en Y
+      double posY = isTeamA 
+          ? formationPositions[i][1]
+          : 1.0 - formationPositions[i][1];
+      
+      Offset formationPos = Offset(formationPositions[i][0], posY);
+      double distance = (position - formationPos).distance;
+      
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestIndex = i;
+      }
+    }
+    
+    return closestIndex;
+  }
+  
+  // Encuentra el primer índice disponible en un mapa de índices
+  int _findFirstAvailableIndex(Map<int, String> positionIndices, int maxSize) {
+    for (int i = 0; i < maxSize; i++) {
+      if (!positionIndices.containsKey(i)) {
+        return i;
+      }
+    }
+    return 0;  // Por defecto, posición 0 si todas están ocupadas
+  }
+  
+  // Asignar automáticamente jugadores sin posición a posiciones disponibles en el campo
+  void _autoAssignPlayersToPositions() {
+    print('Iniciando asignación automática de jugadores a posiciones en el campo');
+    final String format = widget.match['formato'] ?? '5v5';
+    final int teamClaroSize = int.tryParse(format.split('v')[0]) ?? 5;
+    final int teamOscuroSize = int.tryParse(format.split('v')[1] ?? format.split('v')[0]) ?? 5;
+    
+    // Obtener las posiciones predefinidas para ambos equipos
+    List<List<double>> teamClaroFormationPositions = _getFormationPositions(teamClaroSize);
+    List<List<double>> teamOscuroFormationPositions = _getFormationPositions(teamOscuroSize);
+    
+    // Asignar jugadores del equipo claro sin posición
+    List<String> assignedClaroIds = []; // Para rastrear IDs ya asignados
+    
+    for (var player in _teamClaro) {
+      final String playerId = player['id'].toString();
+      
+      // Verificar si ya está asignado a algún índice
+      bool isAssigned = false;
+      _teamClaroPositionIndices.forEach((index, id) {
+        if (id == playerId) isAssigned = true;
+      });
+      
+      if (!isAssigned) {
+        // Buscar el primer índice disponible
+        final int availableIndex = _findFirstAvailableIndex(_teamClaroPositionIndices, teamClaroSize);
+        _teamClaroPositionIndices[availableIndex] = playerId;
+        
+        // Asignar posición predeterminada si no tiene una
+        if (!_teamClaroPositions.containsKey(playerId)) {
+          _teamClaroPositions[playerId] = Offset(
+            teamClaroFormationPositions[availableIndex][0],
+            teamClaroFormationPositions[availableIndex][1]
+          );
+        }
+        
+        assignedClaroIds.add(playerId);
+        print('Jugador $playerId asignado automáticamente a posición $availableIndex en equipo claro');
+      }
+    }
+    
+    // Asignar jugadores del equipo oscuro sin posición
+    List<String> assignedOscuroIds = []; // Para rastrear IDs ya asignados
+    
+    for (var player in _teamOscuro) {
+      final String playerId = player['id'].toString();
+      
+      // Verificar si ya está asignado a algún índice
+      bool isAssigned = false;
+      _teamOscuroPositionIndices.forEach((index, id) {
+        if (id == playerId) isAssigned = true;
+      });
+      
+      if (!isAssigned) {
+        // Buscar el primer índice disponible
+        final int availableIndex = _findFirstAvailableIndex(_teamOscuroPositionIndices, teamOscuroSize);
+        _teamOscuroPositionIndices[availableIndex] = playerId;
+        
+        // Asignar posición predeterminada si no tiene una
+        if (!_teamOscuroPositions.containsKey(playerId)) {
+          _teamOscuroPositions[playerId] = Offset(
+            teamOscuroFormationPositions[availableIndex][0],
+            1.0 - teamOscuroFormationPositions[availableIndex][1] // Invertir en Y para equipo oscuro
+          );
+        }
+        
+        assignedOscuroIds.add(playerId);
+        print('Jugador $playerId asignado automáticamente a posición $availableIndex en equipo oscuro');
+      }
+    }
+    
+    // Mover automáticamente jugadores sin asignar al equipo con menos jugadores si es necesario
+    if (_unassignedParticipants.isNotEmpty) {
+      print('Hay ${_unassignedParticipants.length} jugadores sin asignar que se intentarán distribuir');
+      
+      for (var player in List.from(_unassignedParticipants)) {
+        // Determinar a qué equipo se debería mover el jugador
+        bool moveToClaro = _teamClaro.length < teamClaroSize && _teamClaro.length <= _teamOscuro.length;
+        
+        if (moveToClaro && _teamClaro.length < teamClaroSize) {
+          final String playerId = player['id'].toString();
+          // Mover al equipo claro
+          player['equipo'] = 'claro';
+          _teamClaro.add(player);
+          _unassignedParticipants.remove(player);
+          
+          // Asignar a una posición disponible
+          final int availableIndex = _findFirstAvailableIndex(_teamClaroPositionIndices, teamClaroSize);
+          _teamClaroPositionIndices[availableIndex] = playerId;
+          _teamClaroPositions[playerId] = Offset(
+            teamClaroFormationPositions[availableIndex][0],
+            teamClaroFormationPositions[availableIndex][1]
+          );
+          
+          // Actualizar en la base de datos
+          _updatePlayerTeam(playerId, 'claro');
+          
+          print('Jugador sin asignar $playerId movido automáticamente al equipo claro en posición $availableIndex');
+        } else if (_teamOscuro.length < teamOscuroSize) {
+          final String playerId = player['id'].toString();
+          // Mover al equipo oscuro
+          player['equipo'] = 'oscuro';
+          _teamOscuro.add(player);
+          _unassignedParticipants.remove(player);
+          
+          // Asignar a una posición disponible
+          final int availableIndex = _findFirstAvailableIndex(_teamOscuroPositionIndices, teamOscuroSize);
+          _teamOscuroPositionIndices[availableIndex] = playerId;
+          _teamOscuroPositions[playerId] = Offset(
+            teamOscuroFormationPositions[availableIndex][0],
+            1.0 - teamOscuroFormationPositions[availableIndex][1]
+          );
+          
+          // Actualizar en la base de datos
+          _updatePlayerTeam(playerId, 'oscuro');
+          
+          print('Jugador sin asignar $playerId movido automáticamente al equipo oscuro en posición $availableIndex');
+        }
+      }
+    }
+    
+    print('Asignación automática completada - Equipo Claro: ${_teamClaro.length}/${teamClaroSize}, Equipo Oscuro: ${_teamOscuro.length}/${teamOscuroSize}');
+    
+    // Forzar actualización visual
+    _redrawPositionSlots();
+  }
+
+  // Método auxiliar para actualizar el equipo de un jugador en la base de datos
+  Future<void> _updatePlayerTeam(String participantId, String team) async {
+    try {
+      await supabase
+        .from('match_participants')
+        .update({'equipo': team})
+        .eq('id', participantId);
+    } catch (e) {
+      print('Error al actualizar equipo del jugador $participantId: $e');
     }
   }
 }
