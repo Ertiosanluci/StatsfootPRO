@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data'; // Añadido para usar Uint8List
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -204,20 +205,61 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       
       final fileExt = path.extension(_imageFile!.path);
       final fileName = '${const Uuid().v4()}$fileExt';
-      final filePath = '${user.id}/$fileName';
+      final filePath = 'avatars/${user.id}/$fileName'; // La carpeta dentro del bucket será "avatars"
       
+      // Intentar crear la estructura de carpetas primero (esto no hará nada si ya existe)
+      try {
+        // No podemos crear carpetas directamente, pero intentaremos subir un archivo vacío
+        // como marcador temporal si la carpeta no existe y luego lo borraremos
+        final folderPath = 'avatars/${user.id}/.folder_exists';
+        final emptyBytes = Uint8List(0);
+        
+        try {
+          // Verificar si ya existe algún archivo en la carpeta del usuario
+          final existing = await Supabase.instance.client.storage
+              .from('images') // Usando el bucket "images"
+              .list(path: 'avatars/${user.id}');
+          
+          // Si llegamos aquí, la carpeta ya existe
+          print('Carpeta de usuario ya existe con ${existing.length} archivos.');
+        } catch (folderCheckError) {
+          // Si da error, la carpeta no existe, intentamos crearla
+          print('Creando carpeta para usuario en bucket "images"...');
+          await Supabase.instance.client.storage
+              .from('images') // Usando el bucket "images"
+              .uploadBinary(folderPath, emptyBytes);
+
+          // Eliminar el archivo marcador
+          await Supabase.instance.client.storage
+              .from('images') // Usando el bucket "images"
+              .remove([folderPath]);
+        }
+      } catch (folderError) {
+        // Si falla la creación de carpeta, intentamos subir directamente
+        print('Error creando carpeta: $folderError. Intentando subir directamente.');
+      }
+      
+      // Subir la imagen
+      print('Subiendo imagen a: $filePath en bucket "images"');
       await Supabase.instance.client.storage
-          .from('avatars')
+          .from('images') // Usando el bucket "images"
           .upload(filePath, _imageFile!);
       
       // Obtener URL pública de la imagen
       final imageUrlResponse = Supabase.instance.client.storage
-          .from('avatars')
+          .from('images') // Usando el bucket "images"
           .getPublicUrl(filePath);
       
+      print('URL de imagen generada: $imageUrlResponse');
       return imageUrlResponse;
     } catch (e) {
       print('Error al subir imagen: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al subir imagen: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return null;
     }
   }
@@ -240,19 +282,44 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       String? avatarUrl = _currentImageUrl;
       if (_imageFile != null) {
         avatarUrl = await _uploadImageToStorage();
+        print('Nueva URL de imagen: $avatarUrl');
       }
       
-      // Actualizar perfil en la base de datos
-      await Supabase.instance.client
+      // Preparar datos para actualizar
+      final updatedData = {
+        'username': _usernameController.text.trim(),
+        'position': _selectedPosition,
+        'description': _descriptionController.text.trim(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+      
+      // Solo incluir avatar_url si no es nulo
+      if (avatarUrl != null) {
+        updatedData['avatar_url'] = avatarUrl;
+      }
+      
+      print('Actualizando perfil con datos: $updatedData');
+      
+      // Verificar si el perfil existe
+      final profileExists = await Supabase.instance.client
           .from('profiles')
-          .update({
-            'username': _usernameController.text.trim(),
-            'avatar_url': avatarUrl,
-            'position': _selectedPosition,
-            'description': _descriptionController.text.trim(),
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', user.id);
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle();
+      
+      if (profileExists != null) {
+        // Actualizar perfil existente
+        await Supabase.instance.client
+            .from('profiles')
+            .update(updatedData)
+            .eq('id', user.id);
+      } else {
+        // Crear nuevo perfil si no existe
+        updatedData['id'] = user.id;  // Asegurarse de incluir el ID de usuario
+        await Supabase.instance.client
+            .from('profiles')
+            .insert(updatedData);
+      }
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -271,7 +338,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al actualizar el perfil'),
+            content: Text('Error al actualizar el perfil: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );

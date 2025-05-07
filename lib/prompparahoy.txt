@@ -1,0 +1,1 @@
+vale, necesito hacer que los usuarios puedan subir su foto de perfil aunque no tengan carpeta creada. si no la tienen, que la creen, suban la imágen de perfil y luego se guarde el enlace en la tabla profiles en la columna avatar_url
