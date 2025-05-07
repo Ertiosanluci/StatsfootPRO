@@ -98,10 +98,26 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
             if (userId == currentUserId && supabase.auth.currentUser?.email != null) {
               userEmail = supabase.auth.currentUser!.email!;
               userName = userEmail.split('@')[0]; // Usar parte del email como nombre
+              
+              // Intentar obtener el avatar del perfil del usuario actual
+              try {
+                final currentUserProfile = await supabase
+                    .from('profiles')
+                    .select('username, avatar_url')
+                    .eq('id', userId)
+                    .maybeSingle();
+                
+                if (currentUserProfile != null) {
+                  userName = currentUserProfile['username'] ?? userName;
+                  avatarUrl = currentUserProfile['avatar_url'];
+                }
+              } catch (e) {
+                print('Error al obtener avatar del usuario actual: $e');
+              }
             } else {
               // Para otros usuarios, intentar consultar datos básicos
               try {
-                // Intentar obtener el perfil desde la tabla profiles sin incluir 'email' que no existe
+                // Intentar obtener el perfil desde la tabla profiles
                 final profileData = await supabase
                     .from('profiles')
                     .select('username, avatar_url')
@@ -145,7 +161,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
           } else if (item['equipo'] == 'oscuro') {
             teamOscuro.add(participant);
             // Asignar posición predeterminada si no tiene una
-            if (!_teamOscuroPositions.containsKey(participant['id'].toString())) {
+            if (!_teamClaroPositions.containsKey(participant['id'].toString())) {
               _teamOscuroPositions[participant['id'].toString()] = 
                   _getDefaultPosition(teamOscuro.length - 1, false);
             }
@@ -434,9 +450,6 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
                       ],
                     ),
                   ),
-                  
-                  // Lista de participantes sin asignar
-                  _buildUnassignedParticipants(),
                 ],
               ),
             ),
@@ -1110,6 +1123,29 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              // Añadir icono de participantes con contador
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.people, color: Colors.blue.shade800, size: 18),
+                    SizedBox(width: 4),
+                    Text(
+                      "${_participants.length}",
+                      style: TextStyle(
+                        color: Colors.blue.shade800,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
           Divider(height: 24),
@@ -1217,123 +1253,6 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
     );
   }
   
-  Widget _buildUnassignedParticipants() {
-    if (_unassignedParticipants.isEmpty) {
-      return Container(
-        margin: EdgeInsets.fromLTRB(16, 0, 16, 16),
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Center(
-          child: Text(
-            'No hay participantes sin asignar',
-            style: TextStyle(
-              color: Colors.grey.shade700,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ),
-      );
-    }
-    
-    return Container(
-      margin: EdgeInsets.fromLTRB(16, 0, 16, 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Icon(Icons.people, color: Colors.grey.shade800),
-                SizedBox(width: 8),
-                Text(
-                  'Participantes sin asignar',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade800,
-                  ),
-                ),
-                SizedBox(width: 8),
-                CircleAvatar(
-                  backgroundColor: Colors.grey.shade200,
-                  radius: 12,
-                  child: Text(
-                    '${_unassignedParticipants.length}',
-                    style: TextStyle(
-                      color: Colors.grey.shade800,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Divider(height: 1),
-          Container(
-            height: 120, // Altura fija para limitar el espacio en la pantalla
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: _unassignedParticipants.length,
-              itemBuilder: (context, index) {
-                final participant = _unassignedParticipants[index];
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: participant['avatar_url'] != null
-                        ? NetworkImage(participant['avatar_url'])
-                        : null,
-                    backgroundColor: Colors.grey.shade200,
-                    child: participant['avatar_url'] == null
-                        ? Icon(Icons.person, color: Colors.grey.shade700)
-                        : null,
-                  ),
-                  title: Text(
-                    participant['nombre'] ?? 'Usuario',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    participant['email'] ?? '',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        onPressed: () => _assignToTeam(participant, 'claro'),
-                        icon: Icon(Icons.add_circle, color: Colors.blue.shade700),
-                        tooltip: 'Asignar a Equipo Claro',
-                      ),
-                      IconButton(
-                        onPressed: () => _assignToTeam(participant, 'oscuro'),
-                        icon: Icon(Icons.add_circle, color: Colors.red.shade700),
-                        tooltip: 'Asignar a Equipo Oscuro',
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  
   void _showPlayerOptions(Map<String, dynamic> player) {
     showModalBottomSheet(
       context: context,
@@ -1376,13 +1295,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text(
-                        player['email'] ?? '',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
+                      // Eliminamos la visualización del correo electrónico
                     ],
                   ),
                 ),
@@ -1874,7 +1787,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
                                   subtitle: Text(
                                     isCurrentUser 
                                         ? 'Tú (toca para seleccionarte)' 
-                                        : (player['email'] ?? ''),
+                                        : '',
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontStyle: isCurrentUser 
