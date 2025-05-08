@@ -93,6 +93,9 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
   // Nuevo método para obtener los participantes del partido usando un JOIN entre match_participants y profiles
   Future<void> _fetchMatchParticipants(int matchId) async {
     try {
+      // Imprimir ID del partido para depuración
+      print('Obteniendo participantes para el partido ID: $matchId');
+      
       // Obtener todos los participantes del partido con sus usernames desde profiles
       final response = await supabase
           .rpc('get_match_participants_with_profiles', params: {'match_id_param': matchId});
@@ -101,6 +104,8 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
         print('No se encontraron participantes para el partido $matchId');
         return;
       }
+      
+      print('Número total de participantes encontrados: ${response.length}');
       
       List<dynamic> participants = response;
       List<Map<String, dynamic>> teamClaro = [];
@@ -135,15 +140,21 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
         }
         
         // Agregar al equipo correspondiente según el valor de 'equipo'
-        if (participant['equipo'] == 'team_claro') {
+        // Importante: La columna "equipo" guarda "claro" y "oscuro", no "team_claro" y "team_oscuro"
+        print('Jugador: ${playerData['nombre']}, Equipo: ${participant['equipo']}');
+        
+        if (participant['equipo'] == 'claro') {
           teamClaro.add(playerData);
-        } else if (participant['equipo'] == 'team_oscuro') {
+        } else if (participant['equipo'] == 'oscuro') {
           teamOscuro.add(playerData);
         } else {
           // Si no tiene equipo asignado, simplemente se ignora por ahora
-          print('Jugador sin equipo asignado: ${playerData['nombre']}');
+          print('ALERTA - Jugador sin equipo asignado: ${playerData['nombre']}');
         }
       }
+      
+      print('Jugadores en equipo claro: ${teamClaro.length}');
+      print('Jugadores en equipo oscuro: ${teamOscuro.length}');
       
       // Actualizar estado con los equipos
       setState(() {
@@ -162,6 +173,8 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
   // Método de respaldo por si falla la función RPC
   Future<void> _fetchParticipantsFallback(int matchId) async {
     try {
+      print('Ejecutando método de respaldo para obtener participantes');
+      
       final response = await supabase
           .from('match_participants')
           .select('''
@@ -173,6 +186,8 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
             profiles!inner(id, username, avatar_url)
           ''')
           .eq('match_id', matchId);
+      
+      print('Método de respaldo - participantes encontrados: ${response.length}');
       
       List<Map<String, dynamic>> teamClaro = [];
       List<Map<String, dynamic>> teamOscuro = [];
@@ -206,12 +221,20 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           playerData['goles_propios'] = 0;
         }
         
-        if (item['equipo'] == 'team_claro') {
+        print('Respaldo - Jugador: ${playerData['nombre']}, Equipo: ${item['equipo']}');
+        
+        // Corregir: La columna "equipo" guarda "claro" y "oscuro", no "team_claro" y "team_oscuro"
+        if (item['equipo'] == 'claro') {
           teamClaro.add(playerData);
-        } else if (item['equipo'] == 'team_oscuro') {
+        } else if (item['equipo'] == 'oscuro') {
           teamOscuro.add(playerData);
+        } else {
+          print('ALERTA RESPALDO - Jugador sin equipo: ${playerData['nombre']}');
         }
       }
+      
+      print('Respaldo - Jugadores en equipo claro: ${teamClaro.length}');
+      print('Respaldo - Jugadores en equipo oscuro: ${teamOscuro.length}');
       
       setState(() {
         _teamClaro = teamClaro;
@@ -1134,6 +1157,10 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
     final List<Map<String, dynamic>> players = isTeamClaro ? _teamClaro : _teamOscuro;
     final Map<String, Offset> positions = isTeamClaro ? _teamClaroPositions : _teamOscuroPositions;
     
+    print('Construyendo formación para ${isTeamClaro ? "equipo claro" : "equipo oscuro"}');
+    print('Número de jugadores: ${players.length}');
+    print('Posiciones: ${positions.length}');
+    
     return LayoutBuilder(
       builder: (context, constraints) {
         final double maxWidth = constraints.maxWidth;
@@ -1147,7 +1174,6 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           width: maxWidth,
           height: maxHeight,
           child: Stack(
-            fit: StackFit.expand,
             children: [
               // Campo de fútbol con textura
               Container(
@@ -1161,198 +1187,243 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                     opacity: 0.1,
                   ),
                 ),
-                child: Stack(
-                  children: [
-                    // Elementos del campo (líneas, áreas, etc.)
-                    _buildFootballFieldElements(fieldWidth, fieldHeight),
-                    
-                    // Jugadores posicionados en el campo
-                    ...players.map((player) {
-                      final String playerId = player['id'].toString();
-                      
-                      // Obtener posición o usar una predeterminada
-                      Offset position = positions[playerId] ?? 
-                          Offset(0.5, isTeamClaro ? 0.3 : 0.7);
-                      
-                      // Convertir posición relativa a píxeles
-                      final double posX = position.dx * fieldWidth;
-                      final double posY = position.dy * fieldHeight;
-                      
-                      return Stack(
-                        children: [
-                          // Avatar del jugador
-                          Positioned(
-                            left: posX - 25,
-                            top: posY - 25,
-                            child: GestureDetector(
-                              onTap: () => _showPlayerStatsDialog(player, isTeamClaro),
-                              child: _buildPlayerAvatar(player, isTeamClaro),
-                            ),
-                          ),
-                          
-                          // Nombre del jugador
-                          Positioned(
-                            left: posX - 40,
-                            top: posY + 30,
-                            child: Container(
-                              width: 80,
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.7),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: isTeamClaro 
-                                      ? Colors.blue.shade300.withOpacity(0.5) 
-                                      : Colors.red.shade300.withOpacity(0.5),
-                                  width: 1,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black26,
-                                    blurRadius: 4,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                children: [
-                                  Text(
-                                    player['nombre'] ?? 'Jugador',
-                                    style: TextStyle(
-                                      color: isTeamClaro ? Colors.blue.shade200 : Colors.red.shade200,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  if (player['goles'] != null && player['goles'] > 0 || 
-                                      player['asistencias'] != null && player['asistencias'] > 0)
-                                    Text(
-                                      '⚽ ${player['goles'] ?? 0} | 👟 ${player['asistencias'] ?? 0}',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
-                    
-                    // Información del equipo (tarjeta flotante)
-                    Positioned(
-                      top: 16,
-                      right: 16,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isTeamClaro ? Colors.blue.shade400 : Colors.red.shade400,
-                            width: 1,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              isTeamClaro ? 'Equipo Claro' : 'Equipo Oscuro',
-                              style: TextStyle(
-                                color: isTeamClaro ? Colors.blue.shade200 : Colors.red.shade200,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              'Goles: ${_matchData[isTeamClaro ? 'resultado_claro' : 'resultado_oscuro'] ?? 0}',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                              ),
-                            ),
-                            Text(
-                              'Jugadores: ${players.length}',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
+              ),
+              
+              // Elementos del campo (líneas, áreas, etc.)
+              _buildFootballFieldElements(fieldWidth, fieldHeight),
+              
+              // Jugadores - Usando un enfoque diferente para colocarlos
+              for (var player in players)
+                _buildPlayerWidget(player, positions, isTeamClaro, fieldWidth, fieldHeight),
+              
+              // Información sobre el equipo
+              Positioned(
+                top: 16,
+                right: 16,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isTeamClaro ? Colors.blue.shade400 : Colors.red.shade400,
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        isTeamClaro ? 'Equipo Claro' : 'Equipo Oscuro',
+                        style: TextStyle(
+                          color: isTeamClaro ? Colors.blue.shade200 : Colors.red.shade200,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
                         ),
                       ),
-                    ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Goles: ${_matchData[isTeamClaro ? 'resultado_claro' : 'resultado_oscuro'] ?? 0}',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        'Jugadores: ${players.length}',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        'Arrastra los jugadores para posicionar',
+                        style: TextStyle(
+                          color: Colors.yellow,
+                          fontSize: 10,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
 
-                    // Marcador en la parte superior central
-                    Positioned(
-                      top: 16,
-                      left: fieldWidth / 2 - 50,
-                      child: Container(
-                        width: 100,
-                        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
-                            width: 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black26,
-                              blurRadius: 8,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '${_matchData['resultado_claro'] ?? 0}',
-                              style: TextStyle(
-                                color: Colors.blue.shade300,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
-                            Container(
-                              margin: EdgeInsets.symmetric(horizontal: 6),
-                              child: Text(
-                                '-',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              '${_matchData['resultado_oscuro'] ?? 0}',
-                              style: TextStyle(
-                                color: Colors.red.shade300,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ],
+              // Marcador en la parte superior central
+              Positioned(
+                top: 16,
+                left: fieldWidth / 2 - 50,
+                child: Container(
+                  width: 100,
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 8,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '${_matchData['resultado_claro'] ?? 0}',
+                        style: TextStyle(
+                          color: Colors.blue.shade300,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
                         ),
                       ),
-                    ),
-                  ],
+                      Container(
+                        margin: EdgeInsets.symmetric(horizontal: 6),
+                        child: Text(
+                          '-',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${_matchData['resultado_oscuro'] ?? 0}',
+                        style: TextStyle(
+                          color: Colors.red.shade300,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Botón para guardar posiciones
+              Positioned(
+                bottom: 16,
+                right: 16,
+                child: FloatingActionButton(
+                  heroTag: isTeamClaro ? 'savePositionsClaro' : 'savePositionsOscuro',
+                  backgroundColor: isTeamClaro ? Colors.blue.shade700 : Colors.red.shade700,
+                  mini: true,
+                  child: Icon(Icons.save, color: Colors.white),
+                  onPressed: () => _saveAllPositionsToDatabase(isTeamClaro),
+                  tooltip: 'Guardar posiciones',
                 ),
               ),
             ],
           ),
         );
       },
+    );
+  }
+  
+  // Nuevo método para construir cada jugador de manera individual
+  Widget _buildPlayerWidget(Map<String, dynamic> player, Map<String, Offset> positions, 
+    bool isTeamClaro, double fieldWidth, double fieldHeight) {
+      
+    final String playerId = player['id'].toString();
+    
+    // Comprobar si el jugador tiene una posición o usar una predeterminada
+    Offset position = positions.containsKey(playerId)
+        ? positions[playerId]!
+        : Offset(0.5, isTeamClaro ? 0.3 : 0.7);
+    
+    // Convertir posición relativa (0-1) a posición en píxeles
+    final double posX = position.dx * fieldWidth;
+    final double posY = position.dy * fieldHeight;
+    
+    return Positioned(
+      left: posX - 25,
+      top: posY - 25,
+      child: Column(
+        children: [
+          // Avatar del jugador con Draggable
+          Draggable<String>(
+            data: playerId,
+            feedback: _buildPlayerAvatar(player, isTeamClaro),
+            childWhenDragging: Opacity(
+              opacity: 0.3,
+              child: _buildPlayerAvatar(player, isTeamClaro),
+            ),
+            onDragEnd: (details) {
+              // Calcular la nueva posición relativa
+              final RenderBox renderBox = context.findRenderObject() as RenderBox;
+              final Offset localPosition = renderBox.globalToLocal(details.offset);
+              
+              double newDx = localPosition.dx / fieldWidth;
+              double newDy = localPosition.dy / fieldHeight;
+              
+              // Limitar la posición al campo
+              newDx = newDx.clamp(0.0, 1.0);
+              newDy = newDy.clamp(0.0, 1.0);
+              
+              // Actualizar posición
+              _updatePlayerPosition(playerId, Offset(newDx, newDy), isTeamClaro);
+            },
+            child: GestureDetector(
+              onTap: () => _showPlayerStatsDialog(player, isTeamClaro),
+              child: _buildPlayerAvatar(player, isTeamClaro),
+            ),
+          ),
+          
+          // Nombre del jugador
+          Container(
+            width: 80,
+            margin: EdgeInsets.only(top: 5),
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isTeamClaro 
+                    ? Colors.blue.shade300.withOpacity(0.5) 
+                    : Colors.red.shade300.withOpacity(0.5),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Text(
+                  player['nombre'] ?? 'Jugador',
+                  style: TextStyle(
+                    color: isTeamClaro ? Colors.blue.shade200 : Colors.red.shade200,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if ((player['goles'] ?? 0) > 0 || (player['asistencias'] ?? 0) > 0)
+                  Text(
+                    '⚽ ${player['goles'] ?? 0} | 👟 ${player['asistencias'] ?? 0}',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
   
@@ -2051,7 +2122,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           'goles': goles,
           'asistencias': asistencias,
           'goles_propios': golesPropios,
-          'equipo': isTeamClaro ? 'team_claro' : 'team_oscuro',
+          'equipo': isTeamClaro ? 'claro' : 'oscuro', // Usar 'claro' y 'oscuro' en lugar de 'team_claro' y 'team_oscuro'
         });
       } else {
         // Actualizar registro existente
@@ -2066,76 +2137,11 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
             .eq('partido_id', matchIdInt);
       }
       
-      // Actualizar los marcadores de ambos equipos en la base de datos
-      // Primero, necesitamos obtener todos los datos de estadísticas
-      final allStats = await supabase
-          .from('estadisticas')
-          .select('goles, goles_propios, equipo')
-          .eq('partido_id', matchIdInt);
-      
-      // Calcular los goles para cada equipo
-      int golesEquipoClaro = 0;
-      int golesEquipoOscuro = 0;
-      
-      for (var stat in allStats) {
-        if (stat['equipo'] == 'team_claro') {
-          // Goles directos del equipo claro
-          golesEquipoClaro += (stat['goles'] as int? ?? 0);
-          // Goles en propia puerta del equipo oscuro
-          if (stat['equipo'] != 'team_claro') {
-            golesEquipoClaro += (stat['goles_propios'] as int? ?? 0);
-          }
-        } else if (stat['equipo'] == 'team_oscuro') {
-          // Goles directos del equipo oscuro
-          golesEquipoOscuro += (stat['goles'] as int? ?? 0);
-          // Goles en propia puerta del equipo claro
-          if (stat['equipo'] != 'team_oscuro') {
-            golesEquipoOscuro += (stat['goles_propios'] as int? ?? 0);
-          }
-        }
-      }
-      
-      // Sumar goles en propia puerta del equipo contrario
-      // Los goles en propia puerta del equipo claro suman para el equipo oscuro
-      final golesPropiosClaro = await supabase
-          .from('estadisticas')
-          .select('goles_propios')
-          .eq('partido_id', matchIdInt)
-          .eq('equipo', 'team_claro');
-          
-      for (var stat in golesPropiosClaro) {
-        golesEquipoOscuro += (stat['goles_propios'] as int? ?? 0);
-      }
-      
-      // Los goles en propia puerta del equipo oscuro suman para el equipo claro
-      final golesPropiosOscuro = await supabase
-          .from('estadisticas')
-          .select('goles_propios')
-          .eq('partido_id', matchIdInt)
-          .eq('equipo', 'team_oscuro');
-          
-      for (var stat in golesPropiosOscuro) {
-        golesEquipoClaro += (stat['goles_propios'] as int? ?? 0);
-      }
-      
-      // Actualizar el marcador en la base de datos
-      await supabase
-          .from('matches')
-          .update({
-            'resultado_claro': golesEquipoClaro,
-            'resultado_oscuro': golesEquipoOscuro
-          })
-          .eq('id', matchIdInt);
-          
-      // Actualizar los datos locales
+      // Actualizar los datos locales también
       setState(() {
-        _matchData['resultado_claro'] = golesEquipoClaro;
-        _matchData['resultado_oscuro'] = golesEquipoOscuro;
-        
-        // Actualizar las estadísticas del jugador en la lista local
         if (isTeamClaro) {
-          for (var i = 0; i < _teamClaro.length; i++) {
-            if (_teamClaro[i]['id'] == playerId) {
+          for (int i = 0; i < _teamClaro.length; i++) {
+            if (_teamClaro[i]['id'].toString() == playerId.toString()) {
               _teamClaro[i]['goles'] = goles;
               _teamClaro[i]['asistencias'] = asistencias;
               _teamClaro[i]['goles_propios'] = golesPropios;
@@ -2143,8 +2149,8 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
             }
           }
         } else {
-          for (var i = 0; i < _teamOscuro.length; i++) {
-            if (_teamOscuro[i]['id'] == playerId) {
+          for (int i = 0; i < _teamOscuro.length; i++) {
+            if (_teamOscuro[i]['id'].toString() == playerId.toString()) {
               _teamOscuro[i]['goles'] = goles;
               _teamOscuro[i]['asistencias'] = asistencias;
               _teamOscuro[i]['goles_propios'] = golesPropios;
@@ -2153,6 +2159,9 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           }
         }
       });
+      
+      // Calcular y actualizar el marcador del partido
+      await _updateMatchScore(matchIdInt);
       
       // Mostrar mensaje de éxito
       Fluttertoast.showToast(
@@ -2176,7 +2185,59 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
       );
     }
   }
-
+  
+  // Método para actualizar el marcador del partido
+  Future<void> _updateMatchScore(int matchId) async {
+    try {
+      // Obtener todas las estadísticas de este partido
+      final allStats = await supabase
+          .from('estadisticas')
+          .select('goles, goles_propios, equipo')
+          .eq('partido_id', matchId);
+      
+      // Calcular los goles para cada equipo
+      int golesEquipoClaro = 0;
+      int golesEquipoOscuro = 0;
+      
+      for (var stat in allStats) {
+        if (stat['equipo'] == 'claro') {  // Usar 'claro' en lugar de 'team_claro'
+          // Goles directos del equipo claro
+          golesEquipoClaro += (stat['goles'] as int? ?? 0);
+        } else if (stat['equipo'] == 'oscuro') {  // Usar 'oscuro' en lugar de 'team_oscuro'
+          // Goles directos del equipo oscuro
+          golesEquipoOscuro += (stat['goles'] as int? ?? 0);
+        }
+      }
+      
+      // Sumar goles en propia puerta (los goles en propia del equipo claro suman para el oscuro y viceversa)
+      for (var stat in allStats) {
+        if (stat['equipo'] == 'claro' && stat['goles_propios'] != null) {
+          golesEquipoOscuro += (stat['goles_propios'] as int? ?? 0);
+        } else if (stat['equipo'] == 'oscuro' && stat['goles_propios'] != null) {
+          golesEquipoClaro += (stat['goles_propios'] as int? ?? 0);
+        }
+      }
+      
+      // Actualizar el marcador en la base de datos
+      await supabase
+          .from('matches')
+          .update({
+            'resultado_claro': golesEquipoClaro,
+            'resultado_oscuro': golesEquipoOscuro,
+          })
+          .eq('id', matchId);
+      
+      // Actualizar el marcador local
+      setState(() {
+        _matchData['resultado_claro'] = golesEquipoClaro;
+        _matchData['resultado_oscuro'] = golesEquipoOscuro;
+      });
+      
+    } catch (e) {
+      print('Error al actualizar marcador: $e');
+    }
+  }
+  
   // Método para cargar las posiciones de los jugadores desde JSON a Offset
   void _loadPlayerPositions() {
     try {
@@ -2316,6 +2377,98 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
     }).toList();
     
     return offsets;
+  }
+  
+  // Método para actualizar la posición de un jugador
+  void _updatePlayerPosition(String playerId, Offset position, bool isTeamClaro) {
+    setState(() {
+      if (isTeamClaro) {
+        _teamClaroPositions[playerId] = position;
+      } else {
+        _teamOscuroPositions[playerId] = position;
+      }
+    });
+  }
+  
+  // Método para guardar todas las posiciones de los jugadores en la base de datos
+  Future<void> _saveAllPositionsToDatabase(bool isTeamClaro) async {
+    try {
+      // Mostrar indicador de carga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: CircularProgressIndicator(
+            color: isTeamClaro ? Colors.blue.shade600 : Colors.red.shade600,
+          ),
+        ),
+      );
+      
+      // Convertir matchId a int si es necesario
+      int matchIdInt;
+      if (widget.matchId is int) {
+        matchIdInt = widget.matchId;
+      } else {
+        matchIdInt = int.parse(widget.matchId.toString());
+      }
+      
+      // Preparar los datos de posición para guardar en la base de datos
+      // Convertir Offset a formato de almacenamiento {dx: float, dy: float}
+      Map<String, dynamic> positionsToSave = {};
+      
+      final Map<String, Offset> positions = isTeamClaro ? _teamClaroPositions : _teamOscuroPositions;
+      
+      positions.forEach((playerId, position) {
+        positionsToSave[playerId] = {
+          'dx': position.dx,
+          'dy': position.dy
+        };
+      });
+      
+      // Actualizar en la base de datos según el equipo
+      if (isTeamClaro) {
+        await supabase
+            .from('matches')
+            .update({'team_claro_positions': positionsToSave})
+            .eq('id', matchIdInt);
+      } else {
+        await supabase
+            .from('matches')
+            .update({'team_oscuro_positions': positionsToSave})
+            .eq('id', matchIdInt);
+      }
+      
+      // Cerrar el indicador de carga
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      
+      // Mostrar mensaje de éxito
+      Fluttertoast.showToast(
+        msg: "Posiciones guardadas correctamente",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.green,
+        textColor: Colors.white,
+      );
+      
+    } catch (e) {
+      // Cerrar el indicador de carga si está abierto
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      
+      print('Error al guardar posiciones: $e');
+      
+      // Mostrar mensaje de error
+      Fluttertoast.showToast(
+        msg: "Error al guardar posiciones: $e",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+    }
   }
 }
 
