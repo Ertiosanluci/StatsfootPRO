@@ -2278,157 +2278,187 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
   // Método para guardar las posiciones de los jugadores en la base de datos
   Future<void> _saveTeamPositions() async {
     try {
-      print('\n=== INTENTANDO NUEVO MÉTODO DE ACTUALIZACIÓN ===');
+      print('\n=== GUARDANDO EQUIPOS Y POSICIONES ===');
       
-      // ACTUALIZACIÓN 1: Primero, actualizar el marcador en la tabla matches
-      try {
-        await supabase
-            .from('matches')
-            .update({
-              'resultado_claro': _resultadoClaro,
-              'resultado_oscuro': _resultadoOscuro,
-            })
-            .eq('id', widget.match['id']);
-        print('✓ Marcador actualizado: $_resultadoClaro - $_resultadoOscuro');
-      } catch (e) {
-        print('✗ Error al actualizar marcador: $e');
+      // PASO 1: Guardar las posiciones en la tabla matches
+      print('\n--- Procesando posiciones para guardar ---');
+      
+      // Convertir las posiciones a formato JSON para guardar en la BD
+      Map<String, dynamic> teamClaroPositionsJson = {};
+      Map<String, dynamic> teamOscuroPositionsJson = {};
+      
+      // Procesar posiciones del equipo claro
+      for (String playerId in _teamClaroPositions.keys) {
+        final position = _teamClaroPositions[playerId]!;
+        teamClaroPositionsJson[playerId] = {
+          'dx': position.dx,
+          'dy': position.dy
+        };
+        print('Preparada posición equipo claro: Jugador $playerId en (${position.dx}, ${position.dy})');
       }
       
-      // ACTUALIZACIÓN 2: Actualizar equipo para jugadores del EQUIPO CLARO
-      print('\n=== EQUIPO CLARO (${_teamClaro.length} jugadores) ===');
+      // Procesar posiciones del equipo oscuro
+      for (String playerId in _teamOscuroPositions.keys) {
+        final position = _teamOscuroPositions[playerId]!;
+        teamOscuroPositionsJson[playerId] = {
+          'dx': position.dx,
+          'dy': position.dy
+        };
+        print('Preparada posición equipo oscuro: Jugador $playerId en (${position.dx}, ${position.dy})');
+      }
+      
+      // Crear listas de IDs de usuarios por equipo
+      final teamClaroIds = _teamClaro.map((p) => p['user_id'].toString()).toList();
+      final teamOscuroIds = _teamOscuro.map((p) => p['user_id'].toString()).toList();
+      
+      print('\n--- Actualizando posiciones en la tabla matches ---');
+      print('Total posiciones: ${teamClaroPositionsJson.length} (claro), ${teamOscuroPositionsJson.length} (oscuro)');
+      
+      // Actualizar todo en la tabla matches
+      await supabase
+          .from('matches')
+          .update({
+            'team_claro_positions': teamClaroPositionsJson,
+            'team_oscuro_positions': teamOscuroPositionsJson,
+            'resultado_claro': _resultadoClaro,
+            'resultado_oscuro': _resultadoOscuro,
+            'team_claro': teamClaroIds,
+            'team_oscuro': teamOscuroIds
+          })
+          .eq('id', widget.match['id']);
+      
+      print('✓ Posiciones guardadas en la tabla matches');
+      
+      // PASO 2: Actualizar equipos en match_participants
+      print('\n--- Actualizando asignación de equipos ---');
+      
+      // Actualizar jugadores del equipo CLARO
       for (var player in _teamClaro) {
         final participantId = player['id'];
         final nombre = player['nombre'];
         
         try {
-          // MÉTODO ALTERNATIVO: Usar SQL directo
-          final response = await supabase.rpc(
-            'update_participant_team',
-            params: {
-              'participant_id': participantId,
-              'team_name': 'claro'
-            }
-          );
+          // Primero intentar con el método normal
+          await supabase
+              .from('match_participants')
+              .update({'equipo': 'claro'})
+              .eq('id', participantId);
           
-          print('• Actualizado ${nombre} (ID: $participantId) a equipo CLARO - Respuesta: $response');
+          print('✓ Jugador $nombre actualizado a equipo CLARO');
         } catch (e) {
-          print('✗ Error al actualizar ${nombre} a CLARO: $e');
+          print('✗ Error al actualizar jugador $nombre: $e');
           
-          // Intento de actualización manual básica
+          // Si falla, intentar método alternativo
           try {
-            final actualResponse = await supabase
-                .from('match_participants')
-                .update({'equipo': 'claro'})
-                .eq('id', participantId)
-                .select('id');
-            
-            print('   [Respuesta alternativa]: $actualResponse');
+            await supabase.rpc(
+              'execute_sql',
+              params: {
+                'sql_query': "UPDATE match_participants SET equipo = 'claro' WHERE id = $participantId"
+              }
+            );
+            print('  ✓ Actualizado por método alternativo');
           } catch (innerError) {
-            print('   [Error en actualización alternativa]: $innerError');
+            print('  ✗ Error en método alternativo: $innerError');
           }
         }
       }
       
-      // ACTUALIZACIÓN 3: Actualizar equipo para jugadores del EQUIPO OSCURO
-      print('\n=== EQUIPO OSCURO (${_teamOscuro.length} jugadores) ===');
+      // Actualizar jugadores del equipo OSCURO
       for (var player in _teamOscuro) {
         final participantId = player['id'];
         final nombre = player['nombre'];
         
         try {
-          // MÉTODO ALTERNATIVO: Usar SQL directo
-          final response = await supabase.rpc(
-            'update_participant_team',
-            params: {
-              'participant_id': participantId,
-              'team_name': 'oscuro'
-            }
-          );
+          await supabase
+              .from('match_participants')
+              .update({'equipo': 'oscuro'})
+              .eq('id', participantId);
           
-          print('• Actualizado ${nombre} (ID: $participantId) a equipo OSCURO - Respuesta: $response');
+          print('✓ Jugador $nombre actualizado a equipo OSCURO');
         } catch (e) {
-          print('✗ Error al actualizar ${nombre} a OSCURO: $e');
+          print('✗ Error al actualizar jugador $nombre: $e');
           
-          // Intento de actualización manual
+          // Método alternativo
           try {
-            // SQL directa que sabemos que funciona (según tu prueba)
             await supabase.rpc(
               'execute_sql',
               params: {
                 'sql_query': "UPDATE match_participants SET equipo = 'oscuro' WHERE id = $participantId"
               }
             );
-            print('   [Actualización SQL directa intentada]');
+            print('  ✓ Actualizado por método alternativo');
           } catch (innerError) {
-            print('   [Error en SQL directa]: $innerError');
+            print('  ✗ Error en método alternativo: $innerError');
           }
         }
       }
       
-      // ACTUALIZACIÓN 4: Actualizar equipo para jugadores SIN ASIGNAR
-      print('\n=== SIN ASIGNAR (${_unassignedParticipants.length} jugadores) ===');
+      // Actualizar jugadores SIN ASIGNAR
       for (var player in _unassignedParticipants) {
         final participantId = player['id'];
         final nombre = player['nombre'];
         
         try {
-          // MÉTODO ALTERNATIVO: Usar SQL directo
-          final response = await supabase.rpc(
-            'update_participant_team',
-            params: {
-              'participant_id': participantId,
-              'team_name': null
-            }
-          );
+          await supabase
+              .from('match_participants')
+              .update({'equipo': null})
+              .eq('id', participantId);
           
-          print('• Quitado ${nombre} (ID: $participantId) de equipos - Respuesta: $response');
+          print('✓ Jugador $nombre quitado de equipos');
         } catch (e) {
-          print('✗ Error al quitar equipo a ${nombre}: $e');
+          print('✗ Error al quitar equipo a jugador $nombre: $e');
           
-          // Intento de actualización manual
+          // Método alternativo
           try {
-            // SQL directa que debería funcionar
             await supabase.rpc(
               'execute_sql',
               params: {
                 'sql_query': "UPDATE match_participants SET equipo = NULL WHERE id = $participantId"
               }
             );
-            print('   [Actualización SQL directa intentada]');
+            print('  ✓ Actualizado por método alternativo');
           } catch (innerError) {
-            print('   [Error en SQL directa]: $innerError');
+            print('  ✗ Error en método alternativo: $innerError');
           }
         }
       }
       
-      print('\n=== VERIFICACIÓN FINAL DE EQUIPOS ===');
-      final finalCheck = await supabase
-          .from('match_participants')
-          .select('id, equipo')
-          .eq('match_id', widget.match['id']);
+      print('\n--- Verificando estado final ---');
+      final finalCheckPositions = await supabase
+          .from('matches')
+          .select('team_claro_positions, team_oscuro_positions')
+          .eq('id', widget.match['id'])
+          .single();
       
-      // Contar los equipos para verificar
-      int countClaro = 0;
-      int countOscuro = 0;
-      int countNull = 0;
-      
-      for (var participant in finalCheck) {
-        if (participant['equipo'] == 'claro') {
-          countClaro++;
-        } else if (participant['equipo'] == 'oscuro') {
-          countOscuro++;
-        } else {
-          countNull++;
-        }
-        print('• Participante ID=${participant['id']}: equipo=${participant['equipo'] ?? "NULL"}');
+      if (finalCheckPositions['team_claro_positions'] != null && 
+          finalCheckPositions['team_oscuro_positions'] != null) {
+        
+        final savedClaroPositions = Map<String, dynamic>.from(finalCheckPositions['team_claro_positions']);
+        final savedOscuroPositions = Map<String, dynamic>.from(finalCheckPositions['team_oscuro_positions']);
+        
+        print('✓ Verificado: ${savedClaroPositions.length} posiciones en equipo claro, ${savedOscuroPositions.length} posiciones en equipo oscuro');
+      } else {
+        print('⚠ No se encontraron posiciones guardadas en la verificación');
       }
       
-      print('\n=== RESULTADO FINAL ===');
-      print('- En BD: Claro=$countClaro, Oscuro=$countOscuro, Sin asignar=$countNull');
-      print('- En App: Claro=${_teamClaro.length}, Oscuro=${_teamOscuro.length}, Sin asignar=${_unassignedParticipants.length}');
+      print('\n=== GUARDADO COMPLETADO ===');
       
     } catch (e) {
       print('Error general: $e');
+      if (e.toString().contains('column "team_claro_positions" does not exist')) {
+        print('\n⚠ IMPORTANTE: La tabla matches no tiene las columnas necesarias para guardar posiciones.');
+        print('Ejecuta estas sentencias SQL en tu base de datos:');
+        print('''
+ALTER TABLE matches ADD COLUMN team_claro_positions JSONB;
+ALTER TABLE matches ADD COLUMN team_oscuro_positions JSONB;
+ALTER TABLE matches ADD COLUMN team_claro UUID[];
+ALTER TABLE matches ADD COLUMN team_oscuro UUID[];
+ALTER TABLE matches ADD COLUMN resultado_claro INTEGER DEFAULT 0;
+ALTER TABLE matches ADD COLUMN resultado_oscuro INTEGER DEFAULT 0;
+ALTER TABLE matches ADD COLUMN mvp_team_claro UUID;
+ALTER TABLE matches ADD COLUMN mvp_team_oscuro UUID;
+        ''');
+      }
       throw e;
     }
   }
