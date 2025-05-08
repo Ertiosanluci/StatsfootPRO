@@ -75,7 +75,7 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> with SingleTicker
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MatchDetailsScreen(matchData: matchData),
+        builder: (context) => CreateMatchDetailsScreen(matchData: matchData),
       ),
     );
   }
@@ -363,16 +363,16 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> with SingleTicker
 }
 
 // Clase para la pantalla de detalles del partido (fecha y hora)
-class MatchDetailsScreen extends StatefulWidget {
+class CreateMatchDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> matchData;
   
-  const MatchDetailsScreen({Key? key, required this.matchData}) : super(key: key);
+  const CreateMatchDetailsScreen({Key? key, required this.matchData}) : super(key: key);
   
   @override
-  _MatchDetailsScreenState createState() => _MatchDetailsScreenState();
+  _CreateMatchDetailsScreenState createState() => _CreateMatchDetailsScreenState();
 }
 
-class _MatchDetailsScreenState extends State<MatchDetailsScreen> {
+class _CreateMatchDetailsScreenState extends State<CreateMatchDetailsScreen> {
   final SupabaseClient supabase = Supabase.instance.client;
   // Variables for date and time
   late TimeOfDay _selectedTime;

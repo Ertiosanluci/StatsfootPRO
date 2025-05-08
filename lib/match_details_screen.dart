@@ -50,14 +50,22 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
         matchIdInt = int.parse(widget.matchId.toString());
       }
       
-      // Obtener los datos del partido
+      print('Buscando partido con ID: $matchIdInt');
+      
+      // Obtener los datos del partido usando la tabla 'matches' (no 'partidos')
       final response = await supabase
-          .from('partidos')
+          .from('matches')
           .select('*')
           .eq('id', matchIdInt)
-          .single();
+          .maybeSingle(); // Usar maybeSingle en lugar de single para evitar errores
+      
+      // Verificar si se encontró el partido
+      if (response == null) {
+        throw Exception('No se encontró ningún partido con el ID $matchIdInt');
+      }
       
       _matchData = response;
+      print('Datos del partido encontrados: ${_matchData['nombre']}');
       
       // Recuperar los participantes del partido con la información de profiles
       await _fetchMatchParticipants(matchIdInt);
@@ -365,18 +373,19 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.blue.shade300, Colors.blue.shade800],
+                      colors: [Colors.blue.shade100, Colors.blue.shade300],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),
                   ),
                   child: TabBarView(
                     controller: _tabController,
+                    physics: BouncingScrollPhysics(),
                     children: [
-                      // Vista del Equipo Claro
+                      // Equipo Claro
                       _buildFullScreenTeamFormation(true),
                       
-                      // Vista del Equipo Oscuro
+                      // Equipo Oscuro
                       _buildFullScreenTeamFormation(false),
                     ],
                   ),
@@ -391,7 +400,6 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
   Widget _buildMarcador(int golesEquipoClaro, int golesEquipoOscuro, bool isPartidoFinalizado) {
     return Container(
       color: Colors.black87,
-      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: Column(
         children: [
           Row(
@@ -1037,8 +1045,9 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
       }
       
       // Actualizar el estado del partido a "finalizado" y guardar los MVPs
+      // Usar la tabla 'matches' en lugar de 'partidos'
       await supabase
-          .from('partidos')
+          .from('matches')
           .update({
             'estado': 'finalizado',
             'mvp_team_claro': _mvpTeamClaro,
@@ -1124,15 +1133,13 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
   Widget _buildFullScreenTeamFormation(bool isTeamClaro) {
     final List<Map<String, dynamic>> players = isTeamClaro ? _teamClaro : _teamOscuro;
     final Map<String, Offset> positions = isTeamClaro ? _teamClaroPositions : _teamOscuroPositions;
-    final Color teamColor = isTeamClaro ? Colors.blue.shade700 : Colors.red.shade700;
     
     return LayoutBuilder(
       builder: (context, constraints) {
         final double maxWidth = constraints.maxWidth;
         final double maxHeight = constraints.maxHeight;
         
-        // Usar toda la pantalla para el campo, sin calcular la relación de aspecto
-        // Esto asegura que el campo ocupe todo el espacio disponible
+        // Campo que ocupa todo el espacio disponible
         double fieldWidth = maxWidth;
         double fieldHeight = maxHeight;
         
@@ -1140,34 +1147,34 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           width: maxWidth,
           height: maxHeight,
           child: Stack(
-            fit: StackFit.expand, // Asegura que el Stack use todo el espacio disponible
+            fit: StackFit.expand,
             children: [
-              // Campo de fútbol que ocupa toda la pantalla
+              // Campo de fútbol con textura
               Container(
                 width: fieldWidth,
                 height: fieldHeight,
                 decoration: BoxDecoration(
                   color: const Color(0xFF2E7D32), // Verde campo de fútbol
                   image: DecorationImage(
-                    image: AssetImage('assets/grass_texture.png'),
+                    image: AssetImage('assets/habilidades.png'),
                     fit: BoxFit.cover,
-                    opacity: 0.2,
+                    opacity: 0.1,
                   ),
                 ),
                 child: Stack(
                   children: [
-                    // Elementos del campo (líneas, círculos, etc.)
-                    _buildFootballFieldElements(fieldWidth, fieldHeight, isTeamClaro),
+                    // Elementos del campo (líneas, áreas, etc.)
+                    _buildFootballFieldElements(fieldWidth, fieldHeight),
                     
-                    // Añadir jugadores posicionados
+                    // Jugadores posicionados en el campo
                     ...players.map((player) {
                       final String playerId = player['id'].toString();
                       
-                      // Obtener la posición o usar una por defecto
+                      // Obtener posición o usar una predeterminada
                       Offset position = positions[playerId] ?? 
-                          Offset(0.5, isTeamClaro ? 0.3 : 0.7); // Posición por defecto
+                          Offset(0.5, isTeamClaro ? 0.3 : 0.7);
                       
-                      // Calcular la posición en píxeles
+                      // Convertir posición relativa a píxeles
                       final double posX = position.dx * fieldWidth;
                       final double posY = position.dy * fieldHeight;
                       
@@ -1175,16 +1182,11 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                         children: [
                           // Avatar del jugador
                           Positioned(
-                            left: posX - 70, // Aumentado significativamente para dar más espacio
-                            top: posY - 70,  // Aumentado significativamente para dar más espacio
-                            child: Container(
-                              width: 140, // Área mucho más amplia para el jugador
-                              height: 140, // Área mucho más amplia para el jugador
-                              alignment: Alignment.center,
-                              child: GestureDetector(
-                                onTap: () => _showPlayerStatsDialog(player, isTeamClaro),
-                                child: _buildPlayerAvatar(player, isTeamClaro, posX, posY),
-                              ),
+                            left: posX - 25,
+                            top: posY - 25,
+                            child: GestureDetector(
+                              onTap: () => _showPlayerStatsDialog(player, isTeamClaro),
+                              child: _buildPlayerAvatar(player, isTeamClaro),
                             ),
                           ),
                           
@@ -1204,6 +1206,13 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                                       : Colors.red.shade300.withOpacity(0.5),
                                   width: 1,
                                 ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 4,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
                               ),
                               child: Column(
                                 children: [
@@ -1218,9 +1227,10 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  if (player['goles'] > 0 || player['asistencias'] > 0)
+                                  if (player['goles'] != null && player['goles'] > 0 || 
+                                      player['asistencias'] != null && player['asistencias'] > 0)
                                     Text(
-                                      '⚽ ${player['goles']} | 👟 ${player['asistencias']}',
+                                      '⚽ ${player['goles'] ?? 0} | 👟 ${player['asistencias'] ?? 0}',
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 10,
@@ -1235,10 +1245,10 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                       );
                     }).toList(),
                     
-                    // Añadir información del equipo en una tarjeta flotante
+                    // Información del equipo (tarjeta flotante)
                     Positioned(
-                      top: 8,
-                      right: 8,
+                      top: 16,
+                      right: 16,
                       child: Container(
                         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
@@ -1279,6 +1289,63 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                         ),
                       ),
                     ),
+
+                    // Marcador en la parte superior central
+                    Positioned(
+                      top: 16,
+                      left: fieldWidth / 2 - 50,
+                      child: Container(
+                        width: 100,
+                        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.3),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 8,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '${_matchData['resultado_claro'] ?? 0}',
+                              style: TextStyle(
+                                color: Colors.blue.shade300,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                            Container(
+                              margin: EdgeInsets.symmetric(horizontal: 6),
+                              child: Text(
+                                '-',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              '${_matchData['resultado_oscuro'] ?? 0}',
+                              style: TextStyle(
+                                color: Colors.red.shade300,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1289,7 +1356,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
     );
   }
   
-  Widget _buildPlayerAvatar(Map<String, dynamic> player, bool isTeamA, double posX, double posY) {
+  Widget _buildPlayerAvatar(Map<String, dynamic> player, bool isTeamA) {
     // Calcular promedio de habilidades si están disponibles
     double average = 0;
     if (player.containsKey('tiro') && 
@@ -1486,7 +1553,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
     );
   }
 
-  Widget _buildFootballFieldElements(double width, double height, bool isTeamA) {
+  Widget _buildFootballFieldElements(double width, double height) {
     return Stack(
       children: [
         // Línea central
@@ -2053,7 +2120,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
       
       // Actualizar el marcador en la base de datos
       await supabase
-          .from('partidos')
+          .from('matches')
           .update({
             'resultado_claro': golesEquipoClaro,
             'resultado_oscuro': golesEquipoOscuro

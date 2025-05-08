@@ -576,7 +576,7 @@ Hora: $formattedTime
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MatchJoinScreen(matchId: matchId),
+        builder: (context) => MatchDetailsScreen(matchId: matchId),
       ),
     );
   }
