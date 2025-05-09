@@ -56,11 +56,46 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
       _matchData = await _matchServices.getMatchDetails(widget.matchId);
       print('Datos del partido encontrados: ${_matchData['nombre']}');
       
-      // Obtener participantes
+      // Obtener datos originales de match_participants para mapear IDs correctamente
       int matchIdInt = _matchData['id'] as int;
+      
+      // Crear un mapa para relacionar user_id con participant_id
+      Map<String, String> userIdToParticipantId = {};
+      try {
+        final participantsRaw = await Supabase.instance.client
+            .from('match_participants')
+            .select('id, user_id, equipo')
+            .eq('match_id', matchIdInt);
+            
+        for (var participant in participantsRaw) {
+          userIdToParticipantId[participant['user_id']] = participant['id'].toString();
+          print('Mapeando user_id: ${participant['user_id']} -> participant_id: ${participant['id']} (equipo: ${participant['equipo']})');
+        }
+      } catch (e) {
+        print('Error al obtener mapa de IDs: $e');
+      }
+      
+      // Obtener participantes
       final participants = await _matchServices.getMatchParticipants(matchIdInt);
       _teamClaro = participants['teamClaro'] ?? [];
       _teamOscuro = participants['teamOscuro'] ?? [];
+      
+      // Añadir el participant_id a cada jugador usando el mapa creado
+      for (var player in _teamClaro) {
+        String userId = player['id'].toString();
+        if (userIdToParticipantId.containsKey(userId)) {
+          player['participant_id'] = userIdToParticipantId[userId];
+          print('Asignando participant_id: ${player['participant_id']} a jugador Claro: ${player['nombre']}');
+        }
+      }
+      
+      for (var player in _teamOscuro) {
+        String userId = player['id'].toString();
+        if (userIdToParticipantId.containsKey(userId)) {
+          player['participant_id'] = userIdToParticipantId[userId];
+          print('Asignando participant_id: ${player['participant_id']} a jugador Oscuro: ${player['nombre']}');
+        }
+      }
       
       // Cargar posiciones de los jugadores
       _loadPlayerPositions();
@@ -114,12 +149,31 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           positions = {};
         }
         
-        positions.forEach((playerId, position) {
+        // Procesar las posiciones y asignarlas a los jugadores usando el participant_id
+        positions.forEach((participantId, position) {
           if (position is Map) {
             double dx = (position['dx'] is num) ? (position['dx'] as num).toDouble() : 0.5;
             double dy = (position['dy'] is num) ? (position['dy'] as num).toDouble() : 0.3;
-            _teamClaroPositions[playerId] = Offset(dx, dy);
-            print('Posición jugador claro $playerId: dx=$dx, dy=$dy');
+            
+            // Primero intentar asignar la posición usando el participant_id directamente
+            bool positionAssigned = false;
+            
+            // Buscar el jugador que tenga este ID como participant_id
+            for (var player in _teamClaro) {
+              if (player['participant_id'] == participantId) {
+                String playerId = player['id'].toString();
+                _teamClaroPositions[playerId] = Offset(dx, dy);
+                positionAssigned = true;
+                print('Posición asignada para equipo claro: user_id=${player['id']} usando participant_id=$participantId en ($dx, $dy)');
+                break;
+              }
+            }
+            
+            // Si no se encontró, asignar al participantId directamente (retrocompatibilidad)
+            if (!positionAssigned) {
+              _teamClaroPositions[participantId] = Offset(dx, dy);
+              print('Posición asignada directamente para equipo claro: participant_id=$participantId en ($dx, $dy)');
+            }
           }
         });
       } else {
@@ -151,12 +205,31 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           positions = {};
         }
         
-        positions.forEach((playerId, position) {
+        // Procesar las posiciones y asignarlas a los jugadores usando el participant_id
+        positions.forEach((participantId, position) {
           if (position is Map) {
             double dx = (position['dx'] is num) ? (position['dx'] as num).toDouble() : 0.5;
             double dy = (position['dy'] is num) ? (position['dy'] as num).toDouble() : 0.7;
-            _teamOscuroPositions[playerId] = Offset(dx, dy);
-            print('Posición jugador oscuro $playerId: dx=$dx, dy=$dy');
+            
+            // Primero intentar asignar la posición usando el participant_id
+            bool positionAssigned = false;
+            
+            // Buscar el jugador que tenga este ID como participant_id
+            for (var player in _teamOscuro) {
+              if (player['participant_id'] == participantId) {
+                String playerId = player['id'].toString();
+                _teamOscuroPositions[playerId] = Offset(dx, dy);
+                positionAssigned = true;
+                print('Posición asignada para equipo oscuro: user_id=${player['id']} usando participant_id=$participantId en ($dx, $dy)');
+                break;
+              }
+            }
+            
+            // Si no se encontró, asignar al participantId directamente (retrocompatibilidad)
+            if (!positionAssigned) {
+              _teamOscuroPositions[participantId] = Offset(dx, dy);
+              print('Posición asignada directamente para equipo oscuro: participant_id=$participantId en ($dx, $dy)');
+            }
           }
         });
       } else {
