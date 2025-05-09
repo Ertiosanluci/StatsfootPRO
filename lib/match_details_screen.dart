@@ -453,6 +453,21 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
     // Determinar si la vista es de sólo lectura basado en la ruta desde la que se accedió
     final bool isReadOnly = true; // Siempre en modo de sólo lectura
 
+    // Mostrar toast informativo cuando la vista se carga en modo sólo lectura
+    // usando WidgetsBinding para asegurar que se muestre después de que el widget se construya
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isLoading && isReadOnly) {
+        Fluttertoast.showToast(
+          msg: "Vista informativa - Los jugadores no pueden ser modificados",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.blueGrey.shade700,
+          textColor: Colors.white,
+          fontSize: 16.0
+        );
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_isLoading ? 'Cargando detalles...' : _matchData['nombre'] ?? 'Detalles del Partido'),
@@ -499,28 +514,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                 isPartidoFinalizado: isPartidoFinalizado,
               ),
               
-              // Añadir un banner informativo si estamos en modo de solo lectura
-              if (isReadOnly)
-                Container(
-                  padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  color: Colors.blueGrey.withOpacity(0.2),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.blue.shade800, size: 18),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Vista informativa - Los jugadores no pueden ser modificados',
-                          style: TextStyle(
-                            color: Colors.blue.shade800,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              // Eliminar el banner informativo fijo
               
               // Campo y jugadores
               Expanded(

@@ -56,15 +56,7 @@ class _TeamFormationState extends State<TeamFormation> {
               // Información sobre el equipo
               _buildTeamInfoPanel(),
 
-              // Marcador en la parte superior central
-              Positioned(
-                top: 16,
-                left: maxWidth / 2 - 50,
-                child: FloatingScoreboard(
-                  resultadoClaro: widget.matchData['resultado_claro'] ?? 0,
-                  resultadoOscuro: widget.matchData['resultado_oscuro'] ?? 0,
-                ),
-              ),
+              // Eliminado el marcador flotante que estaba dentro del campo
               
               // Botón para guardar posiciones
               if (!widget.isReadOnly) // Mostrar solo si no está en modo de solo lectura
@@ -266,16 +258,7 @@ class _TeamFormationState extends State<TeamFormation> {
                   fontStyle: FontStyle.italic,
                 ),
               ),
-            // Mostrar indicación de modo solo lectura
-            if (widget.isReadOnly)
-              const Text(
-                'Modo solo visualización',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 10,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
+            // Eliminado el texto "Modo solo visualización"
           ],
         ),
       ),
