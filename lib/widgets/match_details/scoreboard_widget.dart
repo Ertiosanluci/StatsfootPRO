@@ -132,3 +132,69 @@ class ScoreboardWidget extends StatelessWidget {
     );
   }
 }
+
+/// Widget para el marcador flotante en el campo
+class FloatingScoreboard extends StatelessWidget {
+  final int resultadoClaro;
+  final int resultadoOscuro;
+  
+  const FloatingScoreboard({
+    Key? key, 
+    required this.resultadoClaro, 
+    required this.resultadoOscuro
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 100,
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.3),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            '$resultadoClaro',
+            style: TextStyle(
+              color: Colors.blue.shade300,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: 6),
+            child: Text(
+              '-',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+              ),
+            ),
+          ),
+          Text(
+            '$resultadoOscuro',
+            style: TextStyle(
+              color: Colors.red.shade300,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
