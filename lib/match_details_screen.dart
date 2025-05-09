@@ -649,6 +649,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                         onSavePositions: isReadOnly ? null : () => _saveAllPositionsToDatabase(true),
                         mvpId: _mvpTeamClaro,
                         isReadOnly: isReadOnly, // Pasar el modo de solo lectura al componente
+                        onPlayerTap: isReadOnly || isPartidoFinalizado ? null : _showPlayerStatsDialog, // Permitir editar estadísticas
                       ),
                       
                       // Equipo Oscuro
@@ -664,6 +665,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                         onSavePositions: isReadOnly ? null : () => _saveAllPositionsToDatabase(false),
                         mvpId: _mvpTeamOscuro,
                         isReadOnly: isReadOnly, // Pasar el modo de solo lectura al componente
+                        onPlayerTap: isReadOnly || isPartidoFinalizado ? null : _showPlayerStatsDialog, // Permitir editar estadísticas
                       ),
                     ],
                   ),

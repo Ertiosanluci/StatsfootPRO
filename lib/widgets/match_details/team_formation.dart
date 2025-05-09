@@ -13,6 +13,7 @@ class TeamFormation extends StatefulWidget {
   final Function()? onSavePositions;
   final String? mvpId;
   final bool isReadOnly; // Añadir propiedad para modo de solo lectura
+  final Function(Map<String, dynamic>, bool)? onPlayerTap; // Callback para cuando un jugador es tocado
   
   const TeamFormation({
     Key? key,
@@ -24,6 +25,7 @@ class TeamFormation extends StatefulWidget {
     this.onSavePositions,
     this.mvpId,
     this.isReadOnly = false, // Por defecto, no está en modo de solo lectura
+    this.onPlayerTap, // Nuevo callback para manejar el toque en un jugador
   }) : super(key: key);
   
   @override
@@ -266,7 +268,7 @@ class _TeamFormationState extends State<TeamFormation> {
   }
   
   void _showPlayerStatsDialog(Map<String, dynamic> player) {
-    // Aquí se implementaría la lógica para mostrar el diálogo de estadísticas
-    // pero lo delegaremos a la pantalla principal para mantener la consistencia
+    // Llamar al callback pasado desde el componente padre
+    widget.onPlayerTap?.call(player, widget.isTeamClaro);
   }
 }
