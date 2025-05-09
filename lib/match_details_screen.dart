@@ -523,18 +523,32 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
     final int golesEquipoClaro = _matchData['resultado_claro'] ?? 0;
     final int golesEquipoOscuro = _matchData['resultado_oscuro'] ?? 0;
     final bool isPartidoFinalizado = _matchData['estado'] == 'finalizado';
-    // Determinar si la vista es de sólo lectura basado en la ruta desde la que se accedió
-    final bool isReadOnly = true; // Siempre en modo de sólo lectura
+    
+    // Determinar si el usuario actual es el creador del partido
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    final bool isCreator = !_isLoading && currentUser != null && 
+                          _matchData['creador_id'] == currentUser.id;
+                          
+    // La vista solo debe ser de lectura si el usuario no es el creador
+    final bool isReadOnly = !isCreator;
 
     // Mostrar toast informativo cuando la vista se carga en modo sólo lectura
-    // usando WidgetsBinding para asegurar que se muestre después de que el widget se construya
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_isLoading && isReadOnly) {
         Fluttertoast.showToast(
-          msg: "Vista informativa - Los jugadores no pueden ser modificados",
+          msg: "Vista informativa - Solo el creador puede modificar los datos",
           toastLength: Toast.LENGTH_LONG,
           gravity: ToastGravity.BOTTOM,
           backgroundColor: Colors.blueGrey.shade700,
+          textColor: Colors.white,
+          fontSize: 16.0
+        );
+      } else if (!_isLoading && isCreator) {
+        Fluttertoast.showToast(
+          msg: "Toca en un jugador para editar sus estadísticas",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green.shade700,
           textColor: Colors.white,
           fontSize: 16.0
         );
@@ -562,8 +576,27 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
         ),
-        // Quitar la opción de finalizar partido en modo de solo lectura
+        // Mostrar opciones de edición solo al creador del partido
         actions: isReadOnly ? [] : [
+          if (!isPartidoFinalizado && !_isLoading)
+            IconButton(
+              icon: Icon(
+                Icons.sports_score,
+                color: Colors.white,
+                size: 26,
+              ),
+              tooltip: 'Editar estadísticas',
+              onPressed: () {
+                Fluttertoast.showToast(
+                  msg: "Toca en un jugador para editar sus estadísticas",
+                  toastLength: Toast.LENGTH_LONG,
+                  gravity: ToastGravity.CENTER,
+                  backgroundColor: Colors.blue.shade700,
+                  textColor: Colors.white,
+                  fontSize: 16.0
+                );
+              },
+            ),
           if (!isPartidoFinalizado && !_isLoading)
             IconButton(
               icon: Icon(

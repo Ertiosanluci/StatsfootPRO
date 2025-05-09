@@ -53,9 +53,11 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
       // Primero, mostrar un log para depuración
       print('Cargando partidos para usuario: ${currentUser.id}');
 
-      // Fetch matches organized by the current user
+      // Lista para almacenar todos los partidos del usuario (organizados + participante)
+      final List<Map<String, dynamic>> allMyMatches = [];
+
       try {
-        // Versión simplificada de la consulta sin unión de tablas para evitar errores
+        // 1. Cargar partidos organizados por el usuario actual
         final organizedMatchesResponse = await supabase
             .from('matches')
             .select('*')
@@ -64,14 +66,37 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
         
         print('Partidos organizados cargados: ${organizedMatchesResponse.length}');
         
-        // Fetch matches where the user is a participant
+        // Cargar los datos de perfil para los partidos organizados
+        for (final match in organizedMatchesResponse) {
+          final Map<String, dynamic> matchWithProfile = Map.from(match);
+          
+          // Para partidos creados por el usuario actual, usar su propio perfil
+          try {
+            final profileData = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', currentUser.id)
+                .maybeSingle();
+                
+            if (profileData != null) {
+              matchWithProfile['profiles'] = profileData;
+            }
+          } catch (e) {
+            print('Error al cargar perfil del usuario actual: $e');
+          }
+          
+          // Marcar como organizador para distinguirlos
+          matchWithProfile['isOrganizer'] = true;
+          
+          allMyMatches.add(matchWithProfile);
+        }
+        
+        // 2. Cargar partidos donde el usuario es participante
         final participantMatchesResponse = await supabase
             .from('match_participants')
             .select('match_id')
             .eq('user_id', currentUser.id)
             .eq('es_organizador', false);
-        
-        final List<Map<String, dynamic>> invitedMatches = [];
         
         // Si hay partidos donde el usuario es participante, cargarlos individualmente
         if (participantMatchesResponse.isNotEmpty) {
@@ -99,39 +124,27 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
                 print('Error al cargar perfil del creador: $e');
               }
               
-              invitedMatches.add(matchData);
+              // Marcar como no organizador
+              matchData['isOrganizer'] = false;
+              
+              // Añadir a la lista de todos los partidos
+              allMyMatches.add(matchData);
             }
           }
         }
         
-        print('Partidos invitados cargados: ${invitedMatches.length}');
+        print('Total de partidos cargados: ${allMyMatches.length}');
 
-        // Cargar también los datos de los perfiles para los partidos organizados
-        final List<Map<String, dynamic>> myMatchesWithProfiles = [];
-        for (final match in organizedMatchesResponse) {
-          final Map<String, dynamic> matchWithProfile = Map.from(match);
-          
-          // Para partidos creados por el usuario actual, usar su propio perfil
-          try {
-            final profileData = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', currentUser.id)
-                .maybeSingle();
-                
-            if (profileData != null) {
-              matchWithProfile['profiles'] = profileData;
-            }
-          } catch (e) {
-            print('Error al cargar perfil del usuario actual: $e');
-          }
-          
-          myMatchesWithProfiles.add(matchWithProfile);
-        }
+        // Ordenar todos los partidos por fecha (más reciente primero)
+        allMyMatches.sort((a, b) {
+          DateTime dateA = DateTime.parse(a['fecha']);
+          DateTime dateB = DateTime.parse(b['fecha']);
+          return dateB.compareTo(dateA);
+        });
 
         setState(() {
-          _myMatches = myMatchesWithProfiles;
-          _invitedMatches = invitedMatches;
+          _myMatches = allMyMatches;
+          _invitedMatches = []; // Dejar vacío para implementación futura
           _isLoading = false;
         });
       } catch (e) {
@@ -260,8 +273,8 @@ Hora: $formattedTime
         bottom: TabBar(
           controller: _tabController,
           tabs: [
-            Tab(text: 'Mis Partidos'),
-            Tab(text: 'Invitaciones'),
+            Tab(text: 'Todos Mis Partidos'), // Updated label
+            Tab(text: 'Invitaciones Pendientes'), // Updated label
           ],
           indicatorColor: Colors.orange.shade600,
           labelColor: Colors.white,
@@ -351,15 +364,15 @@ Hora: $formattedTime
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    isOrganizer ? Icons.sports_soccer : Icons.sports_handball,
+                    isOrganizer ? Icons.sports_soccer : Icons.mail_outline,
                     color: Colors.white.withOpacity(0.8),
                     size: 80,
                   ),
                   SizedBox(height: 20),
                   Text(
                     isOrganizer
-                        ? 'Aún no has creado ningún partido'
-                        : 'No tienes invitaciones a partidos',
+                        ? 'Aún no tienes partidos'
+                        : 'No hay invitaciones disponibles',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -371,7 +384,7 @@ Hora: $formattedTime
                   Text(
                     isOrganizer
                         ? 'Toca el botón + para crear uno nuevo'
-                        : 'Únete a través de un enlace compartido',
+                        : 'Esta función estará disponible próximamente',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.8),
                       fontSize: 16,
@@ -384,7 +397,15 @@ Hora: $formattedTime
           : ListView.builder(
               padding: EdgeInsets.all(16),
               itemCount: matches.length,
-              itemBuilder: (context, index) => _buildMatchCard(matches[index], isOrganizer: isOrganizer),
+              itemBuilder: (context, index) {
+                final match = matches[index];
+                
+                // Determinar si el usuario actual es organizador de este partido específico
+                // Usar el campo isOrganizer que añadimos al cargar los datos
+                final bool isUserOrganizerOfMatch = match['isOrganizer'] == true;
+                
+                return _buildMatchCard(match, isOrganizer: isUserOrganizerOfMatch);
+              },
             ),
     );
   }
@@ -525,6 +546,24 @@ Hora: $formattedTime
                             ],
                           ),
                         ),
+                        // Mostrar insignia si el usuario participa pero no organiza
+                        if (!isOrganizer)
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade100,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.green.shade300, width: 1),
+                            ),
+                            child: Text(
+                              'Participas',
+                              style: TextStyle(
+                                color: Colors.green.shade800,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -543,16 +582,16 @@ Hora: $formattedTime
                             color: Colors.purple,
                           ),
                           _buildActionButton(
+                            icon: Icons.article,
+                            label: 'Ver Detalles',
+                            onPressed: () => _navigateToMatchJoinScreen(match['id'].toString()),
+                            color: Colors.blue,
+                          ),
+                          _buildActionButton(
                             icon: Icons.share,
                             label: 'Compartir',
                             onPressed: () => _shareMatchLink(match),
                             color: Colors.green,
-                          ),
-                          _buildActionButton(
-                            icon: Icons.copy,
-                            label: 'Copiar Enlace',
-                            onPressed: () => _copyMatchLink(match),
-                            color: Colors.blue,
                           ),
                         ]
                       : [
