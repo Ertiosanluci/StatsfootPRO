@@ -516,7 +516,7 @@ Hora: $formattedTime
                               ),
                               if (!isOrganizer)
                                 Text(
-                                  match['profiles']['nombre'] ?? 'Desconocido',
+                                  match['profiles']['username'] ?? 'Desconocido',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.blue.shade800,
@@ -557,7 +557,7 @@ Hora: $formattedTime
                         ]
                       : [
                           _buildActionButton(
-                            icon: Icons.info_outline,
+                            icon: Icons.article,
                             label: 'Ver Detalles',
                             onPressed: () => _navigateToMatchJoinScreen(match['id'].toString()),
                             color: Colors.blue,
