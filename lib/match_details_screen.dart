@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'dart:convert'; // Añadir para usar jsonDecode
 
 // Importar los widgets y servicios creados
 import 'widgets/match_details/football_field.dart';
@@ -90,30 +91,88 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
     try {
       // Procesar las posiciones de los jugadores del equipo claro
       if (_matchData['team_claro_positions'] != null) {
-        Map<String, dynamic> positions = Map<String, dynamic>.from(_matchData['team_claro_positions']);
+        Map<String, dynamic> positions;
+        
+        // Manejar diferentes formatos de datos
+        if (_matchData['team_claro_positions'] is String) {
+          // Si está en formato String (como JSON), convertirlo a Map
+          try {
+            positions = Map<String, dynamic>.from(
+              jsonDecode(_matchData['team_claro_positions'])
+            );
+            print('Team Claro positions from JSON string: $positions');
+          } catch (e) {
+            print('Error al decodificar team_claro_positions de formato String: $e');
+            positions = {};
+          }
+        } else if (_matchData['team_claro_positions'] is Map) {
+          // Si ya es un Map, usarlo directamente
+          positions = Map<String, dynamic>.from(_matchData['team_claro_positions']);
+          print('Team Claro positions from Map: $positions');
+        } else {
+          print('Formato no reconocido para team_claro_positions: ${_matchData['team_claro_positions'].runtimeType}');
+          positions = {};
+        }
+        
         positions.forEach((playerId, position) {
           if (position is Map) {
             double dx = (position['dx'] is num) ? (position['dx'] as num).toDouble() : 0.5;
             double dy = (position['dy'] is num) ? (position['dy'] as num).toDouble() : 0.3;
             _teamClaroPositions[playerId] = Offset(dx, dy);
+            print('Posición jugador claro $playerId: dx=$dx, dy=$dy');
           }
         });
+      } else {
+        print('No se encontraron posiciones para el equipo claro');
       }
       
       // Procesar las posiciones de los jugadores del equipo oscuro
       if (_matchData['team_oscuro_positions'] != null) {
-        Map<String, dynamic> positions = Map<String, dynamic>.from(_matchData['team_oscuro_positions']);
+        Map<String, dynamic> positions;
+        
+        // Manejar diferentes formatos de datos
+        if (_matchData['team_oscuro_positions'] is String) {
+          // Si está en formato String (como JSON), convertirlo a Map
+          try {
+            positions = Map<String, dynamic>.from(
+              jsonDecode(_matchData['team_oscuro_positions'])
+            );
+            print('Team Oscuro positions from JSON string: $positions');
+          } catch (e) {
+            print('Error al decodificar team_oscuro_positions de formato String: $e');
+            positions = {};
+          }
+        } else if (_matchData['team_oscuro_positions'] is Map) {
+          // Si ya es un Map, usarlo directamente
+          positions = Map<String, dynamic>.from(_matchData['team_oscuro_positions']);
+          print('Team Oscuro positions from Map: $positions');
+        } else {
+          print('Formato no reconocido para team_oscuro_positions: ${_matchData['team_oscuro_positions'].runtimeType}');
+          positions = {};
+        }
+        
         positions.forEach((playerId, position) {
           if (position is Map) {
             double dx = (position['dx'] is num) ? (position['dx'] as num).toDouble() : 0.5;
             double dy = (position['dy'] is num) ? (position['dy'] as num).toDouble() : 0.7;
             _teamOscuroPositions[playerId] = Offset(dx, dy);
+            print('Posición jugador oscuro $playerId: dx=$dx, dy=$dy');
           }
         });
+      } else {
+        print('No se encontraron posiciones para el equipo oscuro');
       }
+      
+      // Log sobre tipo de datos de las posiciones
+      print('Tipo de datos posiciones equipo claro original: ${_matchData['team_claro_positions']?.runtimeType}');
+      print('Tipo de datos posiciones equipo oscuro original: ${_matchData['team_oscuro_positions']?.runtimeType}');
       
       // Asignar posiciones predeterminadas a jugadores sin posición
       _assignDefaultPositions();
+      
+      // Log de posiciones finales
+      print('Posiciones finales equipo claro: $_teamClaroPositions');
+      print('Posiciones finales equipo oscuro: $_teamOscuroPositions');
     } catch (e) {
       print('Error al cargar posiciones de jugadores: $e');
     }
@@ -391,6 +450,8 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
     final int golesEquipoClaro = _matchData['resultado_claro'] ?? 0;
     final int golesEquipoOscuro = _matchData['resultado_oscuro'] ?? 0;
     final bool isPartidoFinalizado = _matchData['estado'] == 'finalizado';
+    // Determinar si la vista es de sólo lectura basado en la ruta desde la que se accedió
+    final bool isReadOnly = true; // Siempre en modo de sólo lectura
 
     return Scaffold(
       appBar: AppBar(
@@ -413,7 +474,8 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
         ),
-        actions: [
+        // Quitar la opción de finalizar partido en modo de solo lectura
+        actions: isReadOnly ? [] : [
           if (!isPartidoFinalizado && !_isLoading)
             IconButton(
               icon: Icon(
@@ -437,6 +499,29 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                 isPartidoFinalizado: isPartidoFinalizado,
               ),
               
+              // Añadir un banner informativo si estamos en modo de solo lectura
+              if (isReadOnly)
+                Container(
+                  padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  color: Colors.blueGrey.withOpacity(0.2),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.blue.shade800, size: 18),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Vista informativa - Los jugadores no pueden ser modificados',
+                          style: TextStyle(
+                            color: Colors.blue.shade800,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              
               // Campo y jugadores
               Expanded(
                 child: Container(
@@ -457,10 +542,13 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                         positions: _teamClaroPositions,
                         isTeamClaro: true,
                         matchData: _matchData,
-                        onPlayerPositionChanged: (playerId, position) => 
+                        // Deshabilitar la edición de posiciones en modo de solo lectura
+                        onPlayerPositionChanged: isReadOnly ? null : (playerId, position) => 
                             _updatePlayerPosition(playerId, position, true),
-                        onSavePositions: () => _saveAllPositionsToDatabase(true),
+                        // Ocultar botón de guardar en modo de solo lectura
+                        onSavePositions: isReadOnly ? null : () => _saveAllPositionsToDatabase(true),
                         mvpId: _mvpTeamClaro,
+                        isReadOnly: isReadOnly, // Pasar el modo de solo lectura al componente
                       ),
                       
                       // Equipo Oscuro
@@ -469,10 +557,13 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                         positions: _teamOscuroPositions,
                         isTeamClaro: false,
                         matchData: _matchData,
-                        onPlayerPositionChanged: (playerId, position) => 
+                        // Deshabilitar la edición de posiciones en modo de solo lectura
+                        onPlayerPositionChanged: isReadOnly ? null : (playerId, position) => 
                             _updatePlayerPosition(playerId, position, false),
-                        onSavePositions: () => _saveAllPositionsToDatabase(false),
+                        // Ocultar botón de guardar en modo de solo lectura
+                        onSavePositions: isReadOnly ? null : () => _saveAllPositionsToDatabase(false),
                         mvpId: _mvpTeamOscuro,
+                        isReadOnly: isReadOnly, // Pasar el modo de solo lectura al componente
                       ),
                     ],
                   ),

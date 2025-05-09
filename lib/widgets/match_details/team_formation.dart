@@ -9,9 +9,10 @@ class TeamFormation extends StatefulWidget {
   final Map<String, Offset> positions;
   final bool isTeamClaro;
   final Map<String, dynamic> matchData;
-  final Function(String, Offset) onPlayerPositionChanged;
-  final Function() onSavePositions;
+  final Function(String, Offset)? onPlayerPositionChanged;
+  final Function()? onSavePositions;
   final String? mvpId;
+  final bool isReadOnly; // Añadir propiedad para modo de solo lectura
   
   const TeamFormation({
     Key? key,
@@ -19,9 +20,10 @@ class TeamFormation extends StatefulWidget {
     required this.positions,
     required this.isTeamClaro,
     required this.matchData,
-    required this.onPlayerPositionChanged,
-    required this.onSavePositions,
+    this.onPlayerPositionChanged,
+    this.onSavePositions,
     this.mvpId,
+    this.isReadOnly = false, // Por defecto, no está en modo de solo lectura
   }) : super(key: key);
   
   @override
@@ -65,18 +67,19 @@ class _TeamFormationState extends State<TeamFormation> {
               ),
               
               // Botón para guardar posiciones
-              Positioned(
-                bottom: 16,
-                right: 16,
-                child: FloatingActionButton(
-                  heroTag: widget.isTeamClaro ? 'savePositionsClaro' : 'savePositionsOscuro',
-                  backgroundColor: widget.isTeamClaro ? Colors.blue.shade700 : Colors.red.shade700,
-                  mini: true,
-                  child: const Icon(Icons.save, color: Colors.white),
-                  onPressed: widget.onSavePositions,
-                  tooltip: 'Guardar posiciones',
+              if (!widget.isReadOnly) // Mostrar solo si no está en modo de solo lectura
+                Positioned(
+                  bottom: 16,
+                  right: 16,
+                  child: FloatingActionButton(
+                    heroTag: widget.isTeamClaro ? 'savePositionsClaro' : 'savePositionsOscuro',
+                    backgroundColor: widget.isTeamClaro ? Colors.blue.shade700 : Colors.red.shade700,
+                    mini: true,
+                    child: const Icon(Icons.save, color: Colors.white),
+                    onPressed: widget.onSavePositions,
+                    tooltip: 'Guardar posiciones',
+                  ),
                 ),
-              ),
             ],
           ),
         );
@@ -107,39 +110,51 @@ class _TeamFormationState extends State<TeamFormation> {
       child: Column(
         children: [
           // Avatar del jugador con Draggable
-          Draggable<String>(
-            data: playerId,
-            feedback: PlayerAvatar(
-              player: player, 
-              isTeamClaro: widget.isTeamClaro,
-              mvpId: mvpTeamId,
-              isFinished: isFinished,
-            ),
-            childWhenDragging: Opacity(
-              opacity: 0.3,
-              child: PlayerAvatar(
+          if (!widget.isReadOnly) // Mostrar Draggable solo si no está en modo de solo lectura
+            Draggable<String>(
+              data: playerId,
+              feedback: PlayerAvatar(
                 player: player, 
                 isTeamClaro: widget.isTeamClaro,
                 mvpId: mvpTeamId,
                 isFinished: isFinished,
               ),
+              childWhenDragging: Opacity(
+                opacity: 0.3,
+                child: PlayerAvatar(
+                  player: player, 
+                  isTeamClaro: widget.isTeamClaro,
+                  mvpId: mvpTeamId,
+                  isFinished: isFinished,
+                ),
+              ),
+              onDragEnd: (details) {
+                // Calcular la nueva posición relativa
+                final RenderBox renderBox = context.findRenderObject() as RenderBox;
+                final Offset localPosition = renderBox.globalToLocal(details.offset);
+                
+                double newDx = localPosition.dx / fieldWidth;
+                double newDy = localPosition.dy / fieldHeight;
+                
+                // Limitar la posición al campo
+                newDx = newDx.clamp(0.0, 1.0);
+                newDy = newDy.clamp(0.0, 1.0);
+                
+                // Actualizar posición
+                widget.onPlayerPositionChanged?.call(playerId, Offset(newDx, newDy));
+              },
+              child: GestureDetector(
+                onTap: () => _showPlayerStatsDialog(player),
+                child: PlayerAvatar(
+                  player: player, 
+                  isTeamClaro: widget.isTeamClaro,
+                  mvpId: mvpTeamId,
+                  isFinished: isFinished,
+                ),
+              ),
             ),
-            onDragEnd: (details) {
-              // Calcular la nueva posición relativa
-              final RenderBox renderBox = context.findRenderObject() as RenderBox;
-              final Offset localPosition = renderBox.globalToLocal(details.offset);
-              
-              double newDx = localPosition.dx / fieldWidth;
-              double newDy = localPosition.dy / fieldHeight;
-              
-              // Limitar la posición al campo
-              newDx = newDx.clamp(0.0, 1.0);
-              newDy = newDy.clamp(0.0, 1.0);
-              
-              // Actualizar posición
-              widget.onPlayerPositionChanged(playerId, Offset(newDx, newDy));
-            },
-            child: GestureDetector(
+          if (widget.isReadOnly) // Mostrar solo el avatar si está en modo de solo lectura
+            GestureDetector(
               onTap: () => _showPlayerStatsDialog(player),
               child: PlayerAvatar(
                 player: player, 
@@ -148,7 +163,6 @@ class _TeamFormationState extends State<TeamFormation> {
                 isFinished: isFinished,
               ),
             ),
-          ),
           
           // Nombre del jugador
           Container(
@@ -242,14 +256,26 @@ class _TeamFormationState extends State<TeamFormation> {
                 fontSize: 12,
               ),
             ),
-            const Text(
-              'Arrastra los jugadores para posicionar',
-              style: TextStyle(
-                color: Colors.yellow,
-                fontSize: 10,
-                fontStyle: FontStyle.italic,
+            // Solo mostrar instrucción de arrastrar si no está en modo de solo lectura
+            if (!widget.isReadOnly)
+              const Text(
+                'Arrastra los jugadores para posicionar',
+                style: TextStyle(
+                  color: Colors.yellow,
+                  fontSize: 10,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
-            ),
+            // Mostrar indicación de modo solo lectura
+            if (widget.isReadOnly)
+              const Text(
+                'Modo solo visualización',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 10,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
           ],
         ),
       ),
