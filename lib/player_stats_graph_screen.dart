@@ -220,7 +220,7 @@ class _PlayerStatsGraphScreenState extends State<PlayerStatsGraphScreen> {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -228,25 +228,29 @@ class _PlayerStatsGraphScreenState extends State<PlayerStatsGraphScreen> {
               Icon(
                 icon,
                 color: color,
-                size: 24,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
+                size: 22,
               ),
               const SizedBox(height: 2),
               Text(
+                value,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 1),
+              Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   color: Colors.white70,
                 ),
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -682,9 +686,9 @@ class _PlayerStatsGraphScreenState extends State<PlayerStatsGraphScreen> {
                           physics: const NeverScrollableScrollPhysics(),
                           shrinkWrap: true,
                           crossAxisCount: 2,
-                          childAspectRatio: 1.5,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
+                          childAspectRatio: 1.6, // Aumentando para dar más espacio vertical
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
                           children: [
                             _buildDetailedStatCard(
                               'Partidos jugados',
@@ -732,9 +736,9 @@ class _PlayerStatsGraphScreenState extends State<PlayerStatsGraphScreen> {
                           physics: const NeverScrollableScrollPhysics(),
                           shrinkWrap: true,
                           crossAxisCount: 2,
-                          childAspectRatio: 1.5,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
+                          childAspectRatio: 1.6, // Ajustado para más espacio vertical
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
                           children: [
                             _buildDetailedStatCard(
                               'Media de goles',
@@ -805,32 +809,37 @@ class _PlayerStatsGraphScreenState extends State<PlayerStatsGraphScreen> {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
               color: color,
-              size: 30,
+              size: 24,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 5),
             Text(
               value,
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               title,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 12,
                 color: Colors.white70,
               ),
               textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
