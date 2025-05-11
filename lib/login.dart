@@ -183,6 +183,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    
+    // Asegurar que la barra de estado sea transparente
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
@@ -190,12 +192,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     
     return Scaffold(
       extendBodyBehindAppBar: true,
+      backgroundColor: Color(0xFF1565C0), // Color de fondo base para evitar barras blancas
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: BackButton(color: Colors.white),
       ),
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -210,270 +215,268 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         child: SafeArea(
           child: SingleChildScrollView(
             physics: BouncingScrollPhysics(),
-            child: Container(
-              height: size.height - kToolbarHeight - MediaQuery.of(context).padding.top,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(24.0, 0, 24.0, MediaQuery.of(context).viewInsets.bottom + 24.0),
               child: FadeTransition(
                 opacity: _fadeAnimation,
                 child: SlideTransition(
                   position: _slideAnimation,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          SizedBox(height: size.height * 0.06),
-                          
-                          // Logo con animación personalizada
-                          Center(
-                            child: TweenAnimationBuilder<double>(
-                              tween: Tween<double>(begin: 0.0, end: 1.0),
-                              duration: Duration(milliseconds: 800),
-                              curve: Curves.elasticOut,
-                              builder: (context, value, child) {
-                                return Transform.scale(
-                                  scale: value,
-                                  child: child,
-                                );
-                              },
-                              child: Hero(
-                                tag: 'app_logo',
-                                child: Container(
-                                  height: 120,
-                                  width: 120,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black26,
-                                        blurRadius: 15,
-                                        offset: Offset(0, 8),
-                                      ),
-                                    ],
-                                  ),
-                                  child: ClipOval(
-                                    child: Image.asset(
-                                      'assets/habilidades.png',
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          
-                          SizedBox(height: 28),
-                          
-                          // Títulos animados
-                          TweenAnimationBuilder<double>(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(height: size.height * 0.03),
+                        
+                        // Logo con animación personalizada
+                        Center(
+                          child: TweenAnimationBuilder<double>(
                             tween: Tween<double>(begin: 0.0, end: 1.0),
-                            duration: Duration(milliseconds: 1000),
-                            curve: Curves.easeOut,
+                            duration: Duration(milliseconds: 800),
+                            curve: Curves.elasticOut,
                             builder: (context, value, child) {
-                              return Opacity(
-                                opacity: value,
-                                child: Transform.translate(
-                                  offset: Offset(0, 20 * (1 - value)),
-                                  child: child,
-                                ),
+                              return Transform.scale(
+                                scale: value,
+                                child: child,
                               );
                             },
-                            child: Column(
-                              children: [
-                                Text(
-                                  "¡Bienvenido!",
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    letterSpacing: 1.0,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black26,
-                                        blurRadius: 5,
-                                        offset: Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  "Inicia sesión para continuar",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.white.withOpacity(0.8),
-                                    letterSpacing: 0.5,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          ),
-                          
-                          SizedBox(height: 40),
-                          
-                          // Campos de formulario con validación
-                          TextFormField(
-                            controller: _emailController,
-                            style: TextStyle(color: Colors.white),
-                            keyboardType: TextInputType.emailAddress,
-                            textInputAction: TextInputAction.next,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Por favor, introduce tu correo electrónico';
-                              }
-                              final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                              if (!emailRegex.hasMatch(value)) {
-                                return 'Introduce un correo electrónico válido';
-                              }
-                              return null;
-                            },
-                            decoration: _buildInputDecoration(
-                              'Email',
-                              Icons.email_rounded,
-                              false,
-                            ),
-                          ),
-                          
-                          SizedBox(height: 20),
-                          
-                          TextFormField(
-                            controller: _passwordController,
-                            style: TextStyle(color: Colors.white),
-                            obscureText: _obscurePassword,
-                            textInputAction: TextInputAction.done,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Por favor, introduce tu contraseña';
-                              }
-                              if (value.length < 6) {
-                                return 'La contraseña debe tener al menos 6 caracteres';
-                              }
-                              return null;
-                            },
-                            onFieldSubmitted: (_) => _signIn(),
-                            decoration: _buildInputDecoration(
-                              'Contraseña',
-                              Icons.lock_rounded,
-                              true,
-                            ),
-                          ),
-                          
-                          SizedBox(height: 10),
-                          
-                          // Olvidaste tu contraseña
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context, 
-                                  MaterialPageRoute(builder: (context) => ResetPasswordScreen())
-                                );
-                              },
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.white70,
-                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              ),
-                              child: Text(
-                                '¿Olvidaste tu contraseña?',
-                                style: TextStyle(fontSize: 14),
-                              ),
-                            ),
-                          ),
-                          
-                          SizedBox(height: 40),
-                          
-                          // Botón de inicio de sesión
-                          ElevatedButton(
-                            onPressed: _isLoading ? null : _signIn,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange.shade600,
-                              disabledBackgroundColor: Colors.orange.shade300,
-                              foregroundColor: Colors.white,
-                              elevation: 8,
-                              shadowColor: Colors.orange.withOpacity(0.5),
-                              padding: EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                            ),
-                            child: _isLoading 
-                              ? SizedBox(
-                                  height: 24,
-                                  width: 24,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.login_rounded, size: 20),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      "INICIAR SESIÓN",
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 1.2,
-                                      ),
+                            child: Hero(
+                              tag: 'app_logo',
+                              child: Container(
+                                height: 120,
+                                width: 120,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 15,
+                                      offset: Offset(0, 8),
                                     ),
                                   ],
                                 ),
-                          ),
-                          
-                          SizedBox(height: 24),
-                          
-                          // Registro
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                "¿No tienes cuenta?",
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context, 
-                                    MaterialPageRoute(builder: (context) => RegisterScreen())
-                                  );
-                                },
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Colors.white,
-                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                ),
-                                child: Text(
-                                  "REGÍSTRATE",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    'assets/habilidades.png',
+                                    fit: BoxFit.cover,
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
-                          
-                          Spacer(),
-                          
-                          // Indicador de versión
-                          Padding(
-                            padding: EdgeInsets.only(bottom: 16),
-                            child: Text(
-                              "v1.0.0",
-                              style: TextStyle(color: Colors.white38, fontSize: 12),
-                              textAlign: TextAlign.center,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                        
+                        SizedBox(height: 28),
+                        
+                        // Títulos animados
+                        TweenAnimationBuilder<double>(
+                          tween: Tween<double>(begin: 0.0, end: 1.0),
+                          duration: Duration(milliseconds: 1000),
+                          curve: Curves.easeOut,
+                          builder: (context, value, child) {
+                            return Opacity(
+                              opacity: value,
+                              child: Transform.translate(
+                                offset: Offset(0, 20 * (1 - value)),
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: Column(
+                            children: [
+                              Text(
+                                "¡Bienvenido!",
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 1.0,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black26,
+                                      blurRadius: 5,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                "Inicia sesión para continuar",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white.withOpacity(0.8),
+                                  letterSpacing: 0.5,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        SizedBox(height: 40),
+                        
+                        // Campos de formulario con validación
+                        TextFormField(
+                          controller: _emailController,
+                          style: TextStyle(color: Colors.white),
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Por favor, introduce tu correo electrónico';
+                            }
+                            final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                            if (!emailRegex.hasMatch(value)) {
+                              return 'Introduce un correo electrónico válido';
+                            }
+                            return null;
+                          },
+                          decoration: _buildInputDecoration(
+                            'Email',
+                            Icons.email_rounded,
+                            false,
+                          ),
+                        ),
+                        
+                        SizedBox(height: 20),
+                        
+                        TextFormField(
+                          controller: _passwordController,
+                          style: TextStyle(color: Colors.white),
+                          obscureText: _obscurePassword,
+                          textInputAction: TextInputAction.done,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Por favor, introduce tu contraseña';
+                            }
+                            if (value.length < 6) {
+                              return 'La contraseña debe tener al menos 6 caracteres';
+                            }
+                            return null;
+                          },
+                          onFieldSubmitted: (_) => _signIn(),
+                          decoration: _buildInputDecoration(
+                            'Contraseña',
+                            Icons.lock_rounded,
+                            true,
+                          ),
+                        ),
+                        
+                        SizedBox(height: 10),
+                        
+                        // Olvidaste tu contraseña
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context, 
+                                MaterialPageRoute(builder: (context) => ResetPasswordScreen())
+                              );
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.white70,
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            ),
+                            child: Text(
+                              '¿Olvidaste tu contraseña?',
+                              style: TextStyle(fontSize: 14),
+                            ),
+                          ),
+                        ),
+                        
+                        SizedBox(height: 40),
+                        
+                        // Botón de inicio de sesión
+                        ElevatedButton(
+                          onPressed: _isLoading ? null : _signIn,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange.shade600,
+                            disabledBackgroundColor: Colors.orange.shade300,
+                            foregroundColor: Colors.white,
+                            elevation: 8,
+                            shadowColor: Colors.orange.withOpacity(0.5),
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          child: _isLoading 
+                            ? SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.login_rounded, size: 20),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    "INICIAR SESIÓN",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                        ),
+                        
+                        SizedBox(height: 24),
+                        
+                        // Registro
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "¿No tienes cuenta?",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 15,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context, 
+                                  MaterialPageRoute(builder: (context) => RegisterScreen())
+                                );
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              ),
+                              child: Text(
+                                "REGÍSTRATE",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        SizedBox(height: 20),
+                        
+                        // Indicador de versión
+                        Padding(
+                          padding: EdgeInsets.only(bottom: 16),
+                          child: Text(
+                            "v1.0.0",
+                            style: TextStyle(color: Colors.white38, fontSize: 12),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
