@@ -20,6 +20,29 @@ class MatchStatistics {
   });
 }
 
+/// Modelo para estadísticas agregadas del jugador
+class AggregatedStats {
+  final int totalMatches;
+  final int totalGoals;
+  final int totalAssists;
+  final int totalOwnGoals;
+  final double goalAverage;
+  final double assistAverage;
+  final double ownGoalAverage;
+  final double goalAssistAverage;
+
+  AggregatedStats({
+    required this.totalMatches,
+    required this.totalGoals,
+    required this.totalAssists,
+    required this.totalOwnGoals,
+    required this.goalAverage,
+    required this.assistAverage,
+    required this.ownGoalAverage,
+    required this.goalAssistAverage,
+  });
+}
+
 /// Pantalla para mostrar gráficos de estadísticas del jugador
 class PlayerStatsGraphScreen extends StatefulWidget {
   const PlayerStatsGraphScreen({Key? key}) : super(key: key);
@@ -31,14 +54,22 @@ class PlayerStatsGraphScreen extends StatefulWidget {
 class _PlayerStatsGraphScreenState extends State<PlayerStatsGraphScreen> {
   bool _isLoading = true;
   final List<MatchStatistics> _matchStatistics = [];
-  int _totalGoals = 0;
-  int _totalAssists = 0;
-  int _totalOwnGoals = 0;
-  int _totalMatches = 0;
+  late AggregatedStats _aggregatedStats;
   
   @override
   void initState() {
     super.initState();
+    // Inicializar con valores por defecto
+    _aggregatedStats = AggregatedStats(
+      totalMatches: 0,
+      totalGoals: 0,
+      totalAssists: 0,
+      totalOwnGoals: 0,
+      goalAverage: 0,
+      assistAverage: 0,
+      ownGoalAverage: 0,
+      goalAssistAverage: 0,
+    );
     _loadPlayerStatistics();
   }
 
@@ -68,6 +99,9 @@ class _PlayerStatsGraphScreenState extends State<PlayerStatsGraphScreen> {
       // Convertir a objetos MatchStatistics
       final List<MatchStatistics> stats = [];
       final Set<String> uniqueMatchIds = {};
+      int totalGoals = 0;
+      int totalAssists = 0;
+      int totalOwnGoals = 0;
       
       for (final dynamic row in result) {
         final Map<String, dynamic> data = row as Map<String, dynamic>;
@@ -93,15 +127,29 @@ class _PlayerStatsGraphScreenState extends State<PlayerStatsGraphScreen> {
         }
         
         // Calcular totales
-        _totalGoals += (data['goles'] ?? 0) as int;
-        _totalAssists += (data['asistencias'] ?? 0) as int;
-        _totalOwnGoals += (data['goles_propios'] ?? 0) as int;
+        totalGoals += (data['goles'] ?? 0) as int;
+        totalAssists += (data['asistencias'] ?? 0) as int;
+        totalOwnGoals += (data['goles_propios'] ?? 0) as int;
       }
       
-      _totalMatches = uniqueMatchIds.length;
+      final int totalMatches = uniqueMatchIds.length;
+      final double goalAverage = totalMatches > 0 ? totalGoals / totalMatches : 0;
+      final double assistAverage = totalMatches > 0 ? totalAssists / totalMatches : 0;
+      final double ownGoalAverage = totalMatches > 0 ? totalOwnGoals / totalMatches : 0;
+      final double goalAssistAverage = totalMatches > 0 ? (totalGoals + totalAssists) / totalMatches : 0;
       
       setState(() {
         _matchStatistics.addAll(stats);
+        _aggregatedStats = AggregatedStats(
+          totalMatches: totalMatches,
+          totalGoals: totalGoals,
+          totalAssists: totalAssists,
+          totalOwnGoals: totalOwnGoals,
+          goalAverage: goalAverage,
+          assistAverage: assistAverage,
+          ownGoalAverage: ownGoalAverage,
+          goalAssistAverage: goalAssistAverage,
+        );
         _isLoading = false;
       });
     } catch (e) {
@@ -474,14 +522,14 @@ class _PlayerStatsGraphScreenState extends State<PlayerStatsGraphScreen> {
                                     children: [
                                       _buildStatCard(
                                         'Partidos',
-                                        _totalMatches.toString(),
+                                        _aggregatedStats.totalMatches.toString(),
                                         Icons.sports_soccer,
                                         const Color(0xFF3F51B5),
                                       ),
                                       const SizedBox(width: 12),
                                       _buildStatCard(
                                         'Goles',
-                                        _totalGoals.toString(),
+                                        _aggregatedStats.totalGoals.toString(),
                                         Icons.star,
                                         const Color(0xFF2196F3),
                                       ),
@@ -494,16 +542,56 @@ class _PlayerStatsGraphScreenState extends State<PlayerStatsGraphScreen> {
                                     children: [
                                       _buildStatCard(
                                         'Asistencias',
-                                        _totalAssists.toString(),
+                                        _aggregatedStats.totalAssists.toString(),
                                         Icons.trending_up,
                                         const Color(0xFF4CAF50),
                                       ),
                                       const SizedBox(width: 12),
                                       _buildStatCard(
                                         'Goles en propia',
-                                        _totalOwnGoals.toString(),
+                                        _aggregatedStats.totalOwnGoals.toString(),
                                         Icons.error_outline,
                                         const Color(0xFFF44336),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      _buildStatCard(
+                                        'Promedio de Goles',
+                                        _aggregatedStats.goalAverage.toStringAsFixed(2),
+                                        Icons.bar_chart,
+                                        const Color(0xFF2196F3),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      _buildStatCard(
+                                        'Promedio de Asistencias',
+                                        _aggregatedStats.assistAverage.toStringAsFixed(2),
+                                        Icons.show_chart,
+                                        const Color(0xFF4CAF50),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      _buildStatCard(
+                                        'Promedio de Goles en Propia',
+                                        _aggregatedStats.ownGoalAverage.toStringAsFixed(2),
+                                        Icons.pie_chart,
+                                        const Color(0xFFF44336),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      _buildStatCard(
+                                        'Promedio de Goles + Asistencias',
+                                        _aggregatedStats.goalAssistAverage.toStringAsFixed(2),
+                                        Icons.stacked_line_chart,
+                                        const Color(0xFF9C27B0),
                                       ),
                                     ],
                                   ),
