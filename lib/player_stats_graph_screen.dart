@@ -491,7 +491,7 @@ class _PlayerStatsGraphScreenState extends State<PlayerStatsGraphScreen> {
                       
                       const SizedBox(height: 16),
                       
-                      // Estadísticas totales
+                      // Estadísticas básicas visibles en la pantalla principal
                       Expanded(
                         child: Container(
                           decoration: BoxDecoration(
@@ -501,103 +501,98 @@ class _PlayerStatsGraphScreenState extends State<PlayerStatsGraphScreen> {
                               topRight: Radius.circular(20),
                             ),
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Estadísticas Totales',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                // Tarjetas de estadísticas
-                                Expanded(
-                                  child: Row(
-                                    children: [
-                                      _buildStatCard(
-                                        'Partidos',
-                                        _aggregatedStats.totalMatches.toString(),
-                                        Icons.sports_soccer,
-                                        const Color(0xFF3F51B5),
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'Estadísticas Totales',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
                                       ),
-                                      const SizedBox(width: 12),
-                                      _buildStatCard(
-                                        'Goles',
-                                        _aggregatedStats.totalGoals.toString(),
-                                        Icons.star,
-                                        const Color(0xFF2196F3),
+                                    ),
+                                    // Botón para mostrar todas las estadísticas
+                                    ElevatedButton(
+                                      onPressed: () => _showFullStatistics(context),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue.shade700,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16.0, 
+                                          vertical: 8.0,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: const [
+                                          Text('Ver todo'),
+                                          SizedBox(width: 4),
+                                          Icon(Icons.keyboard_arrow_up_rounded, size: 18),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              
+                              // Grid de 2x2 para las estadísticas principales
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    children: [
+                                      Expanded(
+                                        child: Row(
+                                          children: [
+                                            _buildStatCard(
+                                              'Partidos',
+                                              _aggregatedStats.totalMatches.toString(),
+                                              Icons.sports_soccer,
+                                              const Color(0xFF3F51B5),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            _buildStatCard(
+                                              'Goles',
+                                              _aggregatedStats.totalGoals.toString(),
+                                              Icons.star,
+                                              const Color(0xFF2196F3),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Expanded(
+                                        child: Row(
+                                          children: [
+                                            _buildStatCard(
+                                              'Asistencias',
+                                              _aggregatedStats.totalAssists.toString(),
+                                              Icons.trending_up,
+                                              const Color(0xFF4CAF50),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            _buildStatCard(
+                                              'Goles en propia',
+                                              _aggregatedStats.totalOwnGoals.toString(),
+                                              Icons.error_outline,
+                                              const Color(0xFFF44336),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: 12),
-                                Expanded(
-                                  child: Row(
-                                    children: [
-                                      _buildStatCard(
-                                        'Asistencias',
-                                        _aggregatedStats.totalAssists.toString(),
-                                        Icons.trending_up,
-                                        const Color(0xFF4CAF50),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      _buildStatCard(
-                                        'Goles en propia',
-                                        _aggregatedStats.totalOwnGoals.toString(),
-                                        Icons.error_outline,
-                                        const Color(0xFFF44336),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Expanded(
-                                  child: Row(
-                                    children: [
-                                      _buildStatCard(
-                                        'Promedio de Goles',
-                                        _aggregatedStats.goalAverage.toStringAsFixed(2),
-                                        Icons.bar_chart,
-                                        const Color(0xFF2196F3),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      _buildStatCard(
-                                        'Promedio de Asistencias',
-                                        _aggregatedStats.assistAverage.toStringAsFixed(2),
-                                        Icons.show_chart,
-                                        const Color(0xFF4CAF50),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Expanded(
-                                  child: Row(
-                                    children: [
-                                      _buildStatCard(
-                                        'Promedio de Goles en Propia',
-                                        _aggregatedStats.ownGoalAverage.toStringAsFixed(2),
-                                        Icons.pie_chart,
-                                        const Color(0xFFF44336),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      _buildStatCard(
-                                        'Promedio de Goles + Asistencias',
-                                        _aggregatedStats.goalAssistAverage.toStringAsFixed(2),
-                                        Icons.stacked_line_chart,
-                                        const Color(0xFF9C27B0),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -605,5 +600,351 @@ class _PlayerStatsGraphScreenState extends State<PlayerStatsGraphScreen> {
                   ),
                 ),
     );
+  }
+  
+  /// Muestra el panel completo de estadísticas
+  void _showFullStatistics(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.8,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          builder: (BuildContext context, ScrollController scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[850],
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Indicador de arrastre
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    width: 50,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.white38,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  
+                  // Encabezado con título y botón cerrar
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Estadísticas Detalladas',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                          splashRadius: 24,
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Lista desplazable de estadísticas
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      padding: const EdgeInsets.all(20),
+                      physics: const BouncingScrollPhysics(),
+                      children: [
+                        // Sección: Totales
+                        const Text(
+                          'TOTALES',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white70,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        
+                        // Grid de estadísticas totales
+                        GridView.count(
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          crossAxisCount: 2,
+                          childAspectRatio: 1.5,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          children: [
+                            _buildDetailedStatCard(
+                              'Partidos jugados',
+                              _aggregatedStats.totalMatches.toString(),
+                              Icons.sports_soccer,
+                              const Color(0xFF3F51B5),
+                            ),
+                            _buildDetailedStatCard(
+                              'Goles marcados',
+                              _aggregatedStats.totalGoals.toString(),
+                              Icons.star,
+                              const Color(0xFF2196F3),
+                            ),
+                            _buildDetailedStatCard(
+                              'Asistencias',
+                              _aggregatedStats.totalAssists.toString(),
+                              Icons.trending_up,
+                              const Color(0xFF4CAF50),
+                            ),
+                            _buildDetailedStatCard(
+                              'Goles en propia',
+                              _aggregatedStats.totalOwnGoals.toString(),
+                              Icons.error_outline,
+                              const Color(0xFFF44336),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 30),
+                        
+                        // Sección: Promedios
+                        const Text(
+                          'PROMEDIOS POR PARTIDO',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white70,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        
+                        // Grid de estadísticas promedio
+                        GridView.count(
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          crossAxisCount: 2,
+                          childAspectRatio: 1.5,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          children: [
+                            _buildDetailedStatCard(
+                              'Media de goles',
+                              _aggregatedStats.goalAverage.toStringAsFixed(2),
+                              Icons.bar_chart,
+                              const Color(0xFF2196F3),
+                            ),
+                            _buildDetailedStatCard(
+                              'Media de asistencias',
+                              _aggregatedStats.assistAverage.toStringAsFixed(2),
+                              Icons.show_chart,
+                              const Color(0xFF4CAF50),
+                            ),
+                            _buildDetailedStatCard(
+                              'Media de goles en propia',
+                              _aggregatedStats.ownGoalAverage.toStringAsFixed(2),
+                              Icons.pie_chart,
+                              const Color(0xFFF44336),
+                            ),
+                            _buildDetailedStatCard(
+                              'Media de contribuciones',
+                              _aggregatedStats.goalAssistAverage.toStringAsFixed(2),
+                              Icons.stacked_line_chart,
+                              const Color(0xFF9C27B0),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 30),
+                        
+                        // Estadísticas adicionales o análisis
+                        _buildRatioCard(
+                          'Ratio de goles',
+                          _getRatioDescription(_aggregatedStats.goalAverage),
+                          _aggregatedStats.goalAverage,
+                          _getRatioColor(_aggregatedStats.goalAverage),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildRatioCard(
+                          'Ratio de contribución',
+                          _getRatioDescription(_aggregatedStats.goalAssistAverage),
+                          _aggregatedStats.goalAssistAverage,
+                          _getRatioColor(_aggregatedStats.goalAssistAverage),
+                        ),
+                        
+                        const SizedBox(height: 40),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+  
+  /// Construye una tarjeta de estadística detallada para el panel completo
+  Widget _buildDetailedStatCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 2,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: color,
+              size: 30,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.white70,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  /// Construye una tarjeta de ratio con barra de progreso
+  Widget _buildRatioCard(String title, String description, double value, Color color) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[800],
+        borderRadius: BorderRadius.circular(15),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            description,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.white70,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: _normalizeRatioValue(value),
+              minHeight: 8,
+              backgroundColor: Colors.white10,
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '0.0',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[400],
+                ),
+              ),
+              Text(
+                value.toStringAsFixed(2),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              Text(
+                '3.0',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[400],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  
+  /// Normaliza el valor del ratio para la barra de progreso (entre 0 y 1)
+  double _normalizeRatioValue(double value) {
+    // Consideramos 3.0 como valor máximo (escala de 0 a 3)
+    return (value / 3.0).clamp(0.0, 1.0);
+  }
+  
+  /// Devuelve la descripción del ratio según el valor
+  String _getRatioDescription(double value) {
+    if (value >= 2.5) {
+      return 'Excelente rendimiento, contribución de élite';
+    } else if (value >= 2.0) {
+      return 'Muy buen rendimiento, contribución destacada';
+    } else if (value >= 1.5) {
+      return 'Buen rendimiento, por encima de la media';
+    } else if (value >= 1.0) {
+      return 'Rendimiento notable, buena contribución';
+    } else if (value >= 0.5) {
+      return 'Rendimiento promedio, contribuyente regular';
+    } else {
+      return 'Área de mejora, contribución moderada';
+    }
+  }
+  
+  /// Devuelve el color según el valor del ratio
+  Color _getRatioColor(double value) {
+    if (value >= 2.5) {
+      return Colors.purple;
+    } else if (value >= 2.0) {
+      return Colors.indigo;
+    } else if (value >= 1.5) {
+      return Colors.blue;
+    } else if (value >= 1.0) {
+      return Colors.teal;
+    } else if (value >= 0.5) {
+      return Colors.amber;
+    } else {
+      return Colors.orange;
+    }
   }
 }
