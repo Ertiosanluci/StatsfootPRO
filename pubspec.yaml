@@ -48,6 +48,8 @@ dependencies:
   app_links: ^3.5.0   # Reemplazado uni_links por app_links
   uuid: ^4.3.3       # Añadido para generar ID únicos
   path: ^1.9.0       # Añadido para trabajar con rutas de archivos
+  fl_chart: ^0.66.0  # Añadido para crear gráficos estadísticos
+  intl: ^0.19.0      # Añadido para formatear fechas
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statsfoota/profile_edit_screen.dart'; // Importación para la pantalla de edición de perfil
+import 'package:statsfoota/player_stats_graph_screen.dart'; // Importación para la pantalla de estadísticas
 
 class UserMenuScreen extends StatefulWidget {
   @override
@@ -173,6 +174,25 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
                 // Actualizar datos después de volver de la pantalla de edición
                 _loadUserData();
               });
+            });
+          },
+        ),
+        PopupMenuItem<String>(
+          value: 'player_stats',
+          child: Row(
+            children: [
+              Icon(Icons.bar_chart, color: Colors.green.shade600),
+              SizedBox(width: 10),
+              Text('Mis Estadísticas'),
+            ],
+          ),
+          onTap: () {
+            // Navegar a la pantalla de estadísticas después de que el menú se cierre
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.push(
+                context, 
+                MaterialPageRoute(builder: (context) => PlayerStatsGraphScreen())
+              );
             });
           },
         ),
