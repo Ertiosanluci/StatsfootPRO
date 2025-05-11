@@ -1,0 +1,111 @@
+Tabla: match_participants
+id (int8)
+
+match_id (int8)
+
+user_id (uuid)
+
+equipo (text)
+
+es_organizador (bool)
+
+joined_at (timestampz)
+
+Tabla: match_stats
+id (int8)
+
+match_id (int8)
+
+user_id (uuid)
+
+goles (int4)
+
+asistencias (int4)
+
+tarjetas_amarillas (int4)
+
+tarjetas_rojas (int4)
+
+equipo (text)
+
+Tabla: matches
+id (int8)
+
+creador_id (uuid)
+
+nombre (text)
+
+formato (text)
+
+fecha (timestampz)
+
+estado (text)
+
+enlace (text)
+
+created_at (timestampz)
+
+updated_at (timestampz)
+
+team_claro (uuid)
+
+team_oscuro (uuid)
+
+team_claro_positions (jsonb)
+
+team_oscuro_positions (jsonb)
+
+resultado_claro (int4)
+
+resultado_oscuro (int4)
+
+mvp_team_claro (uuid)
+
+mvp_team_oscuro (uuid)
+
+Tabla: profiles
+id (uuid)
+
+username (text)
+
+created_at (timestampz)
+
+avatar_url (text)
+
+position (text)
+
+description (text)
+
+updated_at (timestampz)
+
+birthdate (date)
+
+frequency (text)
+
+gender (text)
+
+level (text)
+
+Tabla: estadisticas
+id (int4)
+
+goles (int4)
+
+asistencias (int4)
+
+jugador_id (uuid)
+
+equipo (text)
+
+partido_id (int4)
+
+goles_propios (int4)
+
+Relaciones:
+match_participants.user_id → auth.users.id
+
+match_stats.user_id → auth.users.id
+
+matches.creador_id → auth.users.id
+
+profiles.id → auth.users.id

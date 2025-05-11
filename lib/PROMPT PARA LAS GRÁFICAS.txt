@@ -1,0 +1,46 @@
+PROMPT PARA LAS GRÁFICAS:
+
+
+
+En la pantalla de editar perfil necesito una pantalla que me permita ver una gráfica de mis goles, asistencias y goles en propia que se vaya rellenando por cada partido que juegue, necesito que la línea de los goles sean azules, asistencias en verde, y los goles en propia rojos, y que cada punto aparezca la fecha de cuando jugó. Cuando el tamaño de la gráfica sea más grande que el ancho de la pantalla, procura que se pueda desplazar la gráfica para que los datos que están a la derecha se puedan ver. justo debajo de la gráfica aparecerán los goles totales, asistencias totales , goles en propia totales y la cantidad de partidos asistidos totales. La gráfica ocupará la mitad de la pantalla y debajo estarán las estadísticas que te he comentado.
+También te voy a pasar un ejemplo del tipo de gráfica que quiero.
+Para eso tengo creada una vista llamada "vista_estadisticas_jugadores" te paso la estructura de la vista:
+
+CREATE OR REPLACE VIEW vista_estadisticas_jugadores AS
+SELECT 
+    p.id AS jugador_id,
+    p.username,
+    COUNT(DISTINCT e.partido_id) AS partidos_jugados,
+    COALESCE(SUM(e.goles), 0) AS goles_totales,
+    COALESCE(SUM(e.asistencias), 0) AS asistencias_totales,
+    COALESCE(SUM(e.goles_propios), 0) AS goles_propios_totales,
+    CASE 
+        WHEN COUNT(DISTINCT e.partido_id) > 0 
+        THEN ROUND(COALESCE(SUM(e.goles), 0)::numeric / COUNT(DISTINCT e.partido_id), 2) 
+        ELSE 0 
+    END AS media_goles_por_partido,
+    CASE 
+        WHEN COUNT(DISTINCT e.partido_id) > 0 
+        THEN ROUND(COALESCE(SUM(e.asistencias), 0)::numeric / COUNT(DISTINCT e.partido_id), 2) 
+        ELSE 0 
+    END AS media_asistencias_por_partido,
+    CASE 
+        WHEN COUNT(DISTINCT e.partido_id) > 0 
+        THEN ROUND((COALESCE(SUM(e.goles), 0) + COALESCE(SUM(e.asistencias), 0))::numeric / COUNT(DISTINCT e.partido_id), 2) 
+        ELSE 0 
+    END AS media_goles_asistencias_por_partido,
+    CASE 
+        WHEN COUNT(DISTINCT e.partido_id) > 0 
+        THEN ROUND(COALESCE(SUM(e.goles_propios), 0)::numeric / COUNT(DISTINCT e.partido_id), 2) 
+        ELSE 0 
+    END AS media_goles_propios_por_partido
+FROM 
+    profiles p
+LEFT JOIN 
+    estadisticas e ON p.id = e.jugador_id
+LEFT JOIN 
+    match_participants mp ON p.id = mp.user_id
+GROUP BY 
+    p.id, p.username
+ORDER BY 
+    goles_totales DESC, asistencias_totales DESC;
