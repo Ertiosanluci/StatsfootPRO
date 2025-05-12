@@ -587,7 +587,8 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
               // Back button
               OutlinedButton(
                 onPressed: () {
-                  Navigator.of(context).pop();
+                  // Redirigir a la pantalla de Mis Partidos en lugar de solo hacer pop
+                  Navigator.of(context).pushNamedAndRemoveUntil('/match_list', (route) => false);
                 },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,

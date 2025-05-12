@@ -220,7 +220,7 @@ class _PlayerStatsGraphScreenState extends State<PlayerStatsGraphScreen> {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -228,13 +228,13 @@ class _PlayerStatsGraphScreenState extends State<PlayerStatsGraphScreen> {
               Icon(
                 icon,
                 color: color,
-                size: 22,
+                size: 20,
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 1),
               Text(
                 value,
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: color,
                 ),
@@ -242,15 +242,17 @@ class _PlayerStatsGraphScreenState extends State<PlayerStatsGraphScreen> {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 1),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: Colors.white70,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Colors.white70,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -497,106 +499,125 @@ class _PlayerStatsGraphScreenState extends State<PlayerStatsGraphScreen> {
                       
                       // Estadísticas básicas visibles en la pantalla principal
                       Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.grey[850],
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(20),
-                              topRight: Radius.circular(20),
-                            ),
-                          ),
-                          child: Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      'Estadísticas Totales',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    // Botón para mostrar todas las estadísticas
-                                    ElevatedButton(
-                                      onPressed: () => _showFullStatistics(context),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blue.shade700,
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16.0, 
-                                          vertical: 8.0,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: const [
-                                          Text('Ver todo'),
-                                          SizedBox(width: 4),
-                                          Icon(Icons.keyboard_arrow_up_rounded, size: 18),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                        child: GestureDetector(
+                          onVerticalDragEnd: (details) {
+                            // Si el usuario desliza hacia arriba, mostrar todas las estadísticas
+                            if (details.primaryVelocity != null && details.primaryVelocity! < 0) {
+                              _showFullStatistics(context);
+                            }
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey[850],
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(20),
+                                topRight: Radius.circular(20),
                               ),
-                              
-                              // Grid de 2x2 para las estadísticas principales
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
+                            ),
+                            child: Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Expanded(
-                                        child: Row(
-                                          children: [
-                                            _buildStatCard(
-                                              'Partidos',
-                                              _aggregatedStats.totalMatches.toString(),
-                                              Icons.sports_soccer,
-                                              const Color(0xFF3F51B5),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            _buildStatCard(
-                                              'Goles',
-                                              _aggregatedStats.totalGoals.toString(),
-                                              Icons.star,
-                                              const Color(0xFF2196F3),
-                                            ),
-                                          ],
+                                      const Text(
+                                        'Estadísticas Totales',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
                                         ),
                                       ),
-                                      const SizedBox(height: 12),
-                                      Expanded(
+                                      // Botón para mostrar todas las estadísticas
+                                      ElevatedButton(
+                                        onPressed: () => _showFullStatistics(context),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.blue.shade700,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16.0, 
+                                            vertical: 8.0,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                        ),
                                         child: Row(
-                                          children: [
-                                            _buildStatCard(
-                                              'Asistencias',
-                                              _aggregatedStats.totalAssists.toString(),
-                                              Icons.trending_up,
-                                              const Color(0xFF4CAF50),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            _buildStatCard(
-                                              'Goles en propia',
-                                              _aggregatedStats.totalOwnGoals.toString(),
-                                              Icons.error_outline,
-                                              const Color(0xFFF44336),
-                                            ),
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: const [
+                                            Text('Ver todo'),
+                                            SizedBox(width: 4),
+                                            Icon(Icons.keyboard_arrow_up_rounded, size: 18),
                                           ],
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                              ),
-                            ],
+                                
+                                // Indicador visual de deslizar hacia arriba
+                                Container(
+                                  width: 40,
+                                  height: 4,
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[600],
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                
+                                // Grid de 2x2 para las estadísticas principales
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Column(
+                                      children: [
+                                        Expanded(
+                                          child: Row(
+                                            children: [
+                                              _buildStatCard(
+                                                'Partidos',
+                                                _aggregatedStats.totalMatches.toString(),
+                                                Icons.sports_soccer,
+                                                const Color(0xFF3F51B5),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              _buildStatCard(
+                                                'Goles',
+                                                _aggregatedStats.totalGoals.toString(),
+                                                Icons.star,
+                                                const Color(0xFF2196F3),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Expanded(
+                                          child: Row(
+                                            children: [
+                                              _buildStatCard(
+                                                'Asistencias',
+                                                _aggregatedStats.totalAssists.toString(),
+                                                Icons.trending_up,
+                                                const Color(0xFF4CAF50),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              _buildStatCard(
+                                                'Goles en propia',
+                                                _aggregatedStats.totalOwnGoals.toString(),
+                                                Icons.error_outline,
+                                                const Color(0xFFF44336),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

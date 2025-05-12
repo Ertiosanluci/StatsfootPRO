@@ -1,0 +1,31 @@
+APLICACION STATSFOOT:
+
+-Mejorar CREAR PARTIDO:
+	Seleccionas la plantilla (5v5), (6v6),(7v7), (8vs8) hasta llegar a (11v11)
+	Ahora hay distintas "casillas" para seleccionar jugadores.
+	Eliminamos la lista de jugadores.
+	Mejorar la imagen del campo de futbol
+	Estas casillas si dejo presionada la imagen las puedo mover para modificar la formación de los jugadores.
+
+
+
+	ELIMINAMOS EN ESTA PANTALLA LA SELECCIÓN DE FECHA Y HORA, Y UNA VEZ QUE ESTÉN SELECCIONADOS TODOS LOS JUGADORES EN LA SIGUIENTE PANTALLA SE SELECCIONARÁ
+	Y LA HORA QUE LUEGO SE PODRÁ EDITAR MÁS TARDE.
+(DONE)
+	
+
+
+
+
+	- Permitir cambiar a los jugadores de equipo.
+	- Hay que hacer una vista de la base de datos que aparezcan las estadísticas!!!!!!!!!!!!!!!!!!!!
+	- Añadir una gráfica de estadísticas de los jugadores con los goles por partidos, asistencias, goles en pp, MVPs.
+	- Añadir una funcionalidad de "Entrenador" en la que alguien que no es el creador del partido puede editar la formación del partido.
+	- Queda que se guarden las estadísticas en la base de datos
+
+
+ahora necesito guardar las estadísticas de los goles, asistencias, goles en propia puerta. Quiero actualizar estas estadísticas,
+
+
+COSAS QUE ARREGLAR MAÑANA:
+ HA DEJADO DE FUNCIONAR "MOSTRAR JUGADORES" TANTO EN "VER DETALLES", ESTÁ COGIENDO POSICIONES DISTINTAS, EL EJEMPLO CLARO LO TIENES EN EL PARTIDO "TUSMUERTOS"
