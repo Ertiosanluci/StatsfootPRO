@@ -2332,113 +2332,101 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
       // PASO 2: Actualizar equipos en match_participants
       print('\n--- Actualizando asignación de equipos ---');
       
-      // Actualizar jugadores del equipo CLARO
+      // Crear una lista de todas las actualizaciones que necesitamos hacer
+      List<Future<void>> updateOperations = [];
+      
+      // Preparar actualizaciones para el equipo CLARO
       for (var player in _teamClaro) {
         final participantId = player['id'];
         final nombre = player['nombre'];
+        print('Preparando actualización: Jugador $nombre a equipo CLARO');
         
-        try {
-          // Primero intentar con el método normal
-          await supabase
-              .from('match_participants')
-              .update({'equipo': 'claro'})
-              .eq('id', participantId);
-          
-          print('✓ Jugador $nombre actualizado a equipo CLARO');
-        } catch (e) {
-          print('✗ Error al actualizar jugador $nombre: $e');
-          
-          // Si falla, intentar método alternativo
-          try {
-            await supabase.rpc(
-              'execute_sql',
-              params: {
-                'sql_query': "UPDATE match_participants SET equipo = 'claro' WHERE id = $participantId"
-              }
-            );
-            print('  ✓ Actualizado por método alternativo');
-          } catch (innerError) {
-            print('  ✗ Error en método alternativo: $innerError');
-          }
-        }
+        updateOperations.add(
+          supabase
+            .from('match_participants')
+            .update({'equipo': 'claro'})
+            .eq('id', participantId)
+            .catchError((e) {
+              print('✗ Error al actualizar jugador $nombre: $e');
+              // No propagar el error, para que la operación se considere "completada" aunque falle
+              return null;
+            })
+        );
       }
       
-      // Actualizar jugadores del equipo OSCURO
+      // Preparar actualizaciones para el equipo OSCURO
       for (var player in _teamOscuro) {
         final participantId = player['id'];
         final nombre = player['nombre'];
+        print('Preparando actualización: Jugador $nombre a equipo OSCURO');
         
-        try {
-          await supabase
-              .from('match_participants')
-              .update({'equipo': 'oscuro'})
-              .eq('id', participantId);
-          
-          print('✓ Jugador $nombre actualizado a equipo OSCURO');
-        } catch (e) {
-          print('✗ Error al actualizar jugador $nombre: $e');
-          
-          // Método alternativo
-          try {
-            await supabase.rpc(
-              'execute_sql',
-              params: {
-                'sql_query': "UPDATE match_participants SET equipo = 'oscuro' WHERE id = $participantId"
-              }
-            );
-            print('  ✓ Actualizado por método alternativo');
-          } catch (innerError) {
-            print('  ✗ Error en método alternativo: $innerError');
-          }
-        }
+        updateOperations.add(
+          supabase
+            .from('match_participants')
+            .update({'equipo': 'oscuro'})
+            .eq('id', participantId)
+            .catchError((e) {
+              print('✗ Error al actualizar jugador $nombre: $e');
+              // No propagar el error, para que la operación se considere "completada" aunque falle
+              return null;
+            })
+        );
       }
       
-      // Actualizar jugadores SIN ASIGNAR
+      // Preparar actualizaciones para jugadores SIN ASIGNAR
       for (var player in _unassignedParticipants) {
         final participantId = player['id'];
         final nombre = player['nombre'];
+        print('Preparando actualización: Jugador $nombre a SIN EQUIPO');
         
-        try {
-          await supabase
-              .from('match_participants')
-              .update({'equipo': null})
-              .eq('id', participantId);
-          
-          print('✓ Jugador $nombre quitado de equipos');
-        } catch (e) {
-          print('✗ Error al quitar equipo a jugador $nombre: $e');
-          
-          // Método alternativo
-          try {
-            await supabase.rpc(
-              'execute_sql',
-              params: {
-                'sql_query': "UPDATE match_participants SET equipo = NULL WHERE id = $participantId"
-              }
-            );
-            print('  ✓ Actualizado por método alternativo');
-          } catch (innerError) {
-            print('  ✗ Error en método alternativo: $innerError');
-          }
-        }
+        updateOperations.add(
+          supabase
+            .from('match_participants')
+            .update({'equipo': null})
+            .eq('id', participantId)
+            .catchError((e) {
+              print('✗ Error al quitar equipo a jugador $nombre: $e');
+              // No propagar el error, para que la operación se considere "completada" aunque falle
+              return null;
+            })
+        );
       }
       
-      print('\n--- Verificando estado final ---');
-      final finalCheckPositions = await supabase
-          .from('matches')
-          .select('team_claro_positions, team_oscuro_positions')
-          .eq('id', widget.match['id'])
-          .single();
+      // Ejecutar todas las actualizaciones en paralelo
+      print('Ejecutando ${updateOperations.length} actualizaciones de equipos en match_participants...');
+      await Future.wait(updateOperations);
       
-      if (finalCheckPositions['team_claro_positions'] != null && 
-          finalCheckPositions['team_oscuro_positions'] != null) {
+      print('✓ Actualizaciones de equipo completadas');
+      
+      // Verificación alternativa para asegurar que todas las asignaciones se hayan guardado
+      print('\n--- Verificando estado final en match_participants ---');
+      try {
+        final matchParticipants = await supabase
+          .from('match_participants')
+          .select('id, user_id, equipo')
+          .eq('match_id', widget.match['id']);
         
-        final savedClaroPositions = Map<String, dynamic>.from(finalCheckPositions['team_claro_positions']);
-        final savedOscuroPositions = Map<String, dynamic>.from(finalCheckPositions['team_oscuro_positions']);
+        int countClaro = 0;
+        int countOscuro = 0;
+        int countUnassigned = 0;
         
-        print('✓ Verificado: ${savedClaroPositions.length} posiciones en equipo claro, ${savedOscuroPositions.length} posiciones en equipo oscuro');
-      } else {
-        print('⚠ No se encontraron posiciones guardadas en la verificación');
+        for (var participant in matchParticipants) {
+          if (participant['equipo'] == 'claro') countClaro++;
+          else if (participant['equipo'] == 'oscuro') countOscuro++;
+          else countUnassigned++;
+        }
+        
+        print('Verificación en base de datos: ${countClaro} en Claro, ${countOscuro} en Oscuro, ${countUnassigned} sin asignar (Total: ${matchParticipants.length})');
+        print('Estado local: ${_teamClaro.length} en Claro, ${_teamOscuro.length} en Oscuro, ${_unassignedParticipants.length} sin asignar (Total: ${_participants.length})');
+        
+        // Comprobar si hay discrepancias
+        if (countClaro != _teamClaro.length || countOscuro != _teamOscuro.length) {
+          print('⚠ ADVERTENCIA: Discrepancia entre estado local y base de datos');
+          // Intentar corrección para casos donde la asignación de equipo falló
+          await _forceSyncTeamAssignments();
+        }
+      } catch (e) {
+        print('Error en verificación final: $e');
       }
       
       print('\n=== GUARDADO COMPLETADO ===');
@@ -2460,6 +2448,78 @@ ALTER TABLE matches ADD COLUMN mvp_team_oscuro UUID;
         ''');
       }
       throw e;
+    }
+  }
+  
+  // Método para forzar la sincronización de asignaciones de equipo cuando hay errores
+  Future<void> _forceSyncTeamAssignments() async {
+    print('Intentando sincronización forzada de equipos...');
+    
+    try {
+      // 1. Obtener todos los participantes actuales
+      final participants = await supabase
+          .from('match_participants')
+          .select('*')
+          .eq('match_id', widget.match['id']);
+      
+      // 2. Crear un mapa para búsqueda rápida
+      Map<String, Map<String, dynamic>> participantsMap = {};
+      for (var p in participants) {
+        participantsMap[p['id'].toString()] = p;
+      }
+      
+      // 3. Comprobar y corregir asignaciones para equipo Claro
+      print('Sincronizando equipo CLARO...');
+      int fixedClaro = 0;
+      for (var player in _teamClaro) {
+        final participantId = player['id'].toString();
+        if (participantsMap.containsKey(participantId)) {
+          final currentEquipo = participantsMap[participantId]!['equipo'];
+          if (currentEquipo != 'claro') {
+            // Intentar actualizacion directa SQL via RPC si está disponible
+            try {
+              await supabase.rpc(
+                'execute_sql',
+                params: {
+                  'sql_query': "UPDATE match_participants SET equipo = 'claro' WHERE id = '$participantId'"
+                }
+              );
+              fixedClaro++;
+            } catch (e) {
+              print('Error en sincronización forzada para jugador $participantId: $e');
+            }
+          }
+        }
+      }
+      
+      // 4. Comprobar y corregir asignaciones para equipo Oscuro
+      print('Sincronizando equipo OSCURO...');
+      int fixedOscuro = 0;
+      for (var player in _teamOscuro) {
+        final participantId = player['id'].toString();
+        if (participantsMap.containsKey(participantId)) {
+          final currentEquipo = participantsMap[participantId]!['equipo'];
+          if (currentEquipo != 'oscuro') {
+            // Intentar actualizacion directa SQL via RPC si está disponible
+            try {
+              await supabase.rpc(
+                'execute_sql',
+                params: {
+                  'sql_query': "UPDATE match_participants SET equipo = 'oscuro' WHERE id = '$participantId'"
+                }
+              );
+              fixedOscuro++;
+            } catch (e) {
+              print('Error en sincronización forzada para jugador $participantId: $e');
+            }
+          }
+        }
+      }
+      
+      print('Sincronización forzada completada. Corregidos: $fixedClaro en Claro, $fixedOscuro en Oscuro');
+      
+    } catch (e) {
+      print('Error en sincronización forzada: $e');
     }
   }
 

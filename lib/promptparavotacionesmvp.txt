@@ -1,0 +1,9 @@
+ahora necesito que se pueda elegir el MVP del equipo ganador y el del equipo perdedor por votación popular, entre todos los jugadores del partido.
+La forma de funcionar será la siguiente:
+En la pantalla de "Ver Detalles" el creador del partido podrá decidir cuando se podrá realizar la votación.
+Se creará un botón arriba a la derecha, que al pulsar aparezca un popup en el que diga "Empezar votación".
+Una vez empezada la votación, a todos los participantes del partido, les aparecerá un desplegable de abajo hacia arriba, en el que puedan votar
+	por el mejor jugador del partido. (utiliza la pantalla de elegir mvp ya implementada para guiarte de cómo debes hacer esto que te pido).
+	Una vez que ha pasado un día, se cierra la votación y se guardará los 2 mejores jugadores del partido.
+También, no borres la opción de que el propio creador pueda seleccionar los jugadores manualmente, por si están muy claras las opiniones sobre los mejores jugadores para que no haga falta ninguna votación.
+	Luego, el creador podrá finalizar el partido, y entonces, si eres el MVP, en pantalla te aparecerá "Felicidades eres el MVP del partido" o "Felicidades eres el MVP del equipo" (en caso de que su equipo haya perdido)
