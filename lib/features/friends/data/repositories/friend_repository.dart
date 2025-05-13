@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../features/notifications/domain/models/notification_model.dart';
 import '../../domain/models/friend_request.dart';
 import '../../domain/models/user_profile.dart';
 
@@ -155,13 +156,40 @@ class FriendRepository {
         throw Exception('A friend request already exists between these users');
       }
 
+      // Get sender's name to include in the notification
+      final senderProfile = await _supabaseClient
+          .from('profiles')
+          .select('username')
+          .eq('id', currentUserId)
+          .single();
+      
+      final senderName = senderProfile['username'] as String? ?? 'Usuario';
+
       // Create new friend request
-      await _supabaseClient.from('friends').insert({
+      final response = await _supabaseClient.from('friends').insert({
         'user_id_1': currentUserId,
         'user_id_2': receiverId,
         'status': 'pending',
-      });
+      }).select();
+
+      if (response.isNotEmpty) {
+        // Create a notification for the receiver
+        final requestId = response[0]['id'] as String;
+        
+        await _supabaseClient.from('notifications').insert({
+          'id': DateTime.now().millisecondsSinceEpoch.toString(),
+          'user_id': receiverId,
+          'sender_id': currentUserId,
+          'type': 'friend_request',
+          'title': 'Nueva solicitud de amistad',
+          'message': '$senderName te ha enviado una solicitud de amistad',
+          'resource_id': requestId,
+          'created_at': DateTime.now().toIso8601String(),
+          'is_read': false,
+        });
+      }
     } catch (e) {
+      print('Error sending friend request: $e');
       throw Exception('Failed to send friend request: $e');
     }
   }
@@ -176,21 +204,46 @@ class FriendRepository {
       // Verify the request is directed to the current user
       final response = await _supabaseClient
           .from('friends')
-          .select()
+          .select('user_id_1, user_id_2')
           .eq('id', requestId)
           .eq('user_id_2', currentUserId)
-          .eq('status', 'pending');
+          .eq('status', 'pending')
+          .single();
 
-      if (response.isEmpty) {
+      if (response == null) {
         throw Exception('Friend request not found or not eligible for acceptance');
       }
+
+      final senderId = response['user_id_1'] as String;
+
+      // Get current user's name
+      final currentUserProfile = await _supabaseClient
+          .from('profiles')
+          .select('username')
+          .eq('id', currentUserId)
+          .single();
+      
+      final currentUserName = currentUserProfile['username'] as String? ?? 'Usuario';
 
       // Update the request status to accepted
       await _supabaseClient
           .from('friends')
           .update({'status': 'accepted'})
           .eq('id', requestId);
+
+      // Create notification for the original sender
+      await _supabaseClient.from('notifications').insert({
+        'id': DateTime.now().millisecondsSinceEpoch.toString(),
+        'user_id': senderId,
+        'sender_id': currentUserId,
+        'type': 'friend_accepted',
+        'title': 'Solicitud aceptada',
+        'message': '$currentUserName ha aceptado tu solicitud de amistad',
+        'created_at': DateTime.now().toIso8601String(),
+        'is_read': false,
+      });
     } catch (e) {
+      print('Error accepting friend request: $e');
       throw Exception('Failed to accept friend request: $e');
     }
   }
