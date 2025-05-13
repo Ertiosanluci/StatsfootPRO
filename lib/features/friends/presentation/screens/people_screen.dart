@@ -14,7 +14,7 @@ class PeopleScreen extends ConsumerStatefulWidget {
 
 class _PeopleScreenState extends ConsumerState<PeopleScreen> {
   final TextEditingController _searchController = TextEditingController();
-  bool _isSearching = false;
+  String _searchQuery = '';
   bool _isFirstLoad = true;
 
   @override
@@ -68,6 +68,10 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
 
   // Método para buscar usuarios
   void _searchUsers(String query) {
+    setState(() {
+      _searchQuery = query;
+    });
+    
     // Cancelamos cualquier búsqueda previa
     Future.delayed(const Duration(milliseconds: 100), () {
       if (!mounted) return;
@@ -84,36 +88,6 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
         : ref.watch(friendControllerProvider);
     
     return Scaffold(
-      appBar: AppBar(
-        title: _isSearching 
-          ? TextField(
-              controller: _searchController,
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: 'Buscar personas...',
-                border: InputBorder.none,
-                hintStyle: TextStyle(color: Colors.white70),
-              ),
-              style: TextStyle(color: Colors.white),
-              onChanged: _searchUsers,
-            )
-          : Text('Personas'),
-        backgroundColor: Colors.blue.shade700,
-        actions: [
-          IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search),
-            onPressed: () {
-              setState(() {
-                _isSearching = !_isSearching;
-                if (!_isSearching) {
-                  _searchController.clear();
-                  _loadUsersWithDelay();
-                }
-              });
-            },
-          ),
-        ],
-      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -126,8 +100,51 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
             end: Alignment.bottomCenter,
           ),
         ),
-        child: SafeArea(
-          child: _buildContent(state),
+        child: Column(
+          children: [
+            // Buscador de personas
+            Padding(
+              padding: EdgeInsets.fromLTRB(16, 10, 16, 8),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Buscar personas...',
+                    hintStyle: TextStyle(color: Colors.white70),
+                    prefixIcon: Icon(Icons.search, color: Colors.white70),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(Icons.clear, color: Colors.white70),
+                            onPressed: () {
+                              setState(() {
+                                _searchController.clear();
+                                _searchQuery = '';
+                                _loadUsersWithDelay();
+                              });
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  style: TextStyle(color: Colors.white),
+                  onChanged: _searchUsers,
+                ),
+              ),
+            ),
+
+            // Lista de personas
+            Expanded(
+              child: SafeArea(
+                child: _buildContent(state),
+              ),
+            ),
+          ],
         ),
       ),
     );

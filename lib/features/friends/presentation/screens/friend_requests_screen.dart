@@ -89,23 +89,38 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> wit
     final state = ref.watch(friendControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Solicitudes de amistad'),
-        backgroundColor: Colors.blue.shade800,
-        elevation: 0,
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.orange.shade600,
-          tabs: [
-            Tab(
-              text: 'Recibidas (${state.pendingReceivedRequests.length})',
-              icon: Icon(Icons.inbox),
+      // Usando PreferredSize para controlar la altura exactamente
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(kToolbarHeight - 8), // Reduciendo la altura
+        child: AppBar(
+          backgroundColor: Colors.blue.shade800,
+          elevation: 0,
+          // Sin título y sin espacio extra
+          flexibleSpace: Container(
+            alignment: Alignment.bottomCenter,
+            child: TabBar(
+              controller: _tabController,
+              indicatorColor: Colors.orange.shade600,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white.withOpacity(0.7),
+              tabs: [
+                Tab(
+                  icon: Icon(Icons.inbox, color: Colors.white),
+                  child: Text(
+                    'Recibidas (${state.pendingReceivedRequests.length})',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+                Tab(
+                  icon: Icon(Icons.outbox, color: Colors.white),
+                  child: Text(
+                    'Enviadas (${state.pendingSentRequests.length})',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
             ),
-            Tab(
-              text: 'Enviadas (${state.pendingSentRequests.length})',
-              icon: Icon(Icons.outbox),
-            ),
-          ],
+          ),
         ),
       ),
       body: Container(

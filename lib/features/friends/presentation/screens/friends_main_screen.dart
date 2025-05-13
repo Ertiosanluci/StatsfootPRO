@@ -12,8 +12,8 @@ class FriendsMainScreen extends ConsumerStatefulWidget {
   ConsumerState<FriendsMainScreen> createState() => _FriendsMainScreenState();
 }
 
-class _FriendsMainScreenState extends ConsumerState<FriendsMainScreen> {
-  int _selectedIndex = 0;
+class _FriendsMainScreenState extends ConsumerState<FriendsMainScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   final List<Widget> _screens = [
     const PeopleScreen(),
     const FriendsListScreen(),
@@ -23,7 +23,14 @@ class _FriendsMainScreenState extends ConsumerState<FriendsMainScreen> {
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
     _loadData();
+  }
+  
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -37,66 +44,115 @@ class _FriendsMainScreenState extends ConsumerState<FriendsMainScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(friendControllerProvider);
     
+    // Calculando la altura con margen adicional para las pestañas
+    final double tabBarHeight = kToolbarHeight + 16.0; // Incrementando altura para dar más espacio
+    
     return Scaffold(
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        backgroundColor: Colors.blue.shade800,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white.withOpacity(0.6),
-        elevation: 8,
-        type: BottomNavigationBarType.fixed,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.people_alt),
-            label: 'Personas',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.group),
-            label: 'Mis amigos',
-          ),
-          BottomNavigationBarItem(
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(Icons.notifications),
-                if (state.pendingReceivedRequests.isNotEmpty)
-                  Positioned(
-                    top: -5,
-                    right: -5,
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.blue.shade800, width: 1.5),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(tabBarHeight),
+        child: AppBar(
+          backgroundColor: Colors.blue.shade800,
+          elevation: 0,
+          flexibleSpace: SafeArea(
+            child: Container(
+              alignment: Alignment.bottomCenter,
+              padding: EdgeInsets.only(top: 4),
+              child: TabBar(
+                controller: _tabController,
+                indicatorColor: Colors.orange.shade600,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white.withOpacity(0.6),
+                // Reducir padding horizontal para dar más espacio al texto
+                labelPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 0),
+                // Agregar isScrollable para evitar overflow y hacer las pestañas más compactas
+                isScrollable: false,
+                tabs: [
+                  Tab(
+                    height: 60, // Altura fija para el Tab
+                    icon: Icon(Icons.search, size: 22),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
                       child: Text(
-                        state.pendingReceivedRequests.length.toString(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
+                        'Buscar',
+                        style: TextStyle(fontSize: 12),
                       ),
                     ),
                   ),
-              ],
+                  Tab(
+                    height: 60, // Altura fija para el Tab
+                    icon: Icon(Icons.group, size: 22),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Mis amigos',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ),
+                  Tab(
+                    height: 60, // Altura fija para el Tab
+                    icon: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Icon(Icons.notifications, size: 22),
+                        if (state.pendingReceivedRequests.isNotEmpty)
+                          Positioned(
+                            top: -5,
+                            right: -5,
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.blue.shade800, width: 1.5),
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 14,
+                                minHeight: 14,
+                              ),
+                              child: Text(
+                                state.pendingReceivedRequests.length.toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Solicitudes',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            label: 'Solicitudes',
           ),
-        ],
+        ),
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF1565C0),  // Azul oscuro
+              Color(0xFF1976D2),  // Azul medio
+              Color(0xFF1E88E5),  // Azul claro
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: TabBarView(
+          controller: _tabController,
+          children: _screens,
+        ),
       ),
     );
   }

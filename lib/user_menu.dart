@@ -8,6 +8,9 @@ import 'package:statsfoota/player_stats_graph_screen.dart'; // Importación para
 import 'package:statsfoota/features/friends/friends_module.dart';
 import 'package:statsfoota/features/friends/presentation/controllers/friend_controller.dart';
 import 'package:statsfoota/features/notifications/notifications_drawer.dart'; // Importación para el drawer de notificaciones
+import 'package:statsfoota/features/friends/presentation/screens/friends_main_screen.dart'; // Para la pantalla de amigos
+import 'package:statsfoota/create_match.dart'; // Para la pantalla de crear partido
+import 'package:statsfoota/match_list.dart'; // Para la pantalla de ver partidos
 
 class UserMenuScreen extends ConsumerStatefulWidget {
   @override
@@ -20,6 +23,10 @@ class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTick
   String _username = "Usuario";
   bool _isLoading = true;
   String? _profileImageUrl;
+  int _currentIndex = 0;
+
+  // Lista de pantallas para la navegación inferior
+  late List<Widget> _screens;
 
   @override
   void initState() {
@@ -42,6 +49,14 @@ class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTick
         ref.read(friendControllerProvider.notifier).loadPendingRequests();
       }
     });
+
+    // Inicializar las pantallas
+    _screens = [
+      _buildMainScreen(), // Pantalla principal
+      MatchListScreen(), // Pantalla de ver partidos
+      CreateMatchScreen(), // Pantalla de crear partido
+      FriendsMainScreen(), // Pantalla de personas/amigos
+    ];
   }
 
   @override
@@ -155,55 +170,253 @@ class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTick
           ),
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF1565C0),  // Azul oscuro
-              Color(0xFF1976D2),  // Azul medio
-              Color(0xFF1E88E5),  // Azul claro
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      body: _screens[_currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        backgroundColor: Colors.blue.shade800,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.white.withOpacity(0.6),
+        elevation: 8,
+        type: BottomNavigationBarType.fixed,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Inicio',
           ),
-        ),
-        child: SafeArea(
-          child: CustomScrollView(
-            physics: BouncingScrollPhysics(),
-            slivers: [
-              SliverToBoxAdapter(
-                child: _buildUserHeader(),
-              ),
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(20, 0, 20, 30),
-                sliver: SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSectionHeader("Administración"),
-                      SizedBox(height: 15),
-                      _buildFeaturesGrid(),
-                    ],
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: 'Ver partidos',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.sports_soccer),
+            label: 'Crear partido',
+          ),
+          BottomNavigationBarItem(
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(Icons.search), // Cambiado de people_alt a search (lupa)
+                if (_hasPendingFriendRequests())
+                  Positioned(
+                    top: -5,
+                    right: -5,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.blue.shade800, width: 1.5),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        ref.watch(friendControllerProvider).pendingReceivedRequests.length.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ],
+              ],
+            ),
+            label: 'Personas',
           ),
+        ],
+      ),
+    );
+  }
+  
+  // Pantalla principal (home)
+  Widget _buildMainScreen() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF1565C0),  // Azul oscuro
+            Color(0xFF1976D2),  // Azul medio
+            Color(0xFF1E88E5),  // Azul claro
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.pushNamed(context, '/create_match');
-        },
-        backgroundColor: Colors.orange.shade600,
-        elevation: 8,
-        icon: Icon(Icons.add, color: Colors.white),
-        label: Text(
-          "Nuevo Partido",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
+      child: SafeArea(
+        child: CustomScrollView(
+          physics: BouncingScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Container(
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    SizedBox(height: 20),
+                    Center(
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.sports_soccer,
+                            size: 100,
+                            color: Colors.white,
+                          ),
+                          SizedBox(height: 20),
+                          Text(
+                            "StatsFut PRO",
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            "Tu plataforma para organizar partidos de fútbol",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 40),
+                    _buildInfoSection(),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildInfoSection() {
+    return Column(
+      children: [
+        _buildInfoCard(
+          icon: Icons.calendar_today,
+          title: "Ver tus próximos partidos",
+          description: "Consulta todos tus partidos y los detalles",
+          color: Colors.green,
+          onTap: () {
+            setState(() {
+              _currentIndex = 1; // Cambiar a la pestaña de Ver partidos
+            });
+          },
+        ),
+        SizedBox(height: 16),
+        _buildInfoCard(
+          icon: Icons.sports_soccer,
+          title: "Crear un nuevo partido",
+          description: "Organiza un partido y comparte con amigos",
+          color: Colors.blue,
+          onTap: () {
+            setState(() {
+              _currentIndex = 2; // Cambiar a la pestaña de Crear partido
+            });
+          },
+        ),
+        SizedBox(height: 16),
+        _buildInfoCard(
+          icon: Icons.people_alt,
+          title: "Gestionar amigos",
+          description: "Conecta con otros jugadores",
+          color: Colors.teal,
+          onTap: () {
+            setState(() {
+              _currentIndex = 3; // Cambiar a la pestaña de Personas
+            });
+          },
+        ),
+        SizedBox(height: 16),
+        _buildInfoCard(
+          icon: Icons.bar_chart,
+          title: "Ver estadísticas",
+          description: "Analiza tu rendimiento en los partidos",
+          color: Colors.orange,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => PlayerStatsGraphScreen()),
+            );
+          },
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildInfoCard({
+    required IconData icon,
+    required String title,
+    required String description,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: Colors.white.withOpacity(0.1),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 24,
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.white.withOpacity(0.7),
+                size: 16,
+              ),
+            ],
           ),
         ),
       ),
@@ -432,541 +645,6 @@ class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTick
           },
         ),
       ],
-    );
-  }
-
-  Widget _buildUserHeader() {
-    return Container(
-      padding: EdgeInsets.fromLTRB(20, 10, 20, 25),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Mensaje de bienvenida (sin el avatar)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              FadeTransition(
-                opacity: Tween<double>(begin: 0, end: 1).animate(
-                  CurvedAnimation(
-                    parent: _animationController,
-                    curve: Interval(0.3, 0.7, curve: Curves.easeOut),
-                  ),
-                ),
-                child: Text(
-                  "Bienvenido de nuevo,",
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withOpacity(0.8),
-                  ),
-                ),
-              ),
-              SizedBox(height: 4),
-              FadeTransition(
-                opacity: Tween<double>(begin: 0, end: 1).animate(
-                  CurvedAnimation(
-                    parent: _animationController,
-                    curve: Interval(0.4, 0.8, curve: Curves.easeOut),
-                  ),
-                ),
-                child: Text(
-                  _isLoading ? "Cargando..." : _username,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 20),
-          FadeTransition(
-            opacity: Tween<double>(begin: 0, end: 1).animate(
-              CurvedAnimation(
-                parent: _animationController,
-                curve: Interval(0.5, 0.9, curve: Curves.easeOut),
-              ),
-            ),
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: Offset(0, 0.2),
-                end: Offset.zero,
-              ).animate(
-                CurvedAnimation(
-                  parent: _animationController,
-                  curve: Interval(0.5, 0.9, curve: Curves.easeOut),
-                ),
-              ),
-              child: Container(
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.orange.shade300, Colors.orange.shade600],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 12,
-                      offset: Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.sports_soccer,
-                        color: Colors.white,
-                        size: 30,
-                      ),
-                    ),
-                    SizedBox(width: 15),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Acceso Rápido",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            "Consulta o crea nuevos partidos",
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/match_list');
-                      },
-                      icon: Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.white.withOpacity(0.2),
-                        padding: EdgeInsets.all(8),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAnimatedAvatar() {
-    return ScaleTransition(
-      scale: Tween<double>(begin: 0, end: 1).animate(
-        CurvedAnimation(
-          parent: _animationController,
-          curve: Interval(0.0, 0.6, curve: Curves.elasticOut),
-        ),
-      ),
-      child: Container(
-        width: 65,
-        height: 65,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-            colors: [Colors.blue.shade400, Colors.blue.shade700],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 10,
-              offset: Offset(0, 5),
-            ),
-          ],
-          border: Border.all(
-            color: Colors.white.withOpacity(0.4),
-            width: 2,
-          ),
-        ),
-        child: Center(
-          child: Icon(
-            Icons.person,
-            color: Colors.white,
-            size: 32,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return FadeTransition(
-      opacity: Tween<double>(begin: 0, end: 1).animate(
-        CurvedAnimation(
-          parent: _animationController,
-          curve: Interval(0.6, 1.0, curve: Curves.easeOut),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 20,
-            decoration: BoxDecoration(
-              color: Colors.orange.shade600,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          SizedBox(width: 10),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFeaturesGrid() {
-    final state = ref.watch(friendControllerProvider);
-    final int pendingRequestsCount = state.pendingReceivedRequests.length;
-
-    final List<Map<String, dynamic>> features = [
-      {
-        'icon': Icons.sports_soccer,
-        'title': 'Crear partido',
-        'color': Colors.blue,
-        'route': '/create_match',
-      },
-      {
-        'icon': Icons.calendar_today,
-        'title': 'Ver partidos',
-        'color': Colors.green,
-        'route': '/match_list',
-      },
-      // "Gestionar equipos" button removed while preserving its underlying functionality
-      {
-        'icon': Icons.people_alt,
-        'title': 'Personas',
-        'color': Colors.teal,
-        'route': '/friends',
-        'badge': pendingRequestsCount > 0 ? pendingRequestsCount.toString() : null,
-      },
-    ];
-
-    return FadeTransition(
-      opacity: Tween<double>(begin: 0, end: 1).animate(
-        CurvedAnimation(
-          parent: _animationController,
-          curve: Interval(0.7, 1.0, curve: Curves.easeOut),
-        ),
-      ),
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: Offset(0, 0.2),
-          end: Offset.zero,
-        ).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: Interval(0.7, 1.0, curve: Curves.easeOut),
-          ),
-        ),
-        child: GridView.builder(
-          physics: NeverScrollableScrollPhysics(),
-          shrinkWrap: true,
-          itemCount: features.length,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 1.5,
-            crossAxisSpacing: 15,
-            mainAxisSpacing: 15,
-          ),
-          itemBuilder: (context, index) {
-            final feature = features[index];
-            return _buildFeatureCard(
-              icon: feature['icon'] as IconData,
-              title: feature['title'] as String,
-              color: feature['color'] as Color,
-              onTap: () {
-                Navigator.pushNamed(context, feature['route'] as String);
-              },
-              badge: feature['badge'] as String?,
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFeatureCard({
-    required IconData icon,
-    required String title,
-    required Color color,
-    required VoidCallback onTap,
-    String? badge,
-  }) {
-    return Material(
-      color: Colors.white.withOpacity(0.1),
-      borderRadius: BorderRadius.circular(15),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(15),
-        splashColor: color.withOpacity(0.1),
-        highlightColor: color.withOpacity(0.05),
-        child: Container(
-          padding: EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.1),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: badge != null
-                      ? Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Icon(
-                              icon,
-                              color: color,
-                              size: 26,
-                            ),
-                            Positioned(
-                              top: -8,
-                              right: -8,
-                              child: Container(
-                                padding: EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 1.5),
-                                ),
-                                constraints: BoxConstraints(
-                                  minWidth: 16,
-                                  minHeight: 16,
-                                ),
-                                child: Text(
-                                  badge,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
-                          ],
-                        )
-                      : Icon(
-                          icon,
-                          color: color,
-                          size: 32,
-                        ),
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                title,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatsCards() {
-    final features = [
-      {
-        'icon': Icons.sports_soccer_rounded,
-        'title': 'Partidos',
-        'color': Colors.orange.shade600,
-        'route': '/match_list'
-      },
-      {
-        'icon': Icons.add_chart_rounded,
-        'title': 'Estadísticas',
-        'color': Colors.red.shade600,
-        'route': '/match_list'
-      },
-    ];
-
-    return FadeTransition(
-      opacity: Tween<double>(begin: 0, end: 1).animate(
-        CurvedAnimation(
-          parent: _animationController,
-          curve: Interval(0.7, 1.0, curve: Curves.easeOut),
-        ),
-      ),
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: Offset(0, 0.2),
-          end: Offset.zero,
-        ).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: Interval(0.7, 1.0, curve: Curves.easeOut),
-          ),
-        ),
-        child: GridView.builder(
-          physics: NeverScrollableScrollPhysics(),
-          shrinkWrap: true,
-          itemCount: features.length,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 1.5,
-            crossAxisSpacing: 15,
-            mainAxisSpacing: 15,
-          ),
-          itemBuilder: (context, index) {
-            final feature = features[index];
-            return _buildFeatureCard(
-              icon: feature['icon'] as IconData,
-              title: feature['title'] as String,
-              color: feature['color'] as Color,
-              onTap: () {
-                Navigator.pushNamed(context, feature['route'] as String);
-              },
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatisticCard({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(15),
-        splashColor: color.withOpacity(0.1),
-        highlightColor: color.withOpacity(0.05),
-        child: Container(
-          padding: EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.07),
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.1),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Icon(
-                    icon,
-                    color: color,
-                    size: 26,
-                  ),
-                ),
-              ),
-              SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
-                        fontSize: 14,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          value,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            subtitle,
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
-                              fontSize: 12,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.white.withOpacity(0.5),
-                size: 14,
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
