@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statsfoota/profile_edit_screen.dart'; // Importación para la pantalla de edición de perfil
 import 'package:statsfoota/player_stats_graph_screen.dart'; // Importación para la pantalla de estadísticas
+import 'package:statsfoota/features/friends/friends_module.dart';
+import 'package:statsfoota/features/friends/presentation/controllers/friend_controller.dart';
+import 'package:statsfoota/features/notifications/notifications_drawer.dart'; // Importación para el drawer de notificaciones
 
-class UserMenuScreen extends StatefulWidget {
+class UserMenuScreen extends ConsumerStatefulWidget {
   @override
-  _UserMenuScreenState createState() => _UserMenuScreenState();
+  ConsumerState<UserMenuScreen> createState() => _UserMenuScreenState();
 }
 
-class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProviderStateMixin {
+class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   String _username = "Usuario";
   bool _isLoading = true;
   String? _profileImageUrl;
-  
+
   @override
   void initState() {
     super.initState();
@@ -24,196 +28,14 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
     );
     _animationController.forward();
     _loadUserData();
+    // Inicializar el sistema de amigos
+    FriendsModule.initialize(ref);
   }
-  
+
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadUserData() async {
-    try {
-      final user = Supabase.instance.client.auth.currentUser;
-
-      if (user != null) {
-        // Primero intentamos obtener el nombre y la foto de perfil
-        try {
-          final profileData = await Supabase.instance.client
-              .from('profiles')
-              .select('username, avatar_url')
-              .eq('id', user.id)
-              .single();
-
-          if (profileData != null && mounted) {
-            setState(() {
-              _username = profileData['username'] ?? "Usuario";
-              _profileImageUrl = profileData['avatar_url'];
-              _isLoading = false;
-            });
-            return; // Terminamos aquí si encontramos datos en 'profiles'
-          }
-        } catch (profileError) {
-          print('Error al buscar en tabla profiles: $profileError');
-          // Continuamos con el siguiente intento
-        }
-
-        // Si no hay datos en profiles, intentamos con metadatos de usuario
-        final displayName = user.userMetadata?["username"];
-
-        if (displayName != null) {
-          // Si existe en los metadatos, lo usamos
-          if (mounted) {
-            setState(() {
-              _username = displayName;
-              _isLoading = false;
-            });
-          }
-          return; // Terminamos aquí si encontramos el display_name
-        }
-
-        // Si no hay username en metadatos, usamos el email cortado en @
-        if (user.email != null && user.email!.isNotEmpty) {
-          final emailUsername = user.email!.split('@')[0]; // Obtiene la parte antes del @
-
-          if (mounted) {
-            setState(() {
-              _username = emailUsername;
-              _isLoading = false;
-            });
-          }
-          return; // Terminamos aquí si pudimos extraer el nombre del email
-        }
-
-        // Como último recurso, intentamos con la tabla 'usuarios'
-        try {
-          final userResponse = await Supabase.instance.client
-              .from('usuarios')
-              .select('username')
-              .eq('id', user.id)
-              .single();
-
-          if (userResponse != null && mounted) {
-            setState(() {
-              _username = userResponse['username'] ?? "Usuario";
-              _isLoading = false;
-            });
-          }
-        } catch (userError) {
-          print('Error al buscar en tabla usuarios: $userError');
-          if (mounted) {
-            setState(() {
-              _username = "Usuario";
-              _isLoading = false;
-            });
-          }
-        }
-      } else {
-        // No hay usuario autenticado
-        if (mounted) {
-          setState(() {
-            _username = "Usuario";
-            _isLoading = false;
-          });
-        }
-      }
-    } catch (e) {
-      print('Error general al cargar datos del usuario: $e');
-      if (mounted) {
-        setState(() {
-          _username = "Usuario";
-          _isLoading = false;
-        });
-      }
-    }
-  }
-  
-  Future<void> _signOut() async {
-    try {
-      await Supabase.instance.client.auth.signOut();
-      // Navegar directamente a la pantalla de inicio sin mostrar diálogo
-      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-    } catch (e) {
-      print('Error al cerrar sesión: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al cerrar sesión. Inténtalo de nuevo.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  void _showUserMenu() {
-    showMenu<String>(
-      context: context,
-      position: RelativeRect.fromLTRB(
-        MediaQuery.of(context).size.width, 
-        kToolbarHeight + MediaQuery.of(context).padding.top, 
-        0, 
-        0
-      ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      items: [
-        PopupMenuItem<String>(
-          value: 'edit_profile',
-          child: Row(
-            children: [
-              Icon(Icons.edit, color: Colors.blue.shade600),
-              SizedBox(width: 10),
-              Text('Editar perfil'),
-            ],
-          ),
-          onTap: () {
-            // Navegar a la pantalla de edición de perfil después de que el menú se cierre
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.push(
-                context, 
-                MaterialPageRoute(builder: (context) => ProfileEditScreen())
-              ).then((_) {
-                // Actualizar datos después de volver de la pantalla de edición
-                _loadUserData();
-              });
-            });
-          },
-        ),
-        PopupMenuItem<String>(
-          value: 'player_stats',
-          child: Row(
-            children: [
-              Icon(Icons.bar_chart, color: Colors.green.shade600),
-              SizedBox(width: 10),
-              Text('Mis Estadísticas'),
-            ],
-          ),
-          onTap: () {
-            // Navegar a la pantalla de estadísticas después de que el menú se cierre
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.push(
-                context, 
-                MaterialPageRoute(builder: (context) => PlayerStatsGraphScreen())
-              );
-            });
-          },
-        ),
-        PopupMenuItem<String>(
-          value: 'logout',
-          child: Row(
-            children: [
-              Icon(Icons.logout, color: Colors.red.shade600),
-              SizedBox(width: 10),
-              Text('Cerrar sesión'),
-            ],
-          ),
-          onTap: () {
-            // Llamar directamente a _signOut después de que el menú se cierre
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _signOut();
-            });
-          },
-        ),
-      ],
-    );
   }
 
   @override
@@ -237,8 +59,17 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
             letterSpacing: 0.5,
           ),
         ),
-        // Removing the back button as requested
-        automaticallyImplyLeading: false, // This prevents the back button from appearing
+        leading: IconButton(
+          icon: Badge(
+            label: _getBadgeLabel(),
+            isLabelVisible: _hasPendingFriendRequests(),
+            child: Icon(Icons.menu, color: Colors.white),
+          ),
+          onPressed: () {
+            _showNotificationsDrawer();
+          },
+        ),
+        automaticallyImplyLeading: false,
         actions: [
           // Botón de perfil con imagen de usuario
           GestureDetector(
@@ -336,13 +167,9 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionHeader("Administración de Jugadores"),
+                      _buildSectionHeader("Administración"),
                       SizedBox(height: 15),
                       _buildFeaturesGrid(),
-                      SizedBox(height: 30),
-                      _buildSectionHeader("Administracion de Partidos"),
-                      SizedBox(height: 15),
-                      _buildStatsCards(),
                     ],
                   ),
                 ),
@@ -367,6 +194,231 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
           ),
         ),
       ),
+    );
+  }
+  
+  // Método para verificar si hay solicitudes de amistad pendientes
+  bool _hasPendingFriendRequests() {
+    final state = ref.watch(friendControllerProvider);
+    return state.pendingReceivedRequests.isNotEmpty;
+  }
+  
+  // Método para obtener el número de solicitudes pendientes
+  Widget _getBadgeLabel() {
+    final state = ref.watch(friendControllerProvider);
+    final count = state.pendingReceivedRequests.length;
+    return Text(
+      count.toString(),
+      style: TextStyle(color: Colors.white, fontSize: 10),
+    );
+  }
+  
+  // Método para mostrar el drawer de notificaciones
+  void _showNotificationsDrawer() {
+    // Abre el drawer de notificaciones personalizado desde la izquierda
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 1.0,
+        minChildSize: 0.5,
+        maxChildSize: 1.0,
+        builder: (_, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          child: NotificationsDrawer(),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+
+      if (user != null) {
+        // Primero intentamos obtener el nombre y la foto de perfil
+        try {
+          final profileData = await Supabase.instance.client
+              .from('profiles')
+              .select('username, avatar_url')
+              .eq('id', user.id)
+              .single();
+
+          if (profileData != null && mounted) {
+            setState(() {
+              _username = profileData['username'] ?? "Usuario";
+              _profileImageUrl = profileData['avatar_url'];
+              _isLoading = false;
+            });
+            return; // Terminamos aquí si encontramos datos en 'profiles'
+          }
+        } catch (profileError) {
+          print('Error al buscar en tabla profiles: $profileError');
+          // Continuamos con el siguiente intento
+        }
+
+        // Si no hay datos en profiles, intentamos con metadatos de usuario
+        final displayName = user.userMetadata?["username"];
+
+        if (displayName != null) {
+          // Si existe en los metadatos, lo usamos
+          if (mounted) {
+            setState(() {
+              _username = displayName;
+              _isLoading = false;
+            });
+          }
+          return; // Terminamos aquí si encontramos el display_name
+        }
+
+        // Si no hay username en metadatos, usamos el email cortado en @
+        if (user.email != null && user.email!.isNotEmpty) {
+          final emailUsername = user.email!.split('@')[0]; // Obtiene la parte antes del @
+
+          if (mounted) {
+            setState(() {
+              _username = emailUsername;
+              _isLoading = false;
+            });
+          }
+          return; // Terminamos aquí si pudimos extraer el nombre del email
+        }
+
+        // Como último recurso, intentamos con la tabla 'usuarios'
+        try {
+          final userResponse = await Supabase.instance.client
+              .from('usuarios')
+              .select('username')
+              .eq('id', user.id)
+              .single();
+
+          if (userResponse != null && mounted) {
+            setState(() {
+              _username = userResponse['username'] ?? "Usuario";
+              _isLoading = false;
+            });
+          }
+        } catch (userError) {
+          print('Error al buscar en tabla usuarios: $userError');
+          if (mounted) {
+            setState(() {
+              _username = "Usuario";
+              _isLoading = false;
+            });
+          }
+        }
+      } else {
+        // No hay usuario autenticado
+        if (mounted) {
+          setState(() {
+            _username = "Usuario";
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      print('Error general al cargar datos del usuario: $e');
+      if (mounted) {
+        setState(() {
+          _username = "Usuario";
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _signOut() async {
+    try {
+      await Supabase.instance.client.auth.signOut();
+      // Navegar directamente a la pantalla de inicio sin mostrar diálogo
+      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+    } catch (e) {
+      print('Error al cerrar sesión: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al cerrar sesión. Inténtalo de nuevo.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showUserMenu() {
+    showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        MediaQuery.of(context).size.width,
+        kToolbarHeight + MediaQuery.of(context).padding.top,
+        0,
+        0
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      items: [
+        PopupMenuItem<String>(
+          value: 'edit_profile',
+          child: Row(
+            children: [
+              Icon(Icons.edit, color: Colors.blue.shade600),
+              SizedBox(width: 10),
+              Text('Editar perfil'),
+            ],
+          ),
+          onTap: () {
+            // Navegar a la pantalla de edición de perfil después de que el menú se cierre
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ProfileEditScreen()),
+              ).then((_) {
+                // Actualizar datos después de volver de la pantalla de edición
+                _loadUserData();
+              });
+            });
+          },
+        ),
+        PopupMenuItem<String>(
+          value: 'player_stats',
+          child: Row(
+            children: [
+              Icon(Icons.bar_chart, color: Colors.green.shade600),
+              SizedBox(width: 10),
+              Text('Mis Estadísticas'),
+            ],
+          ),
+          onTap: () {
+            // Navegar a la pantalla de estadísticas después de que el menú se cierre
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => PlayerStatsGraphScreen()),
+              );
+            });
+          },
+        ),
+        PopupMenuItem<String>(
+          value: 'logout',
+          child: Row(
+            children: [
+              Icon(Icons.logout, color: Colors.red.shade600),
+              SizedBox(width: 10),
+              Text('Cerrar sesión'),
+            ],
+          ),
+          onTap: () {
+            // Llamar directamente a _signOut después de que el menú se cierre
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _signOut();
+            });
+          },
+        ),
+      ],
     );
   }
 
@@ -587,16 +639,30 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
   }
 
   Widget _buildFeaturesGrid() {
-    final features = [
-      // Removed the "Crear Jugador" button from here
-      // while keeping all the underlying functionality intact
-      {
-        'icon': Icons.group_rounded,
-        'title': 'Ver Jugadores',
-        'color': Colors.purple.shade600,
-        'route': '/ver_Jugadores'
-      },
+    final state = ref.watch(friendControllerProvider);
+    final int pendingRequestsCount = state.pendingReceivedRequests.length;
 
+    final List<Map<String, dynamic>> features = [
+      {
+        'icon': Icons.sports_soccer,
+        'title': 'Crear partido',
+        'color': Colors.blue,
+        'route': '/create_match',
+      },
+      {
+        'icon': Icons.calendar_today,
+        'title': 'Ver partidos',
+        'color': Colors.green,
+        'route': '/match_list',
+      },
+      // "Gestionar equipos" button removed while preserving its underlying functionality
+      {
+        'icon': Icons.people_alt,
+        'title': 'Personas',
+        'color': Colors.teal,
+        'route': '/friends',
+        'badge': pendingRequestsCount > 0 ? pendingRequestsCount.toString() : null,
+      },
     ];
 
     return FadeTransition(
@@ -635,6 +701,7 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
               onTap: () {
                 Navigator.pushNamed(context, feature['route'] as String);
               },
+              badge: feature['badge'] as String?,
             );
           },
         ),
@@ -647,6 +714,7 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
     required String title,
     required Color color,
     required VoidCallback onTap,
+    String? badge,
   }) {
     return Material(
       color: Colors.white.withOpacity(0.1),
@@ -674,10 +742,48 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
                   color: color.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 26,
+                child: Center(
+                  child: badge != null
+                      ? Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Icon(
+                              icon,
+                              color: color,
+                              size: 26,
+                            ),
+                            Positioned(
+                              top: -8,
+                              right: -8,
+                              child: Container(
+                                padding: EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 1.5),
+                                ),
+                                constraints: BoxConstraints(
+                                  minWidth: 16,
+                                  minHeight: 16,
+                                ),
+                                child: Text(
+                                  badge,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : Icon(
+                          icon,
+                          color: color,
+                          size: 32,
+                        ),
                 ),
               ),
               SizedBox(height: 8),
@@ -699,7 +805,6 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
 
   Widget _buildStatsCards() {
     final features = [
-
       {
         'icon': Icons.sports_soccer_rounded,
         'title': 'Partidos',

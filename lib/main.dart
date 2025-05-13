@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statsfoota/create_match.dart';
 import 'package:statsfoota/create_player.dart';
 import 'package:statsfoota/login.dart';
@@ -12,6 +13,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:app_links/app_links.dart'; // Cambiado de uni_links a app_links
 import 'dart:async';
+
+// Importaciones del sistema de amigos
+import 'package:statsfoota/features/friends/friends_module.dart';
+import 'package:statsfoota/features/friends/presentation/screens/friends_main_screen.dart';
+import 'package:statsfoota/features/friends/presentation/screens/friend_requests_screen.dart';
+import 'package:statsfoota/features/friends/presentation/screens/people_screen.dart';
 
 bool _initialUriIsHandled = false;
 
@@ -34,7 +41,11 @@ Future<void> main() async {
     url: 'https://vlygdxrppzoqlkntfypx.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZseWdkeHJwcHpvcWxrbnRmeXB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAwMzk0MDEsImV4cCI6MjA1NTYxNTQwMX0.gch5BXjGqXbNI2f0zkA3wPg2b357ZfxF97AMEk5CPdE',
   );
-  runApp(MyApp());
+  runApp(
+    ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -151,6 +162,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     return MaterialApp(
       navigatorKey: _navigatorKey, // Añadido para manejar la navegación desde fuera de un BuildContext
       routes: {
+        '/': (context) => SplashScreen(),
+        '/login': (context) => LoginScreen(),
+        '/register': (context) => RegisterScreen(),
         '/user_menu': (context) => UserMenuScreen(),
         '/create_player': (context) => PlayerCreatorScreen(),
         '/ver_Jugadores':(context) => PlayerListScreen(),
@@ -158,6 +172,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/match_list': (context) => MatchListScreen(),
         '/match_join': (context) => MatchJoinScreen(matchId: ''),
         '/profile_edit': (context) => ProfileEditScreen(), // Añadido para manejar la edición de perfil
+        // Rutas del sistema de amigos
+        '/friends': (context) => const FriendsMainScreen(),
+        '/people': (context) => const PeopleScreen(),
+        '/friend_requests': (context) => const FriendRequestsScreen(),
       },
       debugShowCheckedModeBanner: false,
       title: 'StatsFut',
@@ -185,7 +203,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           ),
         ),
       ),
-      home: SplashScreen(),
+      // Removed the redundant home property
     );
   }
 }
