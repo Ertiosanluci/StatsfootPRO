@@ -38,7 +38,6 @@ class _FriendsMainScreenState extends ConsumerState<FriendsMainScreen> {
     final state = ref.watch(friendControllerProvider);
     
     return Scaffold(
-      backgroundColor: Colors.blueGrey.shade900,
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
@@ -47,9 +46,12 @@ class _FriendsMainScreenState extends ConsumerState<FriendsMainScreen> {
             _selectedIndex = index;
           });
         },
-        backgroundColor: Colors.blueGrey.shade800,
-        selectedItemColor: Colors.blue,
+        backgroundColor: Colors.blue.shade800,
+        selectedItemColor: Colors.white,
         unselectedItemColor: Colors.white.withOpacity(0.6),
+        elevation: 8,
+        type: BottomNavigationBarType.fixed,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
         items: [
           const BottomNavigationBarItem(
             icon: Icon(Icons.people_alt),
@@ -73,7 +75,7 @@ class _FriendsMainScreenState extends ConsumerState<FriendsMainScreen> {
                       decoration: BoxDecoration(
                         color: Colors.red,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.blueGrey.shade800, width: 1.5),
+                        border: Border.all(color: Colors.blue.shade800, width: 1.5),
                       ),
                       constraints: const BoxConstraints(
                         minWidth: 16,
