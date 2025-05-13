@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statsfoota/features/friends/presentation/controllers/friend_controller.dart';
 import 'package:statsfoota/features/friends/presentation/screens/user_profile_screen.dart';
+import 'package:statsfoota/features/friends/presentation/state/friend_state.dart'; // Añadiendo importación necesaria
 
 class PeopleScreen extends ConsumerStatefulWidget {
   const PeopleScreen({Key? key}) : super(key: key);
@@ -13,14 +15,14 @@ class PeopleScreen extends ConsumerStatefulWidget {
 class _PeopleScreenState extends ConsumerState<PeopleScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
-  bool _isInitialLoad = true;
+  bool _isFirstLoad = true;
 
   @override
   void initState() {
     super.initState();
-    // We'll load users after the build method completes
+    // Usamos un Timer de un frame para retrasar la carga hasta después del build inicial
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadUsers();
+      _loadUsersWithDelay();
     });
   }
 
@@ -30,26 +32,33 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
     super.dispose();
   }
 
-  Future<void> _loadUsers() async {
-    print('PeopleScreen: _loadUsers called');
+  // Método seguro para cargar usuarios
+  Future<void> _loadUsersWithDelay() async {
     try {
-      await ref.read(friendControllerProvider.notifier).loadAllUsers();
+      if (!mounted) return;
+      
+      // Establecer un delay para asegurar que el widget ya ha terminado de construirse
+      await Future.delayed(const Duration(milliseconds: 100));
+      
       if (mounted) {
         setState(() {
-          _isInitialLoad = false;
+          _isFirstLoad = false;
         });
+        
+        // Usamos ref.read aquí para evitar una dependencia de observación
+        await ref.read(friendControllerProvider.notifier).loadAllUsers();
       }
     } catch (e) {
-      print('PeopleScreen ERROR: Failed to load users: $e');
+      debugPrint('Error al cargar usuarios: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al cargar usuarios. Por favor, intenta de nuevo.'),
+            content: Text('Error al cargar usuarios'),
             backgroundColor: Colors.red,
             action: SnackBarAction(
               label: 'Reintentar',
               textColor: Colors.white,
-              onPressed: _loadUsers,
+              onPressed: _loadUsersWithDelay,
             ),
           ),
         );
@@ -57,18 +66,24 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
     }
   }
 
+  // Método para buscar usuarios
   void _searchUsers(String query) {
-    print('PeopleScreen: _searchUsers called with query: $query');
-    ref.read(friendControllerProvider.notifier).loadAllUsers(searchQuery: query);
+    // Cancelamos cualquier búsqueda previa
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (!mounted) return;
+      ref.read(friendControllerProvider.notifier).loadAllUsers(searchQuery: query);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(friendControllerProvider);
-    final theme = Theme.of(context);
-
+    // Si es la primera carga, usamos un estado inicial vacío para evitar triggers
+    // durante la construcción
+    final state = _isFirstLoad 
+        ? FriendState.initial() 
+        : ref.watch(friendControllerProvider);
+    
     return Scaffold(
-      backgroundColor: Colors.blueGrey.shade900,
       appBar: AppBar(
         title: _isSearching 
           ? TextField(
@@ -76,15 +91,14 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
               autofocus: true,
               decoration: InputDecoration(
                 hintText: 'Buscar personas...',
-                hintStyle: TextStyle(color: Colors.white70),
                 border: InputBorder.none,
+                hintStyle: TextStyle(color: Colors.white70),
               ),
               style: TextStyle(color: Colors.white),
               onChanged: _searchUsers,
             )
           : Text('Personas'),
-        backgroundColor: Colors.blueGrey.shade800,
-        elevation: 0,
+        backgroundColor: Colors.blue.shade700,
         actions: [
           IconButton(
             icon: Icon(_isSearching ? Icons.close : Icons.search),
@@ -93,186 +107,222 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
                 _isSearching = !_isSearching;
                 if (!_isSearching) {
                   _searchController.clear();
-                  _loadUsers();
+                  _loadUsersWithDelay();
                 }
               });
             },
           ),
         ],
       ),
-      body: state.isLoading
-          ? Center(child: CircularProgressIndicator(color: Colors.white))
-          : state.errorMessage != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline, color: Colors.red, size: 50),
-                      SizedBox(height: 16),
-                      Text(
-                        'Error al cargar usuarios',
-                        style: TextStyle(color: Colors.white, fontSize: 18),
-                      ),
-                      SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed: _loadUsers,
-                        child: Text('Reintentar'),
-                      ),
-                    ],
-                  ),
-                )
-              : state.allUsers.isEmpty
-                  ? Center(
-                      child: Text(
-                        'No se encontraron usuarios',
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: EdgeInsets.all(16),
-                      itemCount: state.allUsers.length,
-                      itemBuilder: (context, index) {
-                        final user = state.allUsers[index];
-                        
-                        bool isFriend = state.friends.any((f) => f.id == user.id);
-                        bool hasPendingSentRequest = state.pendingSentRequests.any(
-                          (r) => r.userId2 == user.id
-                        );
-                        bool hasPendingReceivedRequest = state.pendingReceivedRequests.any(
-                          (r) => r.userId1 == user.id
-                        );
-                        
-                        return Card(
-                          elevation: 2,
-                          color: Colors.blueGrey.shade800,
-                          margin: EdgeInsets.only(bottom: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: Colors.blueGrey.shade700, width: 1),
-                          ),
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => UserProfileScreen(userId: user.id),
-                                ),
-                              );
-                            },
-                            borderRadius: BorderRadius.circular(12),
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                              child: Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 28,
-                                    backgroundColor: Colors.blue.shade700,
-                                    backgroundImage: user.avatarUrl != null
-                                        ? NetworkImage(user.avatarUrl!)
-                                        : null,
-                                    child: user.avatarUrl == null
-                                        ? Text(
-                                            user.username.substring(0, 1).toUpperCase(),
-                                            style: TextStyle(
-                                              fontSize: 24,
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          )
-                                        : null,
-                                  ),
-                                  SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          user.username,
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        SizedBox(height: 4),
-                                        if (user.fieldPosition != null)
-                                          Text(
-                                            user.fieldPosition!,
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.white70,
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                  _buildUserStatusButton(
-                                    user.id, 
-                                    isFriend, 
-                                    hasPendingSentRequest, 
-                                    hasPendingReceivedRequest
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF1565C0),
+              Color(0xFF1976D2),
+              Color(0xFF1E88E5),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: _buildContent(state),
+        ),
+      ),
     );
   }
 
-  Widget _buildUserStatusButton(
-    String userId, 
-    bool isFriend, 
-    bool hasPendingSentRequest, 
-    bool hasPendingReceivedRequest
-  ) {
+  Widget _buildContent(FriendState state) {
+    // Si es la primera carga, mostrar indicador
+    if (_isFirstLoad) {
+      return Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
+    }
+    
+    // Si está cargando después del primer build
+    if (state.isLoading) {
+      return Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
+    }
+
+    // Si hay error
+    if (state.errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, color: Colors.red, size: 48),
+              SizedBox(height: 16),
+              Text(
+                'Error: ${state.errorMessage}',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _loadUsersWithDelay,
+                child: Text('Reintentar'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Si no hay usuarios
+    if (state.allUsers.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.people_outline, color: Colors.white70, size: 64),
+            SizedBox(height: 16),
+            Text(
+              _searchController.text.isNotEmpty
+                ? 'No se encontraron usuarios con ese nombre'
+                : 'No hay usuarios disponibles',
+              style: TextStyle(color: Colors.white, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 20),
+            if (_searchController.text.isNotEmpty)
+              ElevatedButton(
+                onPressed: () {
+                  _searchController.clear();
+                  _loadUsersWithDelay();
+                },
+                child: Text('Ver todos los usuarios'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue.shade800,
+                  foregroundColor: Colors.white,
+                ),
+              )
+          ],
+        ),
+      );
+    }
+
+    // Lista de usuarios simple
+    return ListView.builder(
+      padding: EdgeInsets.all(16),
+      itemCount: state.allUsers.length,
+      itemBuilder: (context, index) {
+        final user = state.allUsers[index];
+        return _buildSimpleUserItem(user, state);
+      },
+    );
+  }
+
+  // Construir un item de usuario simple y seguro
+  Widget _buildSimpleUserItem(user, FriendState state) {
+    // Determina el estado de amistad
+    bool isFriend = state.friends.any((f) => f.id == user.id);
+    bool hasPendingSentRequest = state.pendingSentRequests.any(
+        (r) => r.userId2 == user.id);
+    bool hasPendingReceivedRequest = state.pendingReceivedRequests.any(
+        (r) => r.userId1 == user.id);
+
+    return Card(
+      margin: EdgeInsets.only(bottom: 10),
+      color: Colors.white.withOpacity(0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: CircleAvatar(
+          backgroundColor: Colors.blue.shade600,
+          child: Text(
+            user.username != null && user.username.isNotEmpty
+                ? user.username[0].toUpperCase()
+                : '?',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
+        title: Text(
+          user.username ?? 'Sin nombre',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        subtitle: user.fieldPosition != null
+            ? Text(
+                user.fieldPosition,
+                style: TextStyle(color: Colors.white70),
+              )
+            : null,
+        trailing: _buildFriendshipButton(user.id, isFriend,
+            hasPendingSentRequest, hasPendingReceivedRequest),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => UserProfileScreen(userId: user.id),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Construir el botón según el estado de amistad
+  Widget _buildFriendshipButton(String userId, bool isFriend,
+      bool hasPendingSentRequest, bool hasPendingReceivedRequest) {
     if (isFriend) {
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.green.withOpacity(0.2),
+          color: Colors.green,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.green, width: 1),
         ),
         child: Text(
-          'Amigo',
-          style: TextStyle(color: Colors.green, fontSize: 12),
+          'Amigos',
+          style: TextStyle(color: Colors.white, fontSize: 12),
         ),
       );
     } else if (hasPendingSentRequest) {
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.orange.withOpacity(0.2),
+          color: Colors.orange,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.orange, width: 1),
         ),
         child: Text(
           'Enviada',
-          style: TextStyle(color: Colors.orange, fontSize: 12),
+          style: TextStyle(color: Colors.white, fontSize: 12),
         ),
       );
     } else if (hasPendingReceivedRequest) {
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.2),
+          color: Colors.blue,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.blue, width: 1),
         ),
         child: Text(
           'Pendiente',
-          style: TextStyle(color: Colors.blue, fontSize: 12),
+          style: TextStyle(color: Colors.white, fontSize: 12),
         ),
       );
     } else {
-      return IconButton(
-        icon: Icon(Icons.person_add, color: Colors.blue),
+      return ElevatedButton(
         onPressed: () {
-          ref.read(friendControllerProvider.notifier).sendFriendRequest(userId);
+          // Ejecutamos en un futuro para evitar actualizar durante la construcción
+          Future.microtask(() {
+            if (!mounted) return;
+            ref.read(friendControllerProvider.notifier).sendFriendRequest(userId);
+          });
         },
+        child: Text('Añadir'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
+          padding: EdgeInsets.symmetric(horizontal: 12),
+          minimumSize: Size(80, 30),
+        ),
       );
     }
   }

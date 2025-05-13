@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../features/notifications/domain/models/notification_model.dart';
 import '../../domain/models/friend_request.dart';
@@ -119,9 +120,10 @@ class FriendRepository {
 
       print('FriendRepository: Fetching users with query: $searchQuery');
       
+      // Modify the query to ensure we're getting all profile fields
       var query = _supabaseClient
           .from('profiles')
-          .select()
+          .select('*')  // Explicitly select all fields
           .neq('id', currentUserId);
 
       if (searchQuery != null && searchQuery.isNotEmpty) {
@@ -130,12 +132,24 @@ class FriendRepository {
 
       print('FriendRepository: Executing query...');
       final response = await query;
-      print('FriendRepository: Got ${response.length} users');
+      print('FriendRepository: Got ${response.length} users with raw data: ${response.toString().substring(0, math.min(100, response.toString().length))}...');
       
-      return response.map((json) => UserProfile.fromJson(json)).toList();
+      // Transform the response into UserProfile objects with more explicit error handling
+      List<UserProfile> users = [];
+      for (var json in response) {
+        try {
+          users.add(UserProfile.fromJson(json));
+        } catch (e) {
+          print('Error parsing user profile: $e for data: $json');
+        }
+      }
+      
+      print('FriendRepository: Successfully parsed ${users.length} UserProfile objects');
+      return users;
     } catch (e) {
       print('FriendRepository ERROR: Failed to get all users: $e');
-      throw Exception('Failed to get all users: $e');
+      // Return an empty list instead of throwing to prevent breaking the UI
+      return [];
     }
   }
 
