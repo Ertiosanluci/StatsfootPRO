@@ -89,14 +89,13 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> wit
     final state = ref.watch(friendControllerProvider);
 
     return Scaffold(
-      backgroundColor: Colors.blueGrey.shade900,
       appBar: AppBar(
         title: Text('Solicitudes de amistad'),
-        backgroundColor: Colors.blueGrey.shade800,
+        backgroundColor: Colors.blue.shade800,
         elevation: 0,
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.white,
+          indicatorColor: Colors.orange.shade600,
           tabs: [
             Tab(
               text: 'Recibidas (${state.pendingReceivedRequests.length})',
@@ -109,15 +108,28 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> wit
           ],
         ),
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: Colors.white))
-          : TabBarView(
-              controller: _tabController,
-              children: [
-                _buildReceivedRequestsList(),
-                _buildSentRequestsList(),
-              ],
-            ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF1565C0),
+              Color(0xFF1976D2),
+              Color(0xFF1E88E5),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: _isLoading
+            ? Center(child: CircularProgressIndicator(color: Colors.white))
+            : TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildReceivedRequestsList(),
+                  _buildSentRequestsList(),
+                ],
+              ),
+      ),
     );
   }
 
@@ -138,7 +150,7 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> wit
             Text(
               'No tienes solicitudes recibidas',
               style: TextStyle(
-                color: Colors.white70,
+                color: Colors.white,
                 fontSize: 16,
               ),
             ),
@@ -160,11 +172,10 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> wit
           
           return Card(
             elevation: 2,
-            color: Colors.blueGrey.shade800,
+            color: Colors.white.withOpacity(0.1),
             margin: EdgeInsets.only(bottom: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: Colors.blueGrey.shade700, width: 1),
             ),
             child: InkWell(
               onTap: () {
@@ -293,7 +304,7 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> wit
             Text(
               'No has enviado solicitudes de amistad',
               style: TextStyle(
-                color: Colors.white70,
+                color: Colors.white,
                 fontSize: 16,
               ),
             ),
@@ -315,11 +326,10 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> wit
           
           return Card(
             elevation: 2,
-            color: Colors.blueGrey.shade800,
+            color: Colors.white.withOpacity(0.1),
             margin: EdgeInsets.only(bottom: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: Colors.blueGrey.shade700, width: 1),
             ),
             child: InkWell(
               onTap: () {

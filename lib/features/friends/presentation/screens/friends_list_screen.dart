@@ -26,124 +26,139 @@ class _FriendsListScreenState extends ConsumerState<FriendsListScreen> {
     final state = ref.watch(friendControllerProvider);
 
     return Scaffold(
-      backgroundColor: Colors.blueGrey.shade900,
       appBar: AppBar(
         title: Text('Mis amigos'),
-        backgroundColor: Colors.blueGrey.shade800,
+        backgroundColor: Colors.blue.shade800,
         elevation: 0,
       ),
-      body: state.isLoading
-          ? Center(child: CircularProgressIndicator(color: Colors.white))
-          : state.errorMessage != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline, color: Colors.red, size: 50),
-                      SizedBox(height: 16),
-                      Text(
-                        'Error al cargar amigos',
-                        style: TextStyle(color: Colors.white, fontSize: 18),
-                      ),
-                      SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed: _loadFriends,
-                        child: Text('Reintentar'),
-                      ),
-                    ],
-                  ),
-                )
-              : state.friends.isEmpty
-                  ? _buildEmptyFriendsList()
-                  : RefreshIndicator(
-                      onRefresh: _loadFriends,
-                      child: ListView.builder(
-                        padding: EdgeInsets.all(16),
-                        itemCount: state.friends.length,
-                        itemBuilder: (context, index) {
-                          final friend = state.friends[index];
-                          
-                          return Card(
-                            elevation: 2,
-                            color: Colors.blueGrey.shade800,
-                            margin: EdgeInsets.only(bottom: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: Colors.blueGrey.shade700, width: 1),
-                            ),
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => UserProfileScreen(userId: friend.id),
-                                  ),
-                                );
-                              },
-                              borderRadius: BorderRadius.circular(12),
-                              child: Padding(
-                                padding: EdgeInsets.all(16),
-                                child: Row(
-                                  children: [
-                                    Hero(
-                                      tag: 'avatar-${friend.id}',
-                                      child: CircleAvatar(
-                                        radius: 30,
-                                        backgroundColor: Colors.blue.shade700,
-                                        backgroundImage: friend.avatarUrl != null
-                                            ? NetworkImage(friend.avatarUrl!)
-                                            : null,
-                                        child: friend.avatarUrl == null
-                                            ? Text(
-                                                friend.username.substring(0, 1).toUpperCase(),
-                                                style: TextStyle(
-                                                  fontSize: 24,
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              )
-                                            : null,
-                                      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF1565C0),
+              Color(0xFF1976D2),
+              Color(0xFF1E88E5),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: state.isLoading
+            ? Center(child: CircularProgressIndicator(color: Colors.white))
+            : state.errorMessage != null
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error_outline, color: Colors.red, size: 50),
+                        SizedBox(height: 16),
+                        Text(
+                          'Error al cargar amigos',
+                          style: TextStyle(color: Colors.white, fontSize: 18),
+                        ),
+                        SizedBox(height: 8),
+                        ElevatedButton(
+                          onPressed: _loadFriends,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: Text('Reintentar'),
+                        ),
+                      ],
+                    ),
+                  )
+                : state.friends.isEmpty
+                    ? _buildEmptyFriendsList()
+                    : RefreshIndicator(
+                        onRefresh: _loadFriends,
+                        child: ListView.builder(
+                          padding: EdgeInsets.all(16),
+                          itemCount: state.friends.length,
+                          itemBuilder: (context, index) {
+                            final friend = state.friends[index];
+                            
+                            return Card(
+                              elevation: 2,
+                              color: Colors.white.withOpacity(0.1),
+                              margin: EdgeInsets.only(bottom: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => UserProfileScreen(userId: friend.id),
                                     ),
-                                    SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            friend.username,
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                          SizedBox(height: 4),
-                                          if (friend.fieldPosition != null)
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(12),
+                                child: Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Row(
+                                    children: [
+                                      Hero(
+                                        tag: 'avatar-${friend.id}',
+                                        child: CircleAvatar(
+                                          radius: 30,
+                                          backgroundColor: Colors.blue.shade700,
+                                          backgroundImage: friend.avatarUrl != null
+                                              ? NetworkImage(friend.avatarUrl!)
+                                              : null,
+                                          child: friend.avatarUrl == null
+                                              ? Text(
+                                                  friend.username.substring(0, 1).toUpperCase(),
+                                                  style: TextStyle(
+                                                    fontSize: 24,
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                )
+                                              : null,
+                                        ),
+                                      ),
+                                      SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
                                             Text(
-                                              friend.fieldPosition!,
+                                              friend.username,
                                               style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.white70,
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
                                               ),
                                             ),
-                                        ],
+                                            SizedBox(height: 4),
+                                            if (friend.fieldPosition != null)
+                                              Text(
+                                                friend.fieldPosition!,
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.white70,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                    IconButton(
-                                      icon: Icon(Icons.more_vert, color: Colors.white70),
-                                      onPressed: () {
-                                        _showFriendOptions(friend.id, friend.username);
-                                      },
-                                    ),
-                                  ],
+                                      IconButton(
+                                        icon: Icon(Icons.more_vert, color: Colors.white70),
+                                        onPressed: () {
+                                          _showFriendOptions(friend.id, friend.username);
+                                        },
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
-                    ),
+      ),
     );
   }
 
