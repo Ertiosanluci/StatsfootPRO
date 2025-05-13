@@ -588,12 +588,8 @@ class _UserMenuScreenState extends State<UserMenuScreen> with SingleTickerProvid
 
   Widget _buildFeaturesGrid() {
     final features = [
-      {
-        'icon': Icons.person_add_rounded,
-        'title': 'Crear Jugador',
-        'color': Colors.green.shade600,
-        'route': '/create_player'
-      },
+      // Removed the "Crear Jugador" button from here
+      // while keeping all the underlying functionality intact
       {
         'icon': Icons.group_rounded,
         'title': 'Ver Jugadores',
