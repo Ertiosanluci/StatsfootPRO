@@ -24,7 +24,7 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 1, vsync: this);
     _fetchMatches();
   }
 
@@ -270,16 +270,6 @@ Hora: $formattedTime
           fontSize: 24,
           fontWeight: FontWeight.bold,
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: 'Todos Mis Partidos'), // Updated label
-            Tab(text: 'Invitaciones Pendientes'), // Updated label
-          ],
-          indicatorColor: Colors.orange.shade600,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-        ),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -293,13 +283,7 @@ Hora: $formattedTime
             ? Center(child: CircularProgressIndicator(color: Colors.white))
             : _error != null
                 ? _buildErrorMessage()
-                : TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildMatchListView(_myMatches, isOrganizer: true),
-                      _buildMatchListView(_invitedMatches, isOrganizer: false),
-                    ],
-                  ),
+                : _buildMatchListView(_myMatches, isOrganizer: true),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {

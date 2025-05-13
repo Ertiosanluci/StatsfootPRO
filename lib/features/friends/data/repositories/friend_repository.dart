@@ -345,8 +345,37 @@ class FriendRepository {
           .eq('id', userId)
           .single();
       
-      return UserProfile.fromJson(response);
+      // Calcular edad a partir de la fecha de nacimiento si está disponible
+      int? age;
+      if (response['birthdate'] != null) {
+        try {
+          final birthDate = DateTime.parse(response['birthdate']);
+          final today = DateTime.now();
+          age = today.year - birthDate.year;
+          // Ajustar la edad si aún no ha sido el cumpleaños este año
+          if (today.month < birthDate.month || 
+              (today.month == birthDate.month && today.day < birthDate.day)) {
+            age--;
+          }
+        } catch (e) {
+          print('Error calculando la edad: $e');
+        }
+      }
+      
+      // Crear perfil con los campos correctamente mapeados
+      return UserProfile(
+        id: response['id'] as String,
+        username: response['username'] as String,
+        avatarUrl: response['avatar_url'] as String?,
+        age: age,
+        gender: response['gender'] as String?,
+        fieldPosition: response['position'] as String?, // Mapear 'position' a 'fieldPosition'
+        playFrequency: response['frequency'] as String?, // Mapear 'frequency' a 'playFrequency'
+        skillLevel: response['level'] as String?, // Mapear 'level' a 'skillLevel'
+        description: response['description'] as String?,
+      );
     } catch (e) {
+      print('Error al obtener perfil de usuario: $e');
       throw Exception('Failed to get user profile: $e');
     }
   }
