@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statsfoota/features/friends/domain/models/user_profile.dart';
@@ -13,6 +14,8 @@ class NotificationsDrawer extends ConsumerStatefulWidget {
 }
 
 class _NotificationsDrawerState extends ConsumerState<NotificationsDrawer> {
+  Timer? _timer;
+
   @override
   void initState() {
     super.initState();
@@ -20,6 +23,17 @@ class _NotificationsDrawerState extends ConsumerState<NotificationsDrawer> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(notificationControllerProvider.notifier).loadNotifications();
     });
+
+    // Set up a timer to periodically refresh notifications
+    _timer = Timer.periodic(Duration(minutes: 5), (timer) {
+      ref.read(notificationControllerProvider.notifier).loadNotifications();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
   
   @override

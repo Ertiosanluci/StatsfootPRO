@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +16,7 @@ class UserMenuScreen extends ConsumerStatefulWidget {
 
 class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
+  late Timer _refreshTimer;
   String _username = "Usuario";
   bool _isLoading = true;
   String? _profileImageUrl;
@@ -30,11 +32,22 @@ class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTick
     _loadUserData();
     // Inicializar el sistema de amigos
     FriendsModule.initialize(ref);
+    
+    // Cargar las solicitudes de amistad pendientes al iniciar
+    ref.read(friendControllerProvider.notifier).loadPendingRequests();
+    
+    // Configurar un timer para refrescar periodicamente las solicitudes de amistad
+    _refreshTimer = Timer.periodic(Duration(seconds: 30), (timer) {
+      if (mounted) {
+        ref.read(friendControllerProvider.notifier).loadPendingRequests();
+      }
+    });
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _refreshTimer.cancel();
     super.dispose();
   }
 

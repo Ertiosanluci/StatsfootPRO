@@ -19,7 +19,10 @@ class FriendController extends StateNotifier<FriendState> {
 
   FriendController({required FriendRepository friendRepository})
       : _friendRepository = friendRepository,
-        super(FriendState.initial());
+        super(FriendState.initial()) {
+    // Load pending requests as soon as the controller is created
+    loadPendingRequests(); 
+  }
 
   Future<void> loadFriends() async {
     state = state.copyWith(isLoading: true, errorMessage: null);
@@ -45,11 +48,16 @@ class FriendController extends StateNotifier<FriendState> {
     }
   }
 
+  // Enhanced method to load pending requests with more explicit error handling
   Future<void> loadPendingRequests() async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
     try {
+      state = state.copyWith(isLoading: true, errorMessage: null);
+      
       final sentRequests = await _friendRepository.getPendingSentRequests();
       final receivedRequests = await _friendRepository.getPendingReceivedRequests();
+      
+      print('Loaded ${receivedRequests.length} pending received requests');
+      print('Loaded ${sentRequests.length} pending sent requests');
       
       state = state.copyWith(
         pendingSentRequests: sentRequests,
@@ -57,6 +65,7 @@ class FriendController extends StateNotifier<FriendState> {
         isLoading: false,
       );
     } catch (e) {
+      print('Error loading pending requests: $e');
       state = state.copyWith(errorMessage: e.toString(), isLoading: false);
     }
   }
