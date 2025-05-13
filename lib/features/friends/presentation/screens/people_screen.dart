@@ -239,12 +239,17 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
           backgroundColor: Colors.blue.shade600,
-          child: Text(
-            user.username != null && user.username.isNotEmpty
-                ? user.username[0].toUpperCase()
-                : '?',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
+          backgroundImage: user.avatarUrl != null && user.avatarUrl.isNotEmpty
+              ? NetworkImage(user.avatarUrl)
+              : null,
+          child: (user.avatarUrl == null || user.avatarUrl.isEmpty)
+              ? Text(
+                  user.username != null && user.username.isNotEmpty
+                      ? user.username[0].toUpperCase()
+                      : '?',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                )
+              : null,
         ),
         title: Text(
           user.username ?? 'Sin nombre',
