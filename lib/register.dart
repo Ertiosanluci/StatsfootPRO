@@ -105,6 +105,26 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     }
   }
 
+  // Método para verificar si el email ya existe
+  Future<bool> _checkIfEmailExists(String email) async {
+    try {
+      // Intentamos encontrar cualquier usuario con este correo electrónico
+      final response = await Supabase.instance.client
+          .from('usuarios')
+          .select('email')
+          .eq('email', email.trim())
+          .limit(1)
+          .maybeSingle();
+      
+      // Si se encuentra algún registro, el correo ya está en uso
+      return response != null;
+    } catch (e) {
+      print('Error al verificar email: $e');
+      // En caso de error, asumimos que no existe para continuar con la validación normal
+      return false;
+    }
+  }
+
   // Método para el proceso de registro
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) {
@@ -124,7 +144,36 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       // Ocultar teclado
       FocusScope.of(context).unfocus();
       
-      // Mostrar progreso
+      // Mostrar diálogo de comprobación
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ),
+        ),
+      );
+      
+      // Verificar si el email ya existe antes de intentar el registro
+      final emailExists = await _checkIfEmailExists(_emailController.text.trim());
+      
+      // Cerrar el diálogo de comprobación
+      Navigator.pop(context);
+      
+      if (emailExists) {
+        setState(() {
+          _isLoading = false;
+        });
+        _showErrorSnackBar('Este correo electrónico ya está registrado. Por favor, usa otro.');
+        return;
+      }
+      
+      // Mostrar progreso del registro
       _showProgressDialog();
       
       // Registro en Supabase
@@ -588,10 +637,40 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                       if (value == null || value.isEmpty) {
                         return 'Por favor, ingresa tu correo electrónico';
                       }
+                      // Validación básica de formato de email
                       final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
                       if (!emailRegex.hasMatch(value)) {
                         return 'Ingresa un correo electrónico válido';
                       }
+                      
+                      // Validación específica para Gmail
+                      if (value.toLowerCase().endsWith('@gmail.com')) {
+                        // Obtener la parte local del email (antes de @)
+                        final localPart = value.split('@')[0].toLowerCase();
+                        
+                        // Verificar reglas específicas de Gmail
+                        // 1. Longitud mínima de 6 caracteres para la parte local
+                        if (localPart.length < 6) {
+                          return 'Las direcciones de Gmail deben tener al menos 6 caracteres antes de @gmail.com';
+                        }
+                        
+                        // 2. No permitir caracteres consecutivos como puntos
+                        if (localPart.contains('..')) {
+                          return 'Dirección de Gmail inválida: no puede contener puntos consecutivos';
+                        }
+                        
+                        // 3. Verificar que no comience ni termine con punto
+                        if (localPart.startsWith('.') || localPart.endsWith('.')) {
+                          return 'Dirección de Gmail inválida: no puede comenzar ni terminar con punto';
+                        }
+                        
+                        // 4. Verificar caracteres permitidos en Gmail
+                        final gmailAllowedChars = RegExp(r'^[a-z0-9.]+$');
+                        if (!gmailAllowedChars.hasMatch(localPart)) {
+                          return 'Dirección de Gmail inválida: solo puede contener letras, números y puntos';
+                        }
+                      }
+                      
                       return null;
                     },
                   ),

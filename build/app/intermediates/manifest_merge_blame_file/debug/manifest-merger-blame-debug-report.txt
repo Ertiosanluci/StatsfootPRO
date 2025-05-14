@@ -23,7 +23,7 @@
 17-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:8:22-78
 18
 19    <queries>
-19-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:58:5-63:15
+19-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:67:5-72:15
 20        <intent>
 20-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:10:9-13:18
 21            <action android:name="android.intent.action.VIEW" />
@@ -31,7 +31,7 @@
 21-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:11:21-62
 22
 23            <data android:scheme="https" />
-23-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:61:13-50
+23-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:70:13-50
 23-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:12:19-41
 24        </intent>
 25        <intent>
@@ -41,18 +41,18 @@
 26-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:15:21-62
 27
 28            <data android:scheme="https" />
-28-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:61:13-50
+28-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:70:13-50
 28-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:12:19-41
 29        </intent>
 30        <intent>
-30-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:59:9-62:18
+30-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:68:9-71:18
 31            <action android:name="android.intent.action.PROCESS_TEXT" />
-31-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:60:13-72
-31-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:60:21-70
+31-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:69:13-72
+31-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:69:21-70
 32
 33            <data android:mimeType="text/plain" />
-33-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:61:13-50
-33-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:61:19-48
+33-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:70:13-50
+33-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:70:19-48
 34        </intent>
 35        <intent>
 35-->[:file_picker] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\file_picker\intermediates\merged_manifest\debug\AndroidManifest.xml:8:9-12:18
@@ -61,8 +61,8 @@
 36-->[:file_picker] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\file_picker\intermediates\merged_manifest\debug\AndroidManifest.xml:9:21-69
 37
 38            <data android:mimeType="*/*" />
-38-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:61:13-50
-38-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:61:19-48
+38-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:70:13-50
+38-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:70:19-48
 39        </intent>
 40    </queries>
 41
@@ -131,7 +131,7 @@
 90                <category android:name="android.intent.category.BROWSABLE" />
 91                <!-- Esquema URI personalizado para los partidos -->
 92                <data
-92-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:61:13-50
+92-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:70:13-50
 93                    android:host="match"
 94                    android:scheme="statsfoot" />
 94-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:12:19-41
@@ -147,256 +147,272 @@
 102                <category android:name="android.intent.category.BROWSABLE" />
 103                <!-- URLs desde el sitio web -->
 104                <data
-104-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:61:13-50
+104-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:70:13-50
 105                    android:host="statsfootpro.netlify.app"
 106                    android:pathPattern="/match/.*"
 107                    android:scheme="https" />
 107-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:12:19-41
 108                <data
-108-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:61:13-50
+108-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:70:13-50
 109                    android:host="statsfootpro.netlify.app"
 110                    android:pathPattern="/match/.*"
 111                    android:scheme="http" />
 111-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:12:19-41
 112            </intent-filter>
-113        </activity>
-114        <!--
-115             Don't delete the meta-data below.
-116             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java
-117        -->
-118        <meta-data
-119            android:name="flutterEmbedding"
-120            android:value="2" />
-121
-122        <provider
-122-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:9:9-17:20
-123            android:name="io.flutter.plugins.imagepicker.ImagePickerFileProvider"
-123-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:10:13-82
-124            android:authorities="com.example.statsfoota.flutter.image_provider"
-124-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:11:13-74
-125            android:exported="false"
-125-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:12:13-37
-126            android:grantUriPermissions="true" >
-126-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:13:13-47
-127            <meta-data
-127-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:14:13-16:75
-128                android:name="android.support.FILE_PROVIDER_PATHS"
-128-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:15:17-67
-129                android:resource="@xml/flutter_image_picker_file_paths" />
-129-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:16:17-72
-130        </provider> <!-- Trigger Google Play services to install the backported photo picker module. -->
-131        <service
-131-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:19:9-31:19
-132            android:name="com.google.android.gms.metadata.ModuleDependencies"
-132-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:20:13-78
-133            android:enabled="false"
-133-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:21:13-36
-134            android:exported="false" >
-134-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:22:13-37
-135            <intent-filter>
-135-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:24:13-26:29
-136                <action android:name="com.google.android.gms.metadata.MODULE_DEPENDENCIES" />
-136-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:25:17-94
-136-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:25:25-91
-137            </intent-filter>
-138
+113
+114            <!-- Deep links for Google Sign-In -->
+115            <intent-filter>
+116                <action android:name="android.intent.action.VIEW" />
+116-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:11:13-65
+116-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:11:21-62
+117
+118                <category android:name="android.intent.category.DEFAULT" />
+119                <category android:name="android.intent.category.BROWSABLE" />
+120                <!-- Scheme needs to match your custom URI scheme used for redirectTo in the login code -->
+121                <data
+121-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:70:13-50
+122                    android:host="login-callback"
+123                    android:scheme="io.supabase.statsfoota" />
+123-->C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:12:19-41
+124            </intent-filter>
+125        </activity>
+126        <!--
+127             Don't delete the meta-data below.
+128             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java
+129        -->
+130        <meta-data
+131            android:name="flutterEmbedding"
+132            android:value="2" />
+133
+134        <provider
+134-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:9:9-17:20
+135            android:name="io.flutter.plugins.imagepicker.ImagePickerFileProvider"
+135-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:10:13-82
+136            android:authorities="com.example.statsfoota.flutter.image_provider"
+136-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:11:13-74
+137            android:exported="false"
+137-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:12:13-37
+138            android:grantUriPermissions="true" >
+138-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:13:13-47
 139            <meta-data
-139-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:28:13-30:36
-140                android:name="photopicker_activity:0:required"
-140-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:29:17-63
-141                android:value="" />
-141-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:30:17-33
-142        </service>
-143        <!--
-144           Declares a provider which allows us to store files to share in
-145           '.../caches/share_plus' and grant the receiving action access
-146        -->
-147        <provider
-147-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:13:9-21:20
-148            android:name="dev.fluttercommunity.plus.share.ShareFileProvider"
-148-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:14:13-77
-149            android:authorities="com.example.statsfoota.flutter.share_provider"
-149-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:15:13-74
-150            android:exported="false"
-150-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:16:13-37
-151            android:grantUriPermissions="true" >
-151-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:17:13-47
-152            <meta-data
-152-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:14:13-16:75
-153                android:name="android.support.FILE_PROVIDER_PATHS"
-153-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:15:17-67
-154                android:resource="@xml/flutter_share_file_paths" />
-154-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:16:17-72
-155        </provider>
-156        <!--
-157           This manifest declared broadcast receiver allows us to use an explicit
-158           Intent when creating a PendingItent to be informed of the user's choice
-159        -->
-160        <receiver
-160-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:26:9-32:20
-161            android:name="dev.fluttercommunity.plus.share.SharePlusPendingIntent"
-161-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:27:13-82
-162            android:exported="false" >
-162-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:28:13-37
-163            <intent-filter>
-163-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:29:13-31:29
-164                <action android:name="EXTRA_CHOSEN_COMPONENT" />
-164-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:30:17-65
-164-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:30:25-62
-165            </intent-filter>
-166        </receiver>
-167
-168        <activity
-168-->[:url_launcher_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\url_launcher_android\intermediates\merged_manifest\debug\AndroidManifest.xml:8:9-11:74
-169            android:name="io.flutter.plugins.urllauncher.WebViewActivity"
-169-->[:url_launcher_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\url_launcher_android\intermediates\merged_manifest\debug\AndroidManifest.xml:9:13-74
-170            android:exported="false"
-170-->[:url_launcher_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\url_launcher_android\intermediates\merged_manifest\debug\AndroidManifest.xml:10:13-37
-171            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
-171-->[:url_launcher_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\url_launcher_android\intermediates\merged_manifest\debug\AndroidManifest.xml:11:13-71
-172
-173        <receiver
-173-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:29:9-33:20
-174            android:name="com.google.android.gms.measurement.AppMeasurementReceiver"
-174-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:30:13-85
-175            android:enabled="true"
-175-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:31:13-35
-176            android:exported="false" >
-176-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:32:13-37
-177        </receiver>
-178
-179        <service
-179-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:35:9-38:40
-180            android:name="com.google.android.gms.measurement.AppMeasurementService"
-180-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:36:13-84
-181            android:enabled="true"
-181-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:37:13-35
-182            android:exported="false" />
-182-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:38:13-37
-183        <service
-183-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:39:9-43:72
-184            android:name="com.google.android.gms.measurement.AppMeasurementJobService"
-184-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:40:13-87
-185            android:enabled="true"
-185-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:41:13-35
-186            android:exported="false"
-186-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:42:13-37
-187            android:permission="android.permission.BIND_JOB_SERVICE" />
-187-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:43:13-69
-188        <service
-188-->[com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e3df24af8d6e05421daa687881164224\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:27:9-33:19
-189            android:name="com.google.firebase.components.ComponentDiscoveryService"
-189-->[com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e3df24af8d6e05421daa687881164224\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:28:13-84
-190            android:directBootAware="true"
-190-->[com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2e18519aa64818f6336a591b3bcbb6d0\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:35:13-43
-191            android:exported="false" >
-191-->[com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e3df24af8d6e05421daa687881164224\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:29:13-37
-192            <meta-data
-192-->[com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e3df24af8d6e05421daa687881164224\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:30:13-32:85
-193                android:name="com.google.firebase.components:com.google.firebase.analytics.connector.internal.AnalyticsConnectorRegistrar"
-193-->[com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e3df24af8d6e05421daa687881164224\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:31:17-139
-194                android:value="com.google.firebase.components.ComponentRegistrar" />
-194-->[com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e3df24af8d6e05421daa687881164224\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:32:17-82
-195            <meta-data
-195-->[com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\ad5b36f5966bfa40761e8d81cb798ef3\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:18:13-20:85
-196                android:name="com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsRegistrar"
-196-->[com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\ad5b36f5966bfa40761e8d81cb798ef3\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:19:17-127
-197                android:value="com.google.firebase.components.ComponentRegistrar" />
-197-->[com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\ad5b36f5966bfa40761e8d81cb798ef3\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:20:17-82
-198        </service>
-199
-200        <provider
-200-->[com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2e18519aa64818f6336a591b3bcbb6d0\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:26:9-31:39
-201            android:name="com.google.firebase.provider.FirebaseInitProvider"
-201-->[com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2e18519aa64818f6336a591b3bcbb6d0\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:27:13-77
-202            android:authorities="com.example.statsfoota.firebaseinitprovider"
-202-->[com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2e18519aa64818f6336a591b3bcbb6d0\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:28:13-72
-203            android:directBootAware="true"
-203-->[com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2e18519aa64818f6336a591b3bcbb6d0\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:29:13-43
-204            android:exported="false"
-204-->[com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2e18519aa64818f6336a591b3bcbb6d0\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:30:13-37
-205            android:initOrder="100" />
-205-->[com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2e18519aa64818f6336a591b3bcbb6d0\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:31:13-36
-206
-207        <meta-data
-207-->[com.google.android.gms:play-services-basement:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\140aa1b517be5aaa585eb3b67e0a7eac\transformed\jetified-play-services-basement-17.0.0\AndroidManifest.xml:23:9-25:69
-208            android:name="com.google.android.gms.version"
-208-->[com.google.android.gms:play-services-basement:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\140aa1b517be5aaa585eb3b67e0a7eac\transformed\jetified-play-services-basement-17.0.0\AndroidManifest.xml:24:13-58
-209            android:value="@integer/google_play_services_version" />
-209-->[com.google.android.gms:play-services-basement:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\140aa1b517be5aaa585eb3b67e0a7eac\transformed\jetified-play-services-basement-17.0.0\AndroidManifest.xml:25:13-66
-210
-211        <provider
-211-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\1b51b569d1979c44c6da29a9cc78a117\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:24:9-32:20
-212            android:name="androidx.startup.InitializationProvider"
-212-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\1b51b569d1979c44c6da29a9cc78a117\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:25:13-67
-213            android:authorities="com.example.statsfoota.androidx-startup"
-213-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\1b51b569d1979c44c6da29a9cc78a117\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:26:13-68
-214            android:exported="false" >
-214-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\1b51b569d1979c44c6da29a9cc78a117\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:27:13-37
-215            <meta-data
-215-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\1b51b569d1979c44c6da29a9cc78a117\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:29:13-31:52
-216                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
-216-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\1b51b569d1979c44c6da29a9cc78a117\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:30:17-78
-217                android:value="androidx.startup" />
-217-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\1b51b569d1979c44c6da29a9cc78a117\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:31:17-49
-218            <meta-data
-218-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:29:13-31:52
-219                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
-219-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:30:17-85
-220                android:value="androidx.startup" />
-220-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:31:17-49
-221        </provider>
+139-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:14:13-16:75
+140                android:name="android.support.FILE_PROVIDER_PATHS"
+140-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:15:17-67
+141                android:resource="@xml/flutter_image_picker_file_paths" />
+141-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:16:17-72
+142        </provider> <!-- Trigger Google Play services to install the backported photo picker module. -->
+143        <service
+143-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:19:9-31:19
+144            android:name="com.google.android.gms.metadata.ModuleDependencies"
+144-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:20:13-78
+145            android:enabled="false"
+145-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:21:13-36
+146            android:exported="false" >
+146-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:22:13-37
+147            <intent-filter>
+147-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:24:13-26:29
+148                <action android:name="com.google.android.gms.metadata.MODULE_DEPENDENCIES" />
+148-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:25:17-94
+148-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:25:25-91
+149            </intent-filter>
+150
+151            <meta-data
+151-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:28:13-30:36
+152                android:name="photopicker_activity:0:required"
+152-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:29:17-63
+153                android:value="" />
+153-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:30:17-33
+154        </service>
+155        <!--
+156           Declares a provider which allows us to store files to share in
+157           '.../caches/share_plus' and grant the receiving action access
+158        -->
+159        <provider
+159-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:13:9-21:20
+160            android:name="dev.fluttercommunity.plus.share.ShareFileProvider"
+160-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:14:13-77
+161            android:authorities="com.example.statsfoota.flutter.share_provider"
+161-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:15:13-74
+162            android:exported="false"
+162-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:16:13-37
+163            android:grantUriPermissions="true" >
+163-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:17:13-47
+164            <meta-data
+164-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:14:13-16:75
+165                android:name="android.support.FILE_PROVIDER_PATHS"
+165-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:15:17-67
+166                android:resource="@xml/flutter_share_file_paths" />
+166-->[:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:16:17-72
+167        </provider>
+168        <!--
+169           This manifest declared broadcast receiver allows us to use an explicit
+170           Intent when creating a PendingItent to be informed of the user's choice
+171        -->
+172        <receiver
+172-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:26:9-32:20
+173            android:name="dev.fluttercommunity.plus.share.SharePlusPendingIntent"
+173-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:27:13-82
+174            android:exported="false" >
+174-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:28:13-37
+175            <intent-filter>
+175-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:29:13-31:29
+176                <action android:name="EXTRA_CHOSEN_COMPONENT" />
+176-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:30:17-65
+176-->[:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:30:25-62
+177            </intent-filter>
+178        </receiver>
+179
+180        <activity
+180-->[:url_launcher_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\url_launcher_android\intermediates\merged_manifest\debug\AndroidManifest.xml:8:9-11:74
+181            android:name="io.flutter.plugins.urllauncher.WebViewActivity"
+181-->[:url_launcher_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\url_launcher_android\intermediates\merged_manifest\debug\AndroidManifest.xml:9:13-74
+182            android:exported="false"
+182-->[:url_launcher_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\url_launcher_android\intermediates\merged_manifest\debug\AndroidManifest.xml:10:13-37
+183            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
+183-->[:url_launcher_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\url_launcher_android\intermediates\merged_manifest\debug\AndroidManifest.xml:11:13-71
+184
+185        <receiver
+185-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:29:9-33:20
+186            android:name="com.google.android.gms.measurement.AppMeasurementReceiver"
+186-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:30:13-85
+187            android:enabled="true"
+187-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:31:13-35
+188            android:exported="false" >
+188-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:32:13-37
+189        </receiver>
+190
+191        <service
+191-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:35:9-38:40
+192            android:name="com.google.android.gms.measurement.AppMeasurementService"
+192-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:36:13-84
+193            android:enabled="true"
+193-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:37:13-35
+194            android:exported="false" />
+194-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:38:13-37
+195        <service
+195-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:39:9-43:72
+196            android:name="com.google.android.gms.measurement.AppMeasurementJobService"
+196-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:40:13-87
+197            android:enabled="true"
+197-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:41:13-35
+198            android:exported="false"
+198-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:42:13-37
+199            android:permission="android.permission.BIND_JOB_SERVICE" />
+199-->[com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\d5add2428186cc5d0d86caf5df4882b2\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:43:13-69
+200        <service
+200-->[com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e3df24af8d6e05421daa687881164224\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:27:9-33:19
+201            android:name="com.google.firebase.components.ComponentDiscoveryService"
+201-->[com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e3df24af8d6e05421daa687881164224\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:28:13-84
+202            android:directBootAware="true"
+202-->[com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2e18519aa64818f6336a591b3bcbb6d0\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:35:13-43
+203            android:exported="false" >
+203-->[com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e3df24af8d6e05421daa687881164224\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:29:13-37
+204            <meta-data
+204-->[com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e3df24af8d6e05421daa687881164224\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:30:13-32:85
+205                android:name="com.google.firebase.components:com.google.firebase.analytics.connector.internal.AnalyticsConnectorRegistrar"
+205-->[com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e3df24af8d6e05421daa687881164224\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:31:17-139
+206                android:value="com.google.firebase.components.ComponentRegistrar" />
+206-->[com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e3df24af8d6e05421daa687881164224\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:32:17-82
+207            <meta-data
+207-->[com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\ad5b36f5966bfa40761e8d81cb798ef3\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:18:13-20:85
+208                android:name="com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsRegistrar"
+208-->[com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\ad5b36f5966bfa40761e8d81cb798ef3\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:19:17-127
+209                android:value="com.google.firebase.components.ComponentRegistrar" />
+209-->[com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\ad5b36f5966bfa40761e8d81cb798ef3\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:20:17-82
+210        </service>
+211
+212        <provider
+212-->[com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2e18519aa64818f6336a591b3bcbb6d0\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:26:9-31:39
+213            android:name="com.google.firebase.provider.FirebaseInitProvider"
+213-->[com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2e18519aa64818f6336a591b3bcbb6d0\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:27:13-77
+214            android:authorities="com.example.statsfoota.firebaseinitprovider"
+214-->[com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2e18519aa64818f6336a591b3bcbb6d0\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:28:13-72
+215            android:directBootAware="true"
+215-->[com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2e18519aa64818f6336a591b3bcbb6d0\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:29:13-43
+216            android:exported="false"
+216-->[com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2e18519aa64818f6336a591b3bcbb6d0\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:30:13-37
+217            android:initOrder="100" />
+217-->[com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2e18519aa64818f6336a591b3bcbb6d0\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:31:13-36
+218
+219        <meta-data
+219-->[com.google.android.gms:play-services-basement:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\140aa1b517be5aaa585eb3b67e0a7eac\transformed\jetified-play-services-basement-17.0.0\AndroidManifest.xml:23:9-25:69
+220            android:name="com.google.android.gms.version"
+220-->[com.google.android.gms:play-services-basement:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\140aa1b517be5aaa585eb3b67e0a7eac\transformed\jetified-play-services-basement-17.0.0\AndroidManifest.xml:24:13-58
+221            android:value="@integer/google_play_services_version" />
+221-->[com.google.android.gms:play-services-basement:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\140aa1b517be5aaa585eb3b67e0a7eac\transformed\jetified-play-services-basement-17.0.0\AndroidManifest.xml:25:13-66
 222
-223        <uses-library
-223-->[androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\a7bdf18f60ecccdc566bb646d409775f\transformed\jetified-window-1.2.0\AndroidManifest.xml:23:9-25:40
-224            android:name="androidx.window.extensions"
-224-->[androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\a7bdf18f60ecccdc566bb646d409775f\transformed\jetified-window-1.2.0\AndroidManifest.xml:24:13-54
-225            android:required="false" />
-225-->[androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\a7bdf18f60ecccdc566bb646d409775f\transformed\jetified-window-1.2.0\AndroidManifest.xml:25:13-37
-226        <uses-library
-226-->[androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\a7bdf18f60ecccdc566bb646d409775f\transformed\jetified-window-1.2.0\AndroidManifest.xml:26:9-28:40
-227            android:name="androidx.window.sidecar"
-227-->[androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\a7bdf18f60ecccdc566bb646d409775f\transformed\jetified-window-1.2.0\AndroidManifest.xml:27:13-51
-228            android:required="false" />
-228-->[androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\a7bdf18f60ecccdc566bb646d409775f\transformed\jetified-window-1.2.0\AndroidManifest.xml:28:13-37
-229
-230        <receiver
-230-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:34:9-52:20
-231            android:name="androidx.profileinstaller.ProfileInstallReceiver"
-231-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:35:13-76
-232            android:directBootAware="false"
-232-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:36:13-44
-233            android:enabled="true"
-233-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:37:13-35
-234            android:exported="true"
-234-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:38:13-36
-235            android:permission="android.permission.DUMP" >
-235-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:39:13-57
-236            <intent-filter>
-236-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:40:13-42:29
-237                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
-237-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:41:17-91
-237-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:41:25-88
-238            </intent-filter>
-239            <intent-filter>
-239-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:43:13-45:29
-240                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
-240-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:44:17-85
-240-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:44:25-82
-241            </intent-filter>
-242            <intent-filter>
-242-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:46:13-48:29
-243                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
-243-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:47:17-88
-243-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:47:25-85
-244            </intent-filter>
-245            <intent-filter>
-245-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:49:13-51:29
-246                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
-246-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:50:17-95
-246-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:50:25-92
-247            </intent-filter>
-248        </receiver>
-249    </application>
-250
-251</manifest>
+223        <provider
+223-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\1b51b569d1979c44c6da29a9cc78a117\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:24:9-32:20
+224            android:name="androidx.startup.InitializationProvider"
+224-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\1b51b569d1979c44c6da29a9cc78a117\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:25:13-67
+225            android:authorities="com.example.statsfoota.androidx-startup"
+225-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\1b51b569d1979c44c6da29a9cc78a117\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:26:13-68
+226            android:exported="false" >
+226-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\1b51b569d1979c44c6da29a9cc78a117\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:27:13-37
+227            <meta-data
+227-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\1b51b569d1979c44c6da29a9cc78a117\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:29:13-31:52
+228                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+228-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\1b51b569d1979c44c6da29a9cc78a117\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:30:17-78
+229                android:value="androidx.startup" />
+229-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\1b51b569d1979c44c6da29a9cc78a117\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:31:17-49
+230            <meta-data
+230-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:29:13-31:52
+231                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+231-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:30:17-85
+232                android:value="androidx.startup" />
+232-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:31:17-49
+233        </provider>
+234
+235        <uses-library
+235-->[androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\a7bdf18f60ecccdc566bb646d409775f\transformed\jetified-window-1.2.0\AndroidManifest.xml:23:9-25:40
+236            android:name="androidx.window.extensions"
+236-->[androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\a7bdf18f60ecccdc566bb646d409775f\transformed\jetified-window-1.2.0\AndroidManifest.xml:24:13-54
+237            android:required="false" />
+237-->[androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\a7bdf18f60ecccdc566bb646d409775f\transformed\jetified-window-1.2.0\AndroidManifest.xml:25:13-37
+238        <uses-library
+238-->[androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\a7bdf18f60ecccdc566bb646d409775f\transformed\jetified-window-1.2.0\AndroidManifest.xml:26:9-28:40
+239            android:name="androidx.window.sidecar"
+239-->[androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\a7bdf18f60ecccdc566bb646d409775f\transformed\jetified-window-1.2.0\AndroidManifest.xml:27:13-51
+240            android:required="false" />
+240-->[androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\a7bdf18f60ecccdc566bb646d409775f\transformed\jetified-window-1.2.0\AndroidManifest.xml:28:13-37
+241
+242        <receiver
+242-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:34:9-52:20
+243            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+243-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:35:13-76
+244            android:directBootAware="false"
+244-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:36:13-44
+245            android:enabled="true"
+245-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:37:13-35
+246            android:exported="true"
+246-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:38:13-36
+247            android:permission="android.permission.DUMP" >
+247-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:39:13-57
+248            <intent-filter>
+248-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:40:13-42:29
+249                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+249-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:41:17-91
+249-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:41:25-88
+250            </intent-filter>
+251            <intent-filter>
+251-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:43:13-45:29
+252                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+252-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:44:17-85
+252-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:44:25-82
+253            </intent-filter>
+254            <intent-filter>
+254-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:46:13-48:29
+255                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+255-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:47:17-88
+255-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:47:25-85
+256            </intent-filter>
+257            <intent-filter>
+257-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:49:13-51:29
+258                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+258-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:50:17-95
+258-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\00bc8313893ce945c6e87b909ffd337b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:50:25-92
+259            </intent-filter>
+260        </receiver>
+261    </application>
+262
+263</manifest>
