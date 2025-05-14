@@ -14,6 +14,7 @@ class CreateMatchScreen extends StatefulWidget {
 class _CreateMatchScreenState extends State<CreateMatchScreen> with SingleTickerProviderStateMixin {
   final SupabaseClient supabase = Supabase.instance.client;
   String _selectedFormat = '';
+  bool _isPublic = false; // Variable para controlar si el partido es público o privado
   final TextEditingController _matchNameController = TextEditingController();
   late TabController _tabController;
   bool _isLoading = false;
@@ -69,6 +70,7 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> with SingleTicker
     final Map<String, dynamic> matchData = {
       'nombre': matchName,
       'formato': _selectedFormat,
+      'publico': _isPublic, // Añadir la información de si es público o privado
     };
     
     // Navegar a la siguiente pantalla para configurar fecha y hora
@@ -278,90 +280,149 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> with SingleTicker
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Row(
+        child: Column(
           children: [
-            // Dropdown para seleccionar formato
-            Expanded(
-              flex: 2,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
+            Row(
+              children: [
+                // Dropdown para seleccionar formato
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedFormat.isEmpty ? null : _selectedFormat,
-                    hint: Text(
-                      'Formato',
-                      style: TextStyle(
-                        color: const Color(0xFF1A237E).withOpacity(0.8),
-                      ),
-                    ),
-                    icon: Icon(Icons.keyboard_arrow_down, color: const Color(0xFF1A237E)),
-                    isExpanded: true,
-                    items: ['5v5', '6v6', '7v7', '8v8', '9v9', '10v10', '11v11'].map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(
-                          value, 
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedFormat.isEmpty ? null : _selectedFormat,
+                        hint: Text(
+                          'Formato',
                           style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF1A237E),
+                            color: const Color(0xFF1A237E).withOpacity(0.8),
                           ),
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (newValue) {
-                      setState(() {
-                        _selectedFormat = newValue!;
-                      });
-                    },
+                        icon: Icon(Icons.keyboard_arrow_down, color: const Color(0xFF1A237E)),
+                        isExpanded: true,
+                        items: ['5v5', '6v6', '7v7', '8v8', '9v9', '10v10', '11v11'].map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(
+                              value, 
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF1A237E),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (newValue) {
+                          setState(() {
+                            _selectedFormat = newValue!;
+                          });
+                        },
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                
+                SizedBox(width: 16),
+                
+                // TextField para nombre del partido a la derecha
+                Expanded(
+                  flex: 3,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _matchNameController,
+                      style: TextStyle(
+                        color: const Color(0xFF1A237E),
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Nombre del partido',
+                        labelStyle: TextStyle(
+                          color: const Color(0xFF1A237E).withOpacity(0.8),
+                        ),
+                        hintText: 'Ej: Liga Barrial - J3',
+                        border: InputBorder.none,
+                        prefixIcon: Icon(Icons.sports_soccer, color: const Color(0xFF283593)),
+                        contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             
-            SizedBox(width: 16),
-            
-            // TextField para nombre del partido a la derecha
-            Expanded(
-              flex: 3,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: TextField(
-                  controller: _matchNameController,
-                  style: TextStyle(
-                    color: const Color(0xFF1A237E),
+            // Opción para seleccionar si el partido es público o privado
+            SizedBox(height: 16),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
                   ),
-                  decoration: InputDecoration(
-                    labelText: 'Nombre del partido',
-                    labelStyle: TextStyle(
-                      color: const Color(0xFF1A237E).withOpacity(0.8),
-                    ),
-                    hintText: 'Ej: Liga Barrial - J3',
-                    border: InputBorder.none,
-                    prefixIcon: Icon(Icons.sports_soccer, color: const Color(0xFF283593)),
-                    contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                ],
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                children: [
+                  Icon(
+                    _isPublic ? Icons.public : Icons.lock,
+                    color: _isPublic ? Colors.green.shade600 : Colors.orange.shade600,
                   ),
-                ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Visibilidad del partido',
+                      style: TextStyle(
+                        color: const Color(0xFF1A237E),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  Switch(
+                    value: _isPublic,
+                    onChanged: (value) {
+                      setState(() {
+                        _isPublic = value;
+                      });
+                    },
+                    activeColor: Colors.green.shade600,
+                    activeTrackColor: Colors.green.shade200,
+                    inactiveThumbColor: Colors.orange.shade600,
+                    inactiveTrackColor: Colors.orange.shade200,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    _isPublic ? 'Público' : 'Privado',
+                    style: TextStyle(
+                      color: _isPublic ? Colors.green.shade600 : Colors.orange.shade600,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -495,6 +556,7 @@ class _CreateMatchDetailsScreenState extends State<CreateMatchDetailsScreen> {
         'fecha': matchDateTime.toIso8601String(),
         'estado': 'pendiente',
         'created_at': DateTime.now().toIso8601String(),
+        'publico': widget.matchData['publico'] ?? false, // Guardar si el partido es público o privado
       }).select();
 
       // Obtener el ID del partido recién creado

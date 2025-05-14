@@ -15,8 +15,9 @@ class MatchListScreen extends StatefulWidget {
 
 class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProviderStateMixin {
   final SupabaseClient supabase = Supabase.instance.client;
-  List<Map<String, dynamic>> _myMatches = [];
-  List<Map<String, dynamic>> _invitedMatches = [];
+  List<Map<String, dynamic>> _myMatches = []; // Partidos organizados por el usuario
+  List<Map<String, dynamic>> _friendsMatches = []; // Partidos de amigos (privados)
+  List<Map<String, dynamic>> _publicMatches = []; // Partidos públicos
   bool _isLoading = true;
   late TabController _tabController;
   String? _error;
@@ -24,7 +25,7 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 1, vsync: this);
+    _tabController = TabController(length: 3, vsync: this); // 3 pestañas: Mis Partidos, Amigos, Públicos
     _fetchMatches();
   }
 
@@ -54,7 +55,9 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
       print('Cargando partidos para usuario: ${currentUser.id}');
 
       // Lista para almacenar todos los partidos del usuario (organizados + participante)
-      final List<Map<String, dynamic>> allMyMatches = [];
+      final List<Map<String, dynamic>> userMatches = [];
+      final List<Map<String, dynamic>> friendsMatchesList = [];
+      final List<Map<String, dynamic>> publicMatchesList = [];
 
       try {
         // 1. Cargar partidos organizados por el usuario actual
@@ -88,7 +91,7 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
           // Marcar como organizador para distinguirlos
           matchWithProfile['isOrganizer'] = true;
           
-          allMyMatches.add(matchWithProfile);
+          userMatches.add(matchWithProfile);
         }
         
         // 2. Cargar partidos donde el usuario es participante
@@ -127,24 +130,109 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
               // Marcar como no organizador
               matchData['isOrganizer'] = false;
               
-              // Añadir a la lista de todos los partidos
-              allMyMatches.add(matchData);
+              // Añadir a la lista de partidos del usuario
+              userMatches.add(matchData);
             }
           }
         }
         
-        print('Total de partidos cargados: ${allMyMatches.length}');
+        // 3. Cargar partidos públicos (que no son del usuario actual)
+        final publicMatchesResponse = await supabase
+            .from('matches')
+            .select('*')
+            .eq('publico', true)
+            .neq('creador_id', currentUser.id) // No incluir los partidos del usuario actual
+            .order('fecha', ascending: false);
+
+        for (final match in publicMatchesResponse) {
+          final Map<String, dynamic> matchWithProfile = Map.from(match);
+          
+          try {
+            final creatorData = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', match['creador_id'])
+                .maybeSingle();
+                
+            if (creatorData != null) {
+              matchWithProfile['profiles'] = creatorData;
+            }
+          } catch (e) {
+            print('Error al cargar perfil del creador: $e');
+          }
+          
+          matchWithProfile['isOrganizer'] = false;
+          publicMatchesList.add(matchWithProfile);
+        }
+        
+        // 4. Cargar lista de amigos del usuario
+        final friendsResponse = await supabase
+            .from('amigos')
+            .select('amigo_id')
+            .eq('usuario_id', currentUser.id)
+            .eq('estado', 'aceptado'); // Solo amigos aceptados
+        
+        List<String> friendIds = [];
+        for (final friend in friendsResponse) {
+          friendIds.add(friend['amigo_id']);
+        }
+
+        // 5. Cargar partidos privados de amigos
+        if (friendIds.isNotEmpty) {
+          final friendsMatchesResponse = await supabase
+              .from('matches')
+              .select('*')
+              .eq('publico', false) // Solo partidos privados
+              .filter('creador_id', 'in', friendIds) // Creados por amigos - Método correcto
+              .order('fecha', ascending: false);
+
+          for (final match in friendsMatchesResponse) {
+            final Map<String, dynamic> matchWithProfile = Map.from(match);
+            
+            try {
+              final creatorData = await supabase
+                  .from('profiles')
+                  .select('*')
+                  .eq('id', match['creador_id'])
+                  .maybeSingle();
+                  
+              if (creatorData != null) {
+                matchWithProfile['profiles'] = creatorData;
+              }
+            } catch (e) {
+              print('Error al cargar perfil del creador: $e');
+            }
+            
+            matchWithProfile['isOrganizer'] = false;
+            friendsMatchesList.add(matchWithProfile);
+          }
+        }
+        
+        print('Total de partidos cargados - Usuario: ${userMatches.length}, Públicos: ${publicMatchesList.length}, Amigos: ${friendsMatchesList.length}');
 
         // Ordenar todos los partidos por fecha (más reciente primero)
-        allMyMatches.sort((a, b) {
+        userMatches.sort((a, b) {
+          DateTime dateA = DateTime.parse(a['fecha']);
+          DateTime dateB = DateTime.parse(b['fecha']);
+          return dateB.compareTo(dateA);
+        });
+
+        publicMatchesList.sort((a, b) {
+          DateTime dateA = DateTime.parse(a['fecha']);
+          DateTime dateB = DateTime.parse(b['fecha']);
+          return dateB.compareTo(dateA);
+        });
+
+        friendsMatchesList.sort((a, b) {
           DateTime dateA = DateTime.parse(a['fecha']);
           DateTime dateB = DateTime.parse(b['fecha']);
           return dateB.compareTo(dateA);
         });
 
         setState(() {
-          _myMatches = allMyMatches;
-          _invitedMatches = []; // Dejar vacío para implementación futura
+          _myMatches = userMatches;
+          _publicMatches = publicMatchesList;
+          _friendsMatches = friendsMatchesList;
           _isLoading = false;
         });
       } catch (e) {
@@ -266,6 +354,28 @@ Hora: $formattedTime
         centerTitle: true,
         backgroundColor: Colors.blue.shade800,
         automaticallyImplyLeading: false, // Eliminado la flecha de navegación
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: Colors.orange.shade600,
+          indicatorWeight: 3,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white.withOpacity(0.7),
+          labelStyle: TextStyle(fontWeight: FontWeight.bold),
+          tabs: [
+            Tab(
+              icon: Icon(Icons.person),
+              text: 'Mis Partidos',
+            ),
+            Tab(
+              icon: Icon(Icons.group),
+              text: 'Amigos',
+            ),
+            Tab(
+              icon: Icon(Icons.public),
+              text: 'Públicos',
+            ),
+          ],
+        ),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -279,7 +389,14 @@ Hora: $formattedTime
             ? Center(child: CircularProgressIndicator(color: Colors.white))
             : _error != null
                 ? _buildErrorMessage()
-                : _buildMatchListView(_myMatches, isOrganizer: true),
+                : TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildMatchListView(_myMatches, isOrganizer: true, listType: "my"),
+                      _buildMatchListView(_friendsMatches, isOrganizer: false, listType: "friends"),
+                      _buildMatchListView(_publicMatches, isOrganizer: false, listType: "public"),
+                    ],
+                  ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
@@ -335,7 +452,34 @@ Hora: $formattedTime
     );
   }
 
-  Widget _buildMatchListView(List<Map<String, dynamic>> matches, {required bool isOrganizer}) {
+  Widget _buildMatchListView(List<Map<String, dynamic>> matches, {required bool isOrganizer, required String listType}) {
+    // Icons and messages based on the list type
+    IconData emptyIcon;
+    String emptyTitle;
+    String emptySubtitle;
+    
+    switch (listType) {
+      case "my":
+        emptyIcon = Icons.sports_soccer;
+        emptyTitle = 'Aún no tienes partidos';
+        emptySubtitle = 'Toca el botón + para crear uno nuevo';
+        break;
+      case "friends":
+        emptyIcon = Icons.group;
+        emptyTitle = 'No hay partidos de amigos';
+        emptySubtitle = 'Tus amigos aún no han creado partidos privados';
+        break;
+      case "public":
+        emptyIcon = Icons.public;
+        emptyTitle = 'No hay partidos públicos';
+        emptySubtitle = 'No hay partidos públicos disponibles en este momento';
+        break;
+      default:
+        emptyIcon = Icons.sports_soccer;
+        emptyTitle = 'No hay partidos';
+        emptySubtitle = 'No se encontraron partidos';
+    }
+    
     return RefreshIndicator(
       onRefresh: _fetchMatches,
       child: matches.isEmpty
@@ -344,15 +488,13 @@ Hora: $formattedTime
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    isOrganizer ? Icons.sports_soccer : Icons.mail_outline,
+                    emptyIcon,
                     color: Colors.white.withOpacity(0.8),
                     size: 80,
                   ),
                   SizedBox(height: 20),
                   Text(
-                    isOrganizer
-                        ? 'Aún no tienes partidos'
-                        : 'No hay invitaciones disponibles',
+                    emptyTitle,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -362,9 +504,7 @@ Hora: $formattedTime
                   ),
                   SizedBox(height: 10),
                   Text(
-                    isOrganizer
-                        ? 'Toca el botón + para crear uno nuevo'
-                        : 'Esta función estará disponible próximamente',
+                    emptySubtitle,
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.8),
                       fontSize: 16,
@@ -397,6 +537,9 @@ Hora: $formattedTime
     
     // Determine if the match is upcoming or past
     final bool isPast = matchDate.isBefore(DateTime.now());
+    
+    // Determine if the match is public or private
+    final bool isPublic = match['publico'] == true;
 
     return Card(
       margin: EdgeInsets.only(bottom: 16),
@@ -456,6 +599,34 @@ Hora: $formattedTime
                     SizedBox(width: 8),
                     _buildInfoBadge(Icons.access_time, formattedTime),
                     Spacer(),
+                    // Añadir indicador público/privado
+                    Container(
+                      margin: EdgeInsets.only(right: 8),
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isPublic ? Colors.green.shade600.withOpacity(0.8) : Colors.orange.shade600.withOpacity(0.8),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isPublic ? Icons.public : Icons.lock,
+                            color: Colors.white,
+                            size: 12,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            isPublic ? 'Público' : 'Privado',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
