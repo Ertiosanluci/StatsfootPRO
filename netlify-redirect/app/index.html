@@ -12,7 +12,7 @@
     This is a placeholder for base href that will be replaced by the value of
     the `--base-href` argument provided to `flutter build`.
   -->
-  <base href="/">
+  <base href="/app/">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
@@ -102,7 +102,35 @@
       <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x" media="(prefers-color-scheme: dark)">
       <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="">
   </picture>
-  <script src="flutter_bootstrap.js" async=""></script>
-
-
+  
+  <!-- Script para manejar errores de carga -->
+  <script>
+    window.addEventListener('error', function(e) {
+      console.error('Error de carga:', e.message, e.filename);
+    });
+  </script>
+  
+  <!-- Cargar el script principal de Flutter -->
+  <script>
+    window.flutterConfiguration = {
+      canvasKitBaseUrl: "/app/canvaskit/"
+    };
+  </script>
+  <script src="flutter.js" defer></script>
+  <script>
+    window.addEventListener("load", function(ev) {
+      // Utilizar la versión generada o fallback a null
+      var serviceWorkerVersion = null;
+      _flutter.loader.loadEntrypoint({
+        serviceWorker: {
+          serviceWorkerVersion: serviceWorkerVersion,
+        },
+        onEntrypointLoaded: function(engineInitializer) {
+          engineInitializer.initializeEngine().then(function(appRunner) {
+            appRunner.runApp();
+          });
+        }
+      });
+    });
+  </script>
 </body></html>

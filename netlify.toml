@@ -1,16 +1,25 @@
 [build]
   publish = "netlify-redirect"
 
+# Redirección para la aplicación web en /app
 [[redirects]]
   from = "/app/*"
   to = "/app/index.html"
   status = 200
 
+# Redirección específica para la URL de partidos en la versión web
+[[redirects]]
+  from = "/app/match/*"
+  to = "/app/index.html"
+  status = 200
+
+# Redirecciones para las rutas de la versión móvil
 [[redirects]]
   from = "/match/*"
   to = "/match.html"
   status = 200
 
+# Redirección por defecto
 [[redirects]]
   from = "/*"
   to = "/index.html"
