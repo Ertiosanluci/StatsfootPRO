@@ -1,26 +1,15 @@
+@@ -0,0 +1,15 @@
 [build]
-  command = "flutter build web"
-  publish = "build/web"
+  publish = "netlify-redirect"
+  command = "# No build command needed"
 
-# Redirección para la aplicación web en /app
-[[redirects]]
-  from = "/app/*"
-  to = "/app/index.html"
-  status = 200
-
-# Redirección específica para la URL de partidos en la versión web
-[[redirects]]
-  from = "/app/match/*"
-  to = "/app/index.html"
-  status = 200
-
-# Redirecciones para las rutas de la versión móvil
+# Redirecciones específicas para partidos
 [[redirects]]
   from = "/match/*"
   to = "/match.html"
   status = 200
 
-# Redirección por defecto
+# Redirección por defecto a la página principal
 [[redirects]]
   from = "/*"
   to = "/index.html"
