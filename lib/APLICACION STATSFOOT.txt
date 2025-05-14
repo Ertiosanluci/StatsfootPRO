@@ -28,4 +28,9 @@ ahora necesito guardar las estadísticas de los goles, asistencias, goles en pro
 
 
 COSAS QUE ARREGLAR MAÑANA:
- HA DEJADO DE FUNCIONAR "MOSTRAR JUGADORES" TANTO EN "VER DETALLES", ESTÁ COGIENDO POSICIONES DISTINTAS, EL EJEMPLO CLARO LO TIENES EN EL PARTIDO "TUSMUERTOS"
+En crear partido, ahora vamos a quitar la sección que pone "nueva sección" de partidos, además ahora se guardará la ubicación del partido en la base de datos, en la que el creador seleccionará la ubicación en Google maps, luego se guardará la ubicación en la base de datos.
+Seguir mejorando la apariencia de la app
+Quitar lag de pantalla de registro
+hacer que se puedan registrar mediante Gmail y evitar que se inventen gmails
+Hacer que se pueda cambiar la contraseña de los usuarios
+Hacer que la app se pueda ejecutar en netlify desde la web.

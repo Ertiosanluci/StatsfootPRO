@@ -23,10 +23,10 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> with SingleTicker
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     
-    // Mostrar instrucciones como toast al iniciar la pantalla
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showInstructionsToast();
-    });
+    // Elimino el toast que aparecía al iniciar la pantalla
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   _showInstructionsToast();
+    // });
   }
   
   @override

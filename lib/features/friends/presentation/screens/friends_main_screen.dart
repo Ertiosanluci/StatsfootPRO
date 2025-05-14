@@ -45,12 +45,14 @@ class _FriendsMainScreenState extends ConsumerState<FriendsMainScreen> with Sing
     final state = ref.watch(friendControllerProvider);
     
     // Calculando la altura con margen adicional para las pestañas
-    final double tabBarHeight = kToolbarHeight + 16.0; // Incrementando altura para dar más espacio
+    final double tabBarHeight = kToolbarHeight + 16.0;
     
     return Scaffold(
+      // Desactivamos explícitamente la flecha de retroceso para todas las plataformas
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(tabBarHeight),
         child: AppBar(
+          automaticallyImplyLeading: false, // Esto desactiva la flecha de retroceso en todas las plataformas
           backgroundColor: Colors.blue.shade800,
           elevation: 0,
           flexibleSpace: SafeArea(

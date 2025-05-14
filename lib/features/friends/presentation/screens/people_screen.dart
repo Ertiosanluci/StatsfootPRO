@@ -87,65 +87,63 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
         ? FriendState.initial() 
         : ref.watch(friendControllerProvider);
     
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF1565C0),
-              Color(0xFF1976D2),
-              Color(0xFF1E88E5),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Column(
-          children: [
-            // Buscador de personas
-            Padding(
-              padding: EdgeInsets.fromLTRB(16, 10, 16, 8),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Buscar personas...',
-                    hintStyle: TextStyle(color: Colors.white70),
-                    prefixIcon: Icon(Icons.search, color: Colors.white70),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(Icons.clear, color: Colors.white70),
-                            onPressed: () {
-                              setState(() {
-                                _searchController.clear();
-                                _searchQuery = '';
-                                _loadUsersWithDelay();
-                              });
-                            },
-                          )
-                        : null,
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  style: TextStyle(color: Colors.white),
-                  onChanged: _searchUsers,
-                ),
-              ),
-            ),
-
-            // Lista de personas
-            Expanded(
-              child: SafeArea(
-                child: _buildContent(state),
-              ),
-            ),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF1565C0),
+            Color(0xFF1976D2),
+            Color(0xFF1E88E5),
           ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
+      ),
+      child: Column(
+        children: [
+          // Buscador de personas
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, 10, 16, 8),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Buscar personas...',
+                  hintStyle: TextStyle(color: Colors.white70),
+                  prefixIcon: Icon(Icons.search, color: Colors.white70),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: Icon(Icons.clear, color: Colors.white70),
+                          onPressed: () {
+                            setState(() {
+                              _searchController.clear();
+                              _searchQuery = '';
+                              _loadUsersWithDelay();
+                            });
+                          },
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(vertical: 12),
+                ),
+                style: TextStyle(color: Colors.white),
+                onChanged: _searchUsers,
+              ),
+            ),
+          ),
+
+          // Lista de personas
+          Expanded(
+            child: SafeArea(
+              child: _buildContent(state),
+            ),
+          ),
+        ],
       ),
     );
   }
