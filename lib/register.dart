@@ -4,6 +4,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:path/path.dart' as path;
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+// Conditionally import dart:html for web platform only
+// Using a conditional import approach
+import 'html_stub.dart' if (dart.library.html) 'dart:html' as html;
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -22,12 +28,15 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   final _descripcionController = TextEditingController();
   
   late AnimationController _animationController;
-  
-  bool _obscurePassword = true;
+    bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
   bool _acceptTerms = false;
-  File? _profileImage;
+  
+  // Variables para manejo multiplataforma de imágenes
+  File? _profileImageFile;           // Para plataformas nativas
+  Uint8List? _profileImageWeb;       // Para la web
+  String? _profileImagePath;         // Ruta para todas las plataformas
 
   @override
   void initState() {
@@ -84,11 +93,28 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                 InkWell(
                   onTap: () async {
                     Navigator.of(context).pop();
-                    final XFile? photo = await picker.pickImage(source: ImageSource.camera);
-                    if (photo != null) {
-                      setState(() {
-                        _profileImage = File(photo.path);
-                      });
+                    try {                      final XFile? photo = await picker.pickImage(
+                        source: ImageSource.camera,
+                        imageQuality: 70,  // Reducir calidad para mejorar rendimiento
+                        maxWidth: 800,     // Limitar tamaño para compatibilidad
+                      );
+                      if (photo != null) {
+                        setState(() {
+                          if (kIsWeb) {
+                            // Lectura de bytes para la web
+                            photo.readAsBytes().then((value) {
+                              _profileImageWeb = value;
+                              _profileImagePath = photo.path;
+                            });
+                          } else {
+                            // Uso de File para plataformas nativas
+                            _profileImageFile = File(photo.path);
+                            _profileImagePath = photo.path;
+                          }
+                        });
+                      }
+                    } catch (e) {
+                      _showErrorSnackBar('No se pudo acceder a la cámara: ${e.toString()}');
                     }
                   },
                   child: Container(
@@ -128,11 +154,30 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                 InkWell(
                   onTap: () async {
                     Navigator.of(context).pop();
-                    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-                    if (image != null) {
-                      setState(() {
-                        _profileImage = File(image.path);
-                      });
+                    try {                      // Usar configuraciones optimizadas para compatibilidad con Chrome
+                      final XFile? image = await picker.pickImage(
+                        source: ImageSource.gallery,
+                        imageQuality: 70,  // Reducir calidad para mejorar rendimiento
+                        maxWidth: 800,     // Limitar tamaño para compatibilidad
+                      );
+                      if (image != null) {
+                        setState(() {
+                          if (kIsWeb) {
+                            // Lectura de bytes para la web
+                            image.readAsBytes().then((value) {
+                              _profileImageWeb = value;
+                              _profileImagePath = image.path;
+                            });
+                          } else {
+                            // Uso de File para plataformas nativas
+                            _profileImageFile = File(image.path);
+                            _profileImagePath = image.path;
+                          }
+                        });
+                      }
+                    } catch (e) {
+                      // Manejo específico para errores en la web
+                      _showErrorSnackBar('Error al seleccionar la imagen: ${e.toString()}');
                     }
                   },
                   child: Container(
@@ -187,16 +232,26 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
           ),
         );
       },
-    );
-  }
-
-  // Método para subir imagen de perfil a Supabase Storage
+    );  }
+    // Método para subir imagen de perfil a Supabase Storage
   Future<String?> _uploadProfileImage(String userId) async {
-    if (_profileImage == null) return null;
+    if (_profileImagePath == null) return null;
     
     try {
       final String username = _usernameController.text.trim();
-      final String fileExtension = path.extension(_profileImage!.path);
+      // Extraer extensión del archivo de forma segura para compatibilidad multiplataforma
+      String fileExtension = '';
+      try {
+        fileExtension = path.extension(_profileImagePath!).toLowerCase();
+        // Si la extensión está vacía o no es válida, asignar una por defecto
+        if (fileExtension.isEmpty || !fileExtension.startsWith('.')) {
+          fileExtension = '.jpg'; // Extensión predeterminada
+        }
+      } catch (e) {
+        // En caso de error al extraer la extensión, usar jpg por defecto
+        fileExtension = '.jpg';
+      }
+      
       final String folderName = '$userId-$username';
       final String fileName = '$folderName/${DateTime.now().millisecondsSinceEpoch}$fileExtension';
       
@@ -209,13 +264,43 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         // Ignorar error si no existe
       }
       
-      // Subir archivo
+      // Preparar los bytes de la imagen para subirla
+      Uint8List? imageBytes;
+      
+      if (kIsWeb) {
+        // En web, ya tenemos los bytes
+        imageBytes = _profileImageWeb;
+      } else if (_profileImageFile != null) {
+        // En plataformas nativas, leer del archivo
+        List<int> tempBytes = await _profileImageFile!.readAsBytes();
+        imageBytes = Uint8List.fromList(tempBytes);
+      }
+      
+      if (imageBytes == null) {
+        print('No se pudieron obtener los bytes de la imagen');
+        return null;
+      }
+      
+      if (imageBytes == null || imageBytes.isEmpty) {
+        print('No se pudieron obtener los bytes de la imagen');
+        return null;
+      }
+      
+      // Convertir List<int> a Uint8List para compatibilidad con uploadBinary
+      final Uint8List uint8Bytes = Uint8List.fromList(imageBytes);
+      
+      // Subir archivo usando bytes para mayor compatibilidad entre plataformas
       await Supabase.instance.client.storage
           .from('images')
-          .upload(fileName, _profileImage!, fileOptions: const FileOptions(
-            cacheControl: '3600',
-            upsert: true
-          ));
+          .uploadBinary(
+            fileName, 
+            uint8Bytes,
+            fileOptions: const FileOptions(
+              cacheControl: '3600',
+              upsert: true,
+              contentType: 'image/jpeg', // Definir tipo de contenido explícitamente
+            )
+          );
       
       // Obtener URL pública
       final String imageUrl = Supabase.instance.client.storage
@@ -224,6 +309,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       
       return imageUrl;
     } catch (e) {
+      print('Error al subir imagen: $e');
       return null;
     }
   }
@@ -337,9 +423,8 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       } catch (e) {
         // Continuar aunque falle
       }
-      
-      // Subir imagen si hay
-      if (_profileImage != null) {
+        // Subir imagen si hay
+      if (_profileImagePath != null) {
         try {
           final avatarUrl = await _uploadProfileImage(response.user!.id);
           
@@ -351,7 +436,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         } catch (e) {
           // Continuar aunque falle
         }
-      }      // Cerrar progreso
+      }// Cerrar progreso
       Navigator.of(context, rootNavigator: true).pop();
       
       // Iniciar sesión automáticamente
@@ -597,6 +682,34 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     );
   }
 
+  // Método para mostrar la imagen de perfil según la plataforma
+  Widget _buildProfileImage() {
+    if (kIsWeb) {
+      // Para web, usar los bytes de la imagen
+      if (_profileImageWeb != null) {
+        return Image.memory(
+          _profileImageWeb!,
+          fit: BoxFit.cover,
+        );
+      }
+    } else {
+      // Para plataformas nativas, usar el archivo
+      if (_profileImageFile != null) {
+        return Image.file(
+          _profileImageFile!,
+          fit: BoxFit.cover,
+        );
+      }
+    }
+    
+    // En caso de error o estado intermedio, mostrar un icono
+    return Icon(
+      Icons.person,
+      size: 80,
+      color: Colors.white.withOpacity(0.9),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Configurar la barra de estado
@@ -667,13 +780,9 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                   offset: Offset(0, 8),
                                 ),
                               ],
-                            ),
-                            child: ClipOval(
-                              child: _profileImage != null
-                                  ? Image.file(
-                                      _profileImage!,
-                                      fit: BoxFit.cover,
-                                    )
+                            ),                            child: ClipOval(
+                              child: _profileImagePath != null
+                                  ? _buildProfileImage()
                                   : Icon(
                                       Icons.person,
                                       size: 80,
@@ -940,7 +1049,8 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
-                    ),                    child: Row(
+                    ),
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(Icons.how_to_reg_rounded, size: 20),
@@ -968,7 +1078,8 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      ),                      child: Row(
+                      ),
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(Icons.arrow_back, size: 16),

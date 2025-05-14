@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ProfileEditScreen extends StatefulWidget {
   @override
@@ -26,10 +27,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   String? _selectedFrequency;
   String? _selectedGender;
   String? _selectedLevel;
+    DateTime? _birthdate;
   
-  DateTime? _birthdate;
-  
-  File? _imageFile;
+  // Variables para manejo multiplataforma de imágenes
+  File? _imageFile;              // Para plataformas nativas
+  Uint8List? _imageWebBytes;     // Para la web
+  String? _imagePath;            // Ruta para todas las plataformas
   String? _currentImageUrl;
   String _username = "Usuario";
   
@@ -159,10 +162,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
-  
-  // Seleccionar imagen desde la galería
+  // Seleccionar imagen desde la galería (mejorado)
   Future<void> _pickImage() async {
     try {
+      print('Iniciando selección de imagen desde galería');
+      print('Plataforma actual: ${kIsWeb ? "Web" : "Nativa"}');
+      
       final ImagePicker picker = ImagePicker();
       final XFile? pickedImage = await picker.pickImage(
         source: ImageSource.gallery,
@@ -172,21 +177,79 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       );
       
       if (pickedImage != null) {
+        print('Imagen seleccionada: ${pickedImage.path}');
+        
+        // Primero establecer la ruta
         setState(() {
-          _imageFile = File(pickedImage.path);
+          _imagePath = pickedImage.path;
         });
+        
+        if (kIsWeb) {
+          // Para web, leer como bytes de manera asíncrona
+          print('En plataforma web: leyendo bytes de la imagen');
+          try {
+            final bytes = await pickedImage.readAsBytes();
+            print('Bytes leídos en web: ${bytes.length}');
+            
+            // Guardar los bytes de forma segura
+            setState(() {
+              _imageWebBytes = bytes;
+              _imageFile = null; // Asegurar que no haya conflicto con la versión nativa
+            });
+          } catch (bytesError) {
+            print('Error al leer bytes en web: $bytesError');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error al procesar la imagen. Intente con otro formato.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        } else {
+          // Para plataformas nativas, usar File
+          print('En plataforma nativa: creando objeto File');
+          setState(() {
+            _imageFile = File(pickedImage.path);
+            _imageWebBytes = null; // Asegurar que no haya conflicto con la versión web
+          });
+        }
+        
+        // Limpiar URL anterior para asegurar la actualización
+        setState(() {
+          // Mantener la URL actual, se reemplazará al guardar
+        });
+      } else {
+        print('No se seleccionó ninguna imagen');
       }
     } catch (e) {
       print('Error al seleccionar imagen: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al seleccionar imagen')),
+        SnackBar(
+          content: Text('Error al seleccionar imagen: ${kIsWeb 
+            ? "Intente con otro formato de imagen o un archivo más pequeño" 
+            : e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
-  
-  // Tomar foto con la cámara
+  // Tomar foto con la cámara (simplificado)
   Future<void> _takePhoto() async {
     try {
+      print('Iniciando captura de foto desde cámara');
+      print('Plataforma actual: ${kIsWeb ? "Web" : "Nativa"}');
+      
+      // Mostrar advertencia general en web
+      if (kIsWeb) {
+        print('Advertencia: Acceso a cámara en web puede tener limitaciones');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Para mejor experiencia con la cámara, use Google Chrome'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      
       final ImagePicker picker = ImagePicker();
       final XFile? photo = await picker.pickImage(
         source: ImageSource.camera,
@@ -196,14 +259,59 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       );
       
       if (photo != null) {
+        print('Foto tomada: ${photo.path}');
+        
+        // Primero establecer la ruta
         setState(() {
-          _imageFile = File(photo.path);
+          _imagePath = photo.path;
         });
+        
+        if (kIsWeb) {
+          // Para web, leer bytes de forma asíncrona
+          print('En web: leyendo bytes de la foto');
+          try {
+            final bytes = await photo.readAsBytes();
+            print('Bytes leídos en web: ${bytes.length}');
+            
+            setState(() {
+              _imageWebBytes = bytes;
+              _imageFile = null; // Limpiar versión nativa
+            });
+          } catch (bytesError) {
+            print('Error al leer bytes de la foto en web: $bytesError');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error al procesar la foto. Intente usar la galería.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        } else {
+          // Para plataformas nativas
+          print('En plataforma nativa: creando objeto File para la foto');
+          setState(() {
+            _imageFile = File(photo.path);
+            _imageWebBytes = null; // Limpiar versión web
+          });
+        }
+      } else {
+        print('No se capturó ninguna foto');
       }
     } catch (e) {
       print('Error al tomar foto: $e');
+      String errorMsg;
+      
+      if (kIsWeb) {
+        errorMsg = "La cámara puede no estar disponible en este navegador o requiere permisos. Intente usar la galería.";
+      } else {
+        errorMsg = e.toString();
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al tomar foto')),
+        SnackBar(
+          content: Text('Error al tomar foto: $errorMsg'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -241,9 +349,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   leading: Icon(Icons.delete, color: Colors.red.shade300),
                   title: Text('Eliminar foto', style: TextStyle(color: Colors.white)),
                   onTap: () {
-                    Navigator.of(context).pop();
-                    setState(() {
+                    Navigator.of(context).pop();                    setState(() {
                       _imageFile = null;
+                      _imageWebBytes = null;
+                      _imagePath = null;
                       _currentImageUrl = null;
                     });
                   },
@@ -254,16 +363,42 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       },
     );
   }
-  
-  // Subir imagen a Supabase Storage
+  // Subir imagen a Supabase Storage (mejorado)
   Future<String?> _uploadImageToStorage() async {
-    if (_imageFile == null) return _currentImageUrl;
+    print('>>> Inicio de subida de imagen <<<');
+    // Si no hay nueva imagen o ruta, devolver la URL actual
+    if (_imagePath == null && _imageWebBytes == null && _imageFile == null) {
+      print('No hay nueva imagen para subir, manteniendo la URL actual: $_currentImageUrl');
+      return _currentImageUrl;
+    }
     
     try {
       final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) return null;
+      if (user == null) {
+        print('Error: No hay usuario autenticado');
+        return null;
+      }
       
-      final fileExt = path.extension(_imageFile!.path);
+      print('Subiendo imagen para el usuario: ${user.id}');
+      
+      // Determinar la extensión del archivo según la plataforma
+      String fileExt = '.jpg'; // Extensión por defecto
+      try {
+        if (_imagePath != null) {
+          fileExt = path.extension(_imagePath!).toLowerCase();
+          print('Extensión detectada del archivo: $fileExt');
+          if (fileExt.isEmpty || !fileExt.startsWith('.')) {
+            fileExt = '.jpg';
+            print('Extensión inválida, usando .jpg por defecto');
+          }
+        } else {
+          print('No hay ruta de archivo, usando extensión .jpg por defecto');
+        }
+      } catch (e) {
+        // En caso de error, usar extensión predeterminada
+        print('Error al obtener extensión: $e, usando .jpg por defecto');
+      }
+      
       final fileName = '${const Uuid().v4()}$fileExt';
       final filePath = 'avatars/${user.id}/$fileName'; // La carpeta dentro del bucket será "avatars"
       
@@ -297,21 +432,75 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       } catch (folderError) {
         // Si falla la creación de carpeta, intentamos subir directamente
         print('Error creando carpeta: $folderError. Intentando subir directamente.');
+      }        // Preparar los bytes para subir según la plataforma
+      Uint8List? imageBytes;
+      
+      if (kIsWeb && _imageWebBytes != null) {
+        // En web, usar los bytes ya obtenidos
+        print('Usando bytes de imagen web: ${_imageWebBytes!.length} bytes');
+        imageBytes = _imageWebBytes;
+      } else if (!kIsWeb && _imageFile != null) {
+        // En plataformas nativas, leer el archivo
+        print('Leyendo bytes de archivo nativo: ${_imageFile!.path}');
+        try {
+          List<int> tempBytes = await _imageFile!.readAsBytes();
+          imageBytes = Uint8List.fromList(tempBytes);
+          print('Bytes leídos correctamente: ${imageBytes.length} bytes');
+        } catch (e) {
+          print('Error al leer bytes del archivo: $e');
+        }
+      } else if (_imagePath != null && kIsWeb) {
+        // Intentar recuperar bytes si solo tenemos la ruta en web
+        // Este caso no debería ocurrir normalmente, pero es un respaldo
+        print('Advertencia: Solo tenemos ruta de imagen en web, intentando recuperar bytes');
+        return _currentImageUrl;
       }
       
-      // Subir la imagen
-      print('Subiendo imagen a: $filePath en bucket "images"');
-      await Supabase.instance.client.storage
-          .from('images') // Usando el bucket "images"
-          .upload(filePath, _imageFile!);
+      if (imageBytes == null || imageBytes.isEmpty) {
+        print('ERROR: No se pudieron obtener los bytes de la imagen');
+        return _currentImageUrl;
+      }
       
-      // Obtener URL pública de la imagen
-      final imageUrlResponse = Supabase.instance.client.storage
-          .from('images') // Usando el bucket "images"
-          .getPublicUrl(filePath);
-      
-      print('URL de imagen generada: $imageUrlResponse');
-      return imageUrlResponse;
+      print('Bytes de imagen obtenidos correctamente: ${imageBytes.length} bytes');      // Subir la imagen usando bytes para compatibilidad multiplataforma
+      try {
+        print('Subiendo imagen a: $filePath en bucket "images" con ${imageBytes.length} bytes');
+        await Supabase.instance.client.storage
+            .from('images') // Usando el bucket "images"
+            .uploadBinary(
+              filePath, 
+              imageBytes,
+              fileOptions: const FileOptions(
+                cacheControl: '3600',
+                upsert: true,
+                contentType: 'image/jpeg', // Definir tipo de contenido explícitamente
+              )
+            );
+        
+        print('Subida completada exitosamente');
+        
+        // Obtener URL pública de la imagen
+        final imageUrlResponse = Supabase.instance.client.storage
+            .from('images') // Usando el bucket "images"
+            .getPublicUrl(filePath);
+        
+        print('URL de imagen generada: $imageUrlResponse');
+        return imageUrlResponse;
+      } catch (uploadError) {
+        print('ERROR durante la subida de la imagen: $uploadError');
+        
+        // Mostrar mensaje de error específico para web
+        if (kIsWeb) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al subir imagen en la web: $uploadError'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+        
+        return _currentImageUrl;
+      }
     } catch (e) {
       print('Error al subir imagen: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -366,7 +555,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     }
   }
   
-  // Guardar perfil actualizado
+  // Guardar perfil actualizado con depuración mejorada
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
     
@@ -380,11 +569,31 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         throw Exception('No se encontró sesión de usuario');
       }
       
+      // DEBUG: Estado de variables de imagen
+      print('=== DEBUG: Estado de las variables de imagen ===');
+      print('Plataforma: ${kIsWeb ? "Web" : "Nativa"}');
+      print('_imageFile: ${_imageFile != null ? "Presente" : "Null"}');
+      print('_imageWebBytes: ${_imageWebBytes != null ? "${_imageWebBytes!.length} bytes" : "Null"}');
+      print('_imagePath: $_imagePath');
+      print('_currentImageUrl: $_currentImageUrl');
+      
       // Subir imagen si hay una nueva
       String? avatarUrl = _currentImageUrl;
-      if (_imageFile != null) {
+      bool hasNewImage = (_imageFile != null && !kIsWeb) || 
+                         (_imageWebBytes != null && kIsWeb) || 
+                         (_imagePath != null && _currentImageUrl == null);
+      
+      print('¿Hay nueva imagen para subir? ${hasNewImage ? "SÍ" : "NO"}');
+      
+      if (hasNewImage) {
+        print('Intentando subir nueva imagen al storage...');
         avatarUrl = await _uploadImageToStorage();
-        print('Nueva URL de imagen: $avatarUrl');
+        print('Nueva URL de imagen obtenida: $avatarUrl');
+      }
+        // Verificación adicional para problemas con la URL de la imagen
+      if (avatarUrl == null && _currentImageUrl != null) {
+        print('ADVERTENCIA: Se perdió la URL de la imagen durante la subida, restaurando original');
+        avatarUrl = _currentImageUrl;
       }
       
       // Preparar datos para actualizar
@@ -406,6 +615,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       // Solo incluir avatar_url si no es nulo
       if (avatarUrl != null) {
         updatedData['avatar_url'] = avatarUrl;
+        print('Incluyendo avatar_url en los datos a actualizar: $avatarUrl');
+      } else {
+        print('No se incluirá avatar_url (es null)');
       }
       
       print('Actualizando perfil con datos: $updatedData');
@@ -419,6 +631,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       
       if (profileExists != null) {
         // Actualizar perfil existente
+        print('Actualizando perfil existente para usuario: ${user.id}');
         await Supabase.instance.client
             .from('profiles')
             .update(updatedData)
@@ -426,10 +639,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       } else {
         // Crear nuevo perfil si no existe
         updatedData['id'] = user.id;  // Asegurarse de incluir el ID de usuario
+        print('Creando nuevo perfil para usuario: ${user.id}');
         await Supabase.instance.client
             .from('profiles')
             .insert(updatedData);
       }
+      
+      print('Operación de guardado completada con éxito');
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -441,7 +657,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         Navigator.pop(context);
       }
     } catch (e) {
-      print('Error al guardar perfil: $e');
+      print('ERROR al guardar perfil: $e');
       if (mounted) {
         setState(() {
           _isSubmitting = false;
@@ -843,8 +1059,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       ),
     );
   }
-  
-  Widget _buildProfileImage() {
+    Widget _buildProfileImage() {
     return GestureDetector(
       onTap: _showImageSourceActionSheet,
       child: Stack(
@@ -864,46 +1079,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               ],
             ),
             child: ClipOval(
-              child: _imageFile != null
-                ? Image.file(
-                    _imageFile!,
-                    fit: BoxFit.cover,
-                  )
-                : (_currentImageUrl != null && _currentImageUrl!.isNotEmpty)
-                  ? Image.network(
-                      _currentImageUrl!,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          color: Colors.blue.shade400,
-                          child: Icon(
-                            Icons.person,
-                            color: Colors.white,
-                            size: 70,
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        print("Error cargando imagen: $error");
-                        return Container(
-                          color: Colors.blue.shade400,
-                          child: Icon(
-                            Icons.person,
-                            color: Colors.white,
-                            size: 70,
-                          ),
-                        );
-                      },
-                    )
-                  : Container(
-                      color: Colors.blue.shade400,
-                      child: Icon(
-                        Icons.person,
-                        color: Colors.white,
-                        size: 70,
-                      ),
-                    ),
+              child: _getProfileImageWidget(),
             ),
           ),
           Positioned(
@@ -1082,6 +1258,83 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   ),
                 ],
               ),
+      ),
+    );
+  }
+  // Método mejorado para obtener el widget de imagen según la plataforma
+  Widget _getProfileImageWidget() {
+    // Registrar el estado actual para depuración
+    print('Estado actual de imagen:');
+    print('- _imageFile: ${_imageFile != null ? "Presente" : "Null"}');
+    print('- _imageWebBytes: ${_imageWebBytes != null ? "${_imageWebBytes!.length} bytes" : "Null"}');
+    print('- _currentImageUrl: ${_currentImageUrl != null ? _currentImageUrl : "Null"}');
+    print('- Plataforma: ${kIsWeb ? "Web" : "Nativa"}');
+    
+    // Para plataformas nativas, verificar archivo
+    if (!kIsWeb && _imageFile != null) {
+      print('Mostrando imagen desde archivo: ${_imageFile!.path}');
+      return Image.file(
+        _imageFile!,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          print('Error al cargar archivo de imagen: $error');
+          return _buildDefaultProfileIcon();
+        },
+      );
+    } 
+    // Para web, verificar bytes
+    else if (kIsWeb && _imageWebBytes != null) {
+      print('Mostrando imagen desde bytes en web: ${_imageWebBytes!.length} bytes');
+      return Image.memory(
+        _imageWebBytes!,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          print('Error al cargar bytes de imagen en web: $error');
+          return _buildDefaultProfileIcon();
+        },
+      );
+    } 
+    // Si hay URL, mostrarla
+    else if (_currentImageUrl != null && _currentImageUrl!.isNotEmpty) {
+      print('Mostrando imagen desde URL: $_currentImageUrl');
+      return Image.network(
+        _currentImageUrl!,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            color: Colors.blue.shade400,
+            child: Center(
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded / 
+                      loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          print('Error al cargar imagen desde URL: $error');
+          return _buildDefaultProfileIcon();
+        },
+      );
+    }
+    
+    // Fallback a icono por defecto
+    print('Mostrando icono por defecto (no hay imagen disponible)');
+    return _buildDefaultProfileIcon();
+  }
+  
+  // Widget para mostrar un icono por defecto
+  Widget _buildDefaultProfileIcon() {
+    return Container(
+      color: Colors.blue.shade400,
+      child: Icon(
+        Icons.person,
+        color: Colors.white,
+        size: 70,
       ),
     );
   }
