@@ -243,9 +243,9 @@ class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTick
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Color(0xFF1565C0),  // Azul oscuro
-            Color(0xFF1976D2),  // Azul medio
-            Color(0xFF1E88E5),  // Azul claro
+            Color(0xFFB71C1C),  // Rojo oscuro
+            Color(0xFFC62828),  // Rojo medio
+            Color(0xFFD32F2F),  // Rojo claro
           ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
