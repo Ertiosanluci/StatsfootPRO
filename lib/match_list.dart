@@ -360,13 +360,12 @@ Hora: $formattedTime
       _fetchMatches();
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Container(), // Eliminado el texto "Mis Partidos"
-        centerTitle: true,
+        // Eliminamos el contenedor vacío del título
+        toolbarHeight: 0, // Reducimos la altura de la barra a 0 para eliminar el espacio
         backgroundColor: Colors.blue.shade800,
         automaticallyImplyLeading: false, // Eliminado la flecha de navegación
         bottom: TabBar(
