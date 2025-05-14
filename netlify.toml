@@ -1,14 +1,8 @@
 [build]
-  command = "flutter build web"
+  command = "bash ./netlify-build.sh"
   publish = "build/web"
 
 # Redirección para las rutas de la aplicación Flutter
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
-# Redirección por defecto
 [[redirects]]
   from = "/*"
   to = "/index.html"
