@@ -96,8 +96,7 @@ class _FriendsMainScreenState extends ConsumerState<FriendsMainScreen> with Sing
                     icon: Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        // Cambiamos el icono de notifications por person_add que es más adecuado para solicitudes
-                        Icon(Icons.person_add, size: 22),
+                        Icon(Icons.notifications, size: 22),
                         if (state.pendingReceivedRequests.isNotEmpty)
                           Positioned(
                             top: -5,
