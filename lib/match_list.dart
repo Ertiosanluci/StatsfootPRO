@@ -734,8 +734,7 @@ Hora: $formattedTime
                   ),
                 
                 SizedBox(height: 16),
-                
-                // Action buttons
+                  // Action buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: isOrganizer
@@ -759,14 +758,29 @@ Hora: $formattedTime
                             color: Colors.green,
                           ),
                         ]
-                      : [
-                          _buildActionButton(
-                            icon: Icons.article,
-                            label: 'Ver Detalles',
-                            onPressed: () => _navigateToMatchJoinScreen(match['id'].toString()),
-                            color: Colors.blue,
-                          ),
-                        ],
+                      : match['publico'] == true // Verificamos si el partido es público
+                        ? [
+                            _buildActionButton(
+                              icon: Icons.article,
+                              label: 'Ver Detalles',
+                              onPressed: () => _navigateToMatchJoinScreen(match['id'].toString()),
+                              color: Colors.blue,
+                            ),
+                            _buildActionButton(
+                              icon: Icons.person_add,
+                              label: 'Unirse',
+                              onPressed: () => _joinMatch(match['id'].toString()),
+                              color: Colors.green,
+                            ),
+                          ]
+                        : [
+                            _buildActionButton(
+                              icon: Icons.article,
+                              label: 'Ver Detalles',
+                              onPressed: () => _navigateToMatchJoinScreen(match['id'].toString()),
+                              color: Colors.blue,
+                            ),
+                          ],
                 ),
               ],
             ),
@@ -881,5 +895,145 @@ Hora: $formattedTime
         ),
       ),
     );
+  }
+
+  // Método para que el usuario se una a un partido público
+  Future<void> _joinMatch(String matchId) async {
+    try {
+      // Mostrar diálogo de carga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Dialog(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 20),
+                  Text('Uniéndote al partido...'),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+
+      final currentUser = supabase.auth.currentUser;
+      if (currentUser == null) {
+        Navigator.of(context).pop(); // Cerrar diálogo
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Debes iniciar sesión para unirte a un partido'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Convertir a entero si es posible
+      int? matchIdInt;
+      try {
+        matchIdInt = int.parse(matchId);
+      } catch (e) {
+        print('Error al convertir ID: $e');
+      }
+      final matchIdValue = matchIdInt ?? matchId;
+
+      // Verificar si el usuario ya está unido al partido
+      final existingParticipant = await supabase
+          .from('match_participants')
+          .select()
+          .eq('match_id', matchIdValue)
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+
+      if (existingParticipant != null) {
+        Navigator.of(context).pop(); // Cerrar diálogo
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ya estás unido a este partido'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Verificar si el usuario tiene un perfil, si no, crearlo
+      final profileExists = await supabase
+          .from('profiles')
+          .select('id, username')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+
+      if (profileExists == null) {
+        try {
+          // Crear un perfil básico
+          await supabase.from('profiles').insert({
+            'id': currentUser.id,
+            'username': currentUser.email?.split('@')[0] ?? 'user_${currentUser.id.substring(0, 8)}',
+            'created_at': DateTime.now().toIso8601String(),
+          });
+        } catch (profileError) {
+          print('Error al crear perfil: $profileError');
+          // Continuar aunque falle la creación del perfil
+        }
+      }
+
+      // Añadir usuario a match_participants
+      await supabase.from('match_participants').insert({
+        'match_id': matchIdValue,
+        'user_id': currentUser.id,
+        'equipo': null, // El equipo será asignado por el organizador
+        'es_organizador': false,
+        'joined_at': DateTime.now().toIso8601String(),
+      });
+
+      // Cerrar diálogo y mostrar mensaje de éxito
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('¡Te has unido al partido correctamente!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Refrescar la lista de partidos
+      _fetchMatches();
+
+    } catch (e) {
+      // Cerrar diálogo de carga
+      Navigator.of(context).pop();
+
+      // Mostrar mensaje de error con recomendaciones
+      String errorMessage = 'Error al unirse al partido: $e';
+      String? solutionMessage;
+
+      if (e.toString().contains("duplicate key")) {
+        errorMessage = 'Ya parece que estás unido a este partido.';
+        solutionMessage = 'Actualiza la lista para ver los cambios.';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(errorMessage),
+              if (solutionMessage != null)
+                Text(
+                  solutionMessage,
+                  style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                ),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 5),
+        ),
+      );
+    }
   }
 }
