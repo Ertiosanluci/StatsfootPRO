@@ -166,16 +166,31 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
         }
         
         // 4. Cargar lista de amigos del usuario
-        final friendsResponse = await supabase
-            .from('amigos')
-            .select('amigo_id')
-            .eq('usuario_id', currentUser.id)
-            .eq('estado', 'aceptado'); // Solo amigos aceptados
+        final friendsResponseAsUser1 = await supabase
+            .from('friends')
+            .select('user_id_2')
+            .eq('user_id_1', currentUser.id)
+            .eq('status', 'accepted'); // Solo amigos aceptados cuando el usuario actual es user_id_1
+        
+        final friendsResponseAsUser2 = await supabase
+            .from('friends')
+            .select('user_id_1')
+            .eq('user_id_2', currentUser.id)
+            .eq('status', 'accepted'); // Solo amigos aceptados cuando el usuario actual es user_id_2
         
         List<String> friendIds = [];
-        for (final friend in friendsResponse) {
-          friendIds.add(friend['amigo_id']);
+        
+        // Añadir IDs de amigos donde el usuario actual es user_id_1
+        for (final friend in friendsResponseAsUser1) {
+          friendIds.add(friend['user_id_2']);
         }
+        
+        // Añadir IDs de amigos donde el usuario actual es user_id_2
+        for (final friend in friendsResponseAsUser2) {
+          friendIds.add(friend['user_id_1']);
+        }
+        
+        print('Amigos encontrados: ${friendIds.length}');
 
         // 5. Cargar partidos privados de amigos
         if (friendIds.isNotEmpty) {
