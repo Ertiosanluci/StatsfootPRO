@@ -84,7 +84,7 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> with SingleTicker
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Crear Partido'),
+        title: Container(), // Eliminado el texto "Crear Partido"
         centerTitle: true,
         titleTextStyle: TextStyle(
           color: Colors.white,
@@ -94,17 +94,26 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> with SingleTicker
         ),
         backgroundColor: const Color(0xFF1A237E), // Azul más oscuro y profesional
         elevation: 0, // Eliminar la sombra para un estilo más moderno
-        leading: BackButton(color: Colors.white), // Flecha de navegación blanca
+        automaticallyImplyLeading: false, // Eliminar la flecha de navegación
         actions: [
           Container(
             margin: EdgeInsets.only(right: 12),
-            child: IconButton(
-              icon: Icon(Icons.arrow_forward),
+            child: ElevatedButton(
               onPressed: _continueToNextScreen,
-              tooltip: 'Continuar',
-              style: IconButton.styleFrom(
+              style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green.shade600,
                 foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+              child: Text(
+                'Continuar',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),

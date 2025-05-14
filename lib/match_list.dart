@@ -262,14 +262,10 @@ Hora: $formattedTime
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Mis Partidos'),
+        title: Container(), // Eliminado el texto "Mis Partidos"
         centerTitle: true,
         backgroundColor: Colors.blue.shade800,
-        titleTextStyle: TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
+        automaticallyImplyLeading: false, // Eliminado la flecha de navegación
       ),
       body: Container(
         decoration: BoxDecoration(
