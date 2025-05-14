@@ -1,5 +1,6 @@
 [build]
-  publish = "netlify-redirect"
+  command = "flutter build web"
+  publish = "build/web"
 
 # Redirección para la aplicación web en /app
 [[redirects]]
