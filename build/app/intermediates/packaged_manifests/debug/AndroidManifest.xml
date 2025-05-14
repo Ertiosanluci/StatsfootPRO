@@ -110,18 +110,6 @@
                     android:pathPattern="/match/.*"
                     android:scheme="http" />
             </intent-filter>
-
-            <!-- Deep links for Google Sign-In -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <!-- Scheme needs to match your custom URI scheme used for redirectTo in the login code -->
-                <data
-                    android:host="login-callback"
-                    android:scheme="io.supabase.statsfoota" />
-            </intent-filter>
         </activity>
         <!--
              Don't delete the meta-data below.

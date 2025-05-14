@@ -53,18 +53,141 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     _posicionController.dispose();
     _descripcionController.dispose();
     super.dispose();
-  }
-
-  // Método para seleccionar imagen de perfil
+  }  // Método para seleccionar imagen de perfil
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
     
-    if (image != null) {
-      setState(() {
-        _profileImage = File(image.path);
-      });
-    }
+    // Mostrar un diálogo para elegir entre cámara o galería
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: const Color(0xFF1976D2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          elevation: 10,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Seleccionar imagen',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                InkWell(
+                  onTap: () async {
+                    Navigator.of(context).pop();
+                    final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+                    if (photo != null) {
+                      setState(() {
+                        _profileImage = File(photo.path);
+                      });
+                    }
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade600,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.photo_camera,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        const Text(
+                          'Tomar una foto',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: () async {
+                    Navigator.of(context).pop();
+                    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                    if (image != null) {
+                      setState(() {
+                        _profileImage = File(image.path);
+                      });
+                    }
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade600,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.photo_library,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        const Text(
+                          'Seleccionar de galería',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text(
+                    'Cancelar',
+                    style: TextStyle(
+                      color: Colors.orange.shade300,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   // Método para subir imagen de perfil a Supabase Storage
@@ -491,41 +614,57 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             physics: const ClampingScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Form(
-              key: _formKey,
-              child: Column(
+              key: _formKey,              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 20),
+                  
+                  // Título de la pantalla
+                  const Text(
+                    "Crear Cuenta",
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  
+                  const SizedBox(height: 24),
                   
                   // Avatar y selector de imagen
                   Center(
                     child: Stack(
                       children: [
-                        Container(
-                          height: 120,
-                          width: 120,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.2),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 15,
-                                offset: Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: ClipOval(
-                            child: _profileImage != null
-                                ? Image.file(
-                                    _profileImage!,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Icon(
-                                    Icons.person,
-                                    size: 80,
-                                    color: Colors.white.withOpacity(0.9),
-                                  ),
+                        GestureDetector(
+                          onTap: _pickImage,
+                          child: Container(
+                            height: 120,
+                            width: 120,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withOpacity(0.2),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 15,
+                                  offset: Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: _profileImage != null
+                                  ? Image.file(
+                                      _profileImage!,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Icon(
+                                      Icons.person,
+                                      size: 80,
+                                      color: Colors.white.withOpacity(0.9),
+                                    ),
+                            ),
                           ),
                         ),
                         
@@ -563,20 +702,6 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                       ],
                     ),
                   ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Título de la pantalla
-                  const Text(
-                    "Crear Cuenta",
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 0.5,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
                   const SizedBox(height: 10),
                   Text(
                     "Únete a nuestra comunidad y comienza a registrar tus estadísticas",
@@ -604,27 +729,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                       }
                       return null;
                     },
-                  ),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Campo de posición
-                  _buildTextField(
-                    controller: _posicionController,
-                    label: 'Posición (Opcional)',
-                    icon: Icons.sports_soccer,
-                  ),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Campo de descripción
-                  _buildTextField(
-                    controller: _descripcionController,
-                    label: 'Descripción (Opcional)',
-                    icon: Icons.description,
-                    maxLines: 2,
-                  ),
-                  
+                  ),                  
                   const SizedBox(height: 20),
                   
                   // Campo de email
@@ -820,13 +925,12 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
-                    ),
-                    child: Row(
+                    ),                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.how_to_reg_rounded, size: 20),
-                        SizedBox(width: 10),
-                        Text(
+                      children: [
+                        const Icon(Icons.how_to_reg_rounded, size: 20),
+                        const SizedBox(width: 10),
+                        const Text(
                           "CREAR CUENTA",
                           style: TextStyle(
                             fontSize: 16,
@@ -849,13 +953,12 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      ),
-                      child: Row(
+                      ),                      child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Icon(Icons.arrow_back, size: 16),
-                          SizedBox(width: 8),
-                          Text(
+                        children: [
+                          const Icon(Icons.arrow_back, size: 16),
+                          const SizedBox(width: 8),
+                          const Text(
                             "¿Ya tienes cuenta? Iniciar sesión",
                             style: TextStyle(fontSize: 14),
                           ),
