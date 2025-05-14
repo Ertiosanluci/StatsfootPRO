@@ -351,13 +351,22 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         } catch (e) {
           // Continuar aunque falle
         }
-      }
-
-      // Cerrar progreso
+      }      // Cerrar progreso
       Navigator.of(context, rootNavigator: true).pop();
       
-      // Mostrar éxito
-      _showSuccessDialog();
+      // Iniciar sesión automáticamente
+      try {
+        await Supabase.instance.client.auth.signInWithPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+        
+        // Mostrar éxito y navegar a la pantalla principal
+        _showSuccessDialog(autoLogin: true);
+      } catch (loginError) {
+        // Si falla el inicio de sesión automático, mostrar el diálogo normal
+        _showSuccessDialog(autoLogin: false);
+      }
       
     } on AuthException catch (e) {
       Navigator.of(context, rootNavigator: true).pop();
@@ -416,9 +425,8 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       ),
     );
   }
-  
-  // Diálogo de éxito
-  void _showSuccessDialog() {
+    // Diálogo de éxito
+  void _showSuccessDialog({bool autoLogin = false}) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -453,7 +461,9 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
               ),
               const SizedBox(height: 10),
               Text(
-                'Hemos enviado un correo de verificación a ${_emailController.text}. Por favor, revisa tu bandeja de entrada.',
+                autoLogin 
+                    ? 'Tu cuenta ha sido creada y has iniciado sesión automáticamente.'
+                    : 'Hemos enviado un correo de verificación a ${_emailController.text}. Por favor, revisa tu bandeja de entrada.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
@@ -465,7 +475,12 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pop(); // Cerrar diálogo
-                  Navigator.of(context).pop(); // Volver a la pantalla de inicio
+                  if (autoLogin) {
+                    // En lugar de volver a la pantalla de inicio, navegar a la pantalla principal (user_menu)
+                    Navigator.pushNamedAndRemoveUntil(context, '/user_menu', (route) => false);
+                  } else {
+                    Navigator.of(context).pop(); // Volver a la pantalla de inicio si no es inicio automático
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green.shade600,
@@ -475,9 +490,9 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
                 ),
-                child: const Text(
-                  'Continuar',
-                  style: TextStyle(fontSize: 16),
+                child: Text(
+                  autoLogin ? 'Ir al menú principal' : 'Continuar',
+                  style: const TextStyle(fontSize: 16),
                 ),
               ),
             ],
