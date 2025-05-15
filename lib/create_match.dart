@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
+import 'package:statsfoota/user_menu.dart';
 import 'dart:math';
 import 'dart:ui' as ui;
 
@@ -897,10 +898,16 @@ Hora: $formattedTime
               // Botones finales
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton.icon(
+                children: [                  ElevatedButton.icon(
                     onPressed: () {
-                      Navigator.pushNamed(context, '/match_list');
+                      // Navegar a la pantalla principal y seleccionar la pestaña de "Mis Partidos"
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => UserMenuScreen(initialTabIndex: 1),
+                        ),
+                        (route) => false,
+                      );
                     },
                     icon: Icon(Icons.list),
                     label: Text('Ver Mis Partidos'),
@@ -912,10 +919,16 @@ Hora: $formattedTime
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                  ),
-                  ElevatedButton.icon(
+                  ),                  ElevatedButton.icon(
                     onPressed: () {
-                      Navigator.popUntil(context, (route) => route.isFirst);
+                      // Navegar a la pantalla principal con el tab de inicio seleccionado
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => UserMenuScreen(initialTabIndex: 0),
+                        ),
+                        (route) => false,
+                      );
                     },
                     icon: Icon(Icons.home),
                     label: Text('Inicio'),

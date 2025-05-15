@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:statsfoota/user_menu.dart';
 
 class MatchJoinScreen extends StatefulWidget {
   final String matchId;
@@ -581,14 +582,18 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
               
               // Join button
               _buildJoinButton(),
-              
-              SizedBox(height: 20),
+                SizedBox(height: 20),
               
               // Back button
               OutlinedButton(
                 onPressed: () {
-                  // Redirigir a la pantalla de Mis Partidos en lugar de solo hacer pop
-                  Navigator.of(context).pushNamedAndRemoveUntil('/match_list', (route) => false);
+                  // Navegar a la pantalla principal con el tab de "Mis Partidos" seleccionado
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (context) => UserMenuScreen(initialTabIndex: 1),
+                    ),
+                    (route) => false,
+                  );
                 },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,

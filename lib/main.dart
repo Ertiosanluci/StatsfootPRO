@@ -165,7 +165,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/': (context) => SplashScreen(),
         '/login': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
-        '/user_menu': (context) => UserMenuScreen(),
+        '/user_menu': (context) => UserMenuScreen(initialTabIndex: 0),
         '/create_player': (context) => PlayerCreatorScreen(),
         '/ver_Jugadores':(context) => PlayerListScreen(),
         '/create_match': (context) => CreateMatchScreen(),
@@ -246,7 +246,7 @@ class _SplashScreenState extends State<SplashScreen> {
     if (session != null) {
       // Si hay sesión activa, ir al menú de usuario
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => UserMenuScreen())
+        MaterialPageRoute(builder: (context) => UserMenuScreen(initialTabIndex: 0))
       );
     } else {
       // Si no hay sesión, ir a la pantalla principal

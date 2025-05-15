@@ -13,6 +13,10 @@ import 'package:statsfoota/create_match.dart'; // Para la pantalla de crear part
 import 'package:statsfoota/match_list.dart'; // Para la pantalla de ver partidos
 
 class UserMenuScreen extends ConsumerStatefulWidget {
+  final int initialTabIndex;
+  
+  const UserMenuScreen({Key? key, this.initialTabIndex = 0}) : super(key: key);
+  
   @override
   ConsumerState<UserMenuScreen> createState() => _UserMenuScreenState();
 }
@@ -23,7 +27,7 @@ class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTick
   String _username = "Usuario";
   bool _isLoading = true;
   String? _profileImageUrl;
-  int _currentIndex = 0;
+  late int _currentIndex;
 
   // Lista de pantallas para la navegación inferior
   late List<Widget> _screens;
@@ -31,6 +35,9 @@ class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTick
   @override
   void initState() {
     super.initState();
+    // Inicializar el índice de la pestaña actual con el valor proporcionado
+    _currentIndex = widget.initialTabIndex;
+    
     _animationController = AnimationController(
       duration: Duration(milliseconds: 1500),
       vsync: this,

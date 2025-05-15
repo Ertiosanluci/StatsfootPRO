@@ -554,6 +554,22 @@ Hora: $formattedTime
     
     // Determine if the match is public or private
     final bool isPublic = match['publico'] == true;
+    
+    // Verificar si el usuario actual es participante del partido
+    final currentUser = supabase.auth.currentUser;
+    bool isParticipant = false;
+    
+    if (currentUser != null && !isOrganizer) {
+      // Verificar si el usuario está en la lista de participantes
+      try {
+        isParticipant = _myMatches.any((m) => 
+          m['id'] == match['id'] && 
+          !m['isOrganizer'] == true
+        );
+      } catch (e) {
+        print('Error al verificar participación: $e');
+      }
+    }
 
     return Card(
       margin: EdgeInsets.only(bottom: 16),
@@ -735,52 +751,81 @@ Hora: $formattedTime
                 
                 SizedBox(height: 16),
                   // Action buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: isOrganizer
-                      ? [
-                          _buildActionButton(
-                            icon: Icons.people,
-                            label: 'Participantes',
-                            onPressed: () => _manageParticipants(match),
-                            color: Colors.purple,
-                          ),
-                          _buildActionButton(
-                            icon: Icons.article,
-                            label: 'Ver Detalles',
-                            onPressed: () => _navigateToMatchJoinScreen(match['id'].toString()),
-                            color: Colors.blue,
-                          ),
-                          _buildActionButton(
-                            icon: Icons.share,
-                            label: 'Compartir',
-                            onPressed: () => _shareMatchLink(match),
-                            color: Colors.green,
-                          ),
-                        ]
-                      : match['publico'] == true // Verificamos si el partido es público
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: isOrganizer
                         ? [
                             _buildActionButton(
+                              icon: Icons.people,
+                              label: 'Participantes',
+                              onPressed: () => _manageParticipants(match),
+                              color: Colors.purple,
+                            ),
+                            _buildActionButton(
                               icon: Icons.article,
-                              label: 'Ver Detalles',
+                              label: 'Detalles',
                               onPressed: () => _navigateToMatchJoinScreen(match['id'].toString()),
                               color: Colors.blue,
                             ),
                             _buildActionButton(
-                              icon: Icons.person_add,
-                              label: 'Unirse',
-                              onPressed: () => _joinMatch(match['id'].toString()),
+                              icon: Icons.share,
+                              label: 'Compartir',
+                              onPressed: () => _shareMatchLink(match),
                               color: Colors.green,
                             ),
+                            // Añadir botón de eliminar partido para el organizador
+                            if (!isPast) // Solo si el partido no ha pasado
+                              _buildActionButton(
+                                icon: Icons.delete,
+                                label: 'Eliminar',
+                                onPressed: () => _deleteMatch(match),
+                                color: Colors.red,
+                              ),
                           ]
-                        : [
-                            _buildActionButton(
-                              icon: Icons.article,
-                              label: 'Ver Detalles',
-                              onPressed: () => _navigateToMatchJoinScreen(match['id'].toString()),
-                              color: Colors.blue,
-                            ),
-                          ],
+                        : isParticipant // Si el usuario es participante pero no organizador
+                          ? [
+                              _buildActionButton(
+                                icon: Icons.article,
+                                label: 'Detalles',
+                                onPressed: () => _navigateToMatchJoinScreen(match['id'].toString()),
+                                color: Colors.blue,
+                              ),
+                              // Añadir botón de abandonar partido si no ha pasado la fecha
+                              if (!isPast) // Solo si el partido no ha pasado
+                                _buildActionButton(
+                                  icon: Icons.exit_to_app,
+                                  label: 'Abandonar',
+                                  onPressed: () => _leaveMatch(match),
+                                  color: Colors.red,
+                                ),
+                            ]
+                          : match['publico'] == true // Verificamos si el partido es público
+                            ? [
+                                _buildActionButton(
+                                  icon: Icons.article,
+                                  label: 'Detalles',
+                                  onPressed: () => _navigateToMatchJoinScreen(match['id'].toString()),
+                                  color: Colors.blue,
+                                ),
+                                if (!isPast) // Solo si el partido no ha pasado
+                                  _buildActionButton(
+                                    icon: Icons.person_add,
+                                    label: 'Unirse',
+                                    onPressed: () => _joinMatch(match['id'].toString()),
+                                    color: Colors.green,
+                                  ),
+                              ]
+                            : [
+                                _buildActionButton(
+                                  icon: Icons.article,
+                                  label: 'Detalles',
+                                  onPressed: () => _navigateToMatchJoinScreen(match['id'].toString()),
+                                  color: Colors.blue,
+                                ),
+                              ],
+                  ),
                 ),
               ],
             ),
@@ -866,7 +911,7 @@ Hora: $formattedTime
       onTap: onPressed,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -879,17 +924,19 @@ Hora: $formattedTime
               child: Icon(
                 icon,
                 color: color.shade700,
-                size: 20,
+                size: 18,
               ),
             ),
-            SizedBox(height: 4),
+            SizedBox(height: 3),
             Text(
               label,
               style: TextStyle(
                 color: color.shade700,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w500,
               ),
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -1030,6 +1077,214 @@ Hora: $formattedTime
                 ),
             ],
           ),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 5),
+        ),
+      );
+    }
+  }
+
+  // Método para que un usuario abandone un partido
+  Future<void> _leaveMatch(Map<String, dynamic> match) async {
+    // Mostrar diálogo de confirmación
+    bool confirmLeave = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Abandonar partido'),
+          content: Text('¿Estás seguro de que quieres abandonar este partido?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text('Abandonar', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    ) ?? false;
+
+    if (!confirmLeave) return;
+
+    // Mostrar diálogo de carga
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 20),
+                Text('Abandonando el partido...'),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    try {
+      final currentUser = supabase.auth.currentUser;
+      if (currentUser == null) {
+        Navigator.of(context).pop(); // Cerrar diálogo
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Debes iniciar sesión para abandonar un partido'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Obtener el ID del partido
+      final matchId = match['id'];
+
+      // Eliminar al usuario de match_participants
+      await supabase
+          .from('match_participants')
+          .delete()
+          .eq('match_id', matchId)
+          .eq('user_id', currentUser.id);
+
+      // Cerrar diálogo y mostrar mensaje de éxito
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Has abandonado el partido correctamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Refrescar la lista de partidos
+      _fetchMatches();
+    } catch (e) {
+      // Cerrar diálogo de carga
+      Navigator.of(context).pop();
+
+      // Mostrar mensaje de error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al abandonar el partido: $e'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 5),
+        ),
+      );
+    }
+  }
+
+  // Método para que un organizador elimine un partido
+  Future<void> _deleteMatch(Map<String, dynamic> match) async {
+    // Mostrar diálogo de confirmación
+    bool confirmDelete = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Eliminar partido'),
+          content: Text('¿Estás seguro de que quieres eliminar este partido? Esta acción no se puede deshacer.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text('Eliminar', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    ) ?? false;
+
+    if (!confirmDelete) return;
+
+    // Mostrar diálogo de carga
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 20),
+                Text('Eliminando el partido...'),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    try {
+      final currentUser = supabase.auth.currentUser;
+      if (currentUser == null) {
+        Navigator.of(context).pop(); // Cerrar diálogo
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Debes iniciar sesión para eliminar un partido'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Verificar que el usuario es el creador del partido
+      if (match['creador_id'] != currentUser.id) {
+        Navigator.of(context).pop(); // Cerrar diálogo
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Solo el creador puede eliminar el partido'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Obtener el ID del partido
+      final matchId = match['id'];
+
+      // Eliminar el partido y todos los registros relacionados
+      // Primero eliminar los participantes
+      await supabase
+          .from('match_participants')
+          .delete()
+          .eq('match_id', matchId);
+
+      // Luego eliminar el partido
+      await supabase
+          .from('matches')
+          .delete()
+          .eq('id', matchId);
+
+      // Cerrar diálogo y mostrar mensaje de éxito
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Partido eliminado correctamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Refrescar la lista de partidos
+      _fetchMatches();
+    } catch (e) {
+      // Cerrar diálogo de carga
+      Navigator.of(context).pop();
+
+      // Mostrar mensaje de error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al eliminar el partido: $e'),
           backgroundColor: Colors.red,
           duration: Duration(seconds: 5),
         ),
