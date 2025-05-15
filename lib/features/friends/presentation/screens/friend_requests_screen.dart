@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:statsfoota/features/friends/data/repositories/friend_repository.dart';
 import 'package:statsfoota/features/friends/domain/models/friend_request.dart';
 import 'package:statsfoota/features/friends/domain/models/user_profile.dart';
 import 'package:statsfoota/features/friends/presentation/controllers/friend_controller.dart';
@@ -22,11 +23,21 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> wit
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_handleTabChange);
     _loadFriendRequests();
+  }
+  
+  void _handleTabChange() {
+    if (_tabController.indexIsChanging) {
+      setState(() {
+        // Forzar una reconstrucción cuando cambia la pestaña
+      });
+    }
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_handleTabChange);
     _tabController.dispose();
     super.dispose();
   }
@@ -53,99 +64,67 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> wit
   }
 
   Future<void> _loadUserProfiles() async {
-    final state = ref.read(friendControllerProvider);
-    final repository = ref.read(friendRepositoryProvider);
-    
-    // Load user profiles for received requests
-    final List<UserProfile> receivedProfiles = [];
-    for (FriendRequest request in state.pendingReceivedRequests) {
-      try {
-        final profile = await repository.getUserProfile(request.userId1);
-        receivedProfiles.add(profile);
-      } catch (e) {
-        print('Error loading profile for user ${request.userId1}: $e');
+    try {
+      print('Iniciando carga de perfiles de usuarios');
+      final state = ref.read(friendControllerProvider);
+      // State no puede ser nulo ya que es un StateNotifierProvider
+      
+      final repository = ref.read(friendRepositoryProvider);
+      // Repository no puede ser nulo ya que es un Provider
+      
+      print('Requests recibidas: ${state.pendingReceivedRequests.length}');
+      print('Requests enviadas: ${state.pendingSentRequests.length}');
+      
+      // Load user profiles for received requests
+      final List<UserProfile> receivedProfiles = [];
+      if (state.pendingReceivedRequests.isNotEmpty) {
+        for (FriendRequest request in state.pendingReceivedRequests) {
+          try {
+            print('Cargando perfil para solicitud recibida de usuario: ${request.userId1}');
+            final profile = await repository.getUserProfile(request.userId1);
+            receivedProfiles.add(profile);
+            print('Perfil cargado correctamente para: ${profile.username}');
+          } catch (e) {
+            print('Error loading profile for user ${request.userId1}: $e');
+            // Agregar un perfil de respaldo con información limitada
+            receivedProfiles.add(UserProfile(
+              id: request.userId1,
+              username: 'Usuario (Sin datos)',
+            ));
+          }
+        }
       }
-    }
-    
-    // Load user profiles for sent requests
-    final List<UserProfile> sentProfiles = [];
-    for (FriendRequest request in state.pendingSentRequests) {
-      try {
-        final profile = await repository.getUserProfile(request.userId2);
-        sentProfiles.add(profile);
-      } catch (e) {
-        print('Error loading profile for user ${request.userId2}: $e');
+      
+      // Load user profiles for sent requests
+      final List<UserProfile> sentProfiles = [];
+      if (state.pendingSentRequests.isNotEmpty) {
+        for (FriendRequest request in state.pendingSentRequests) {
+          try {
+            print('Cargando perfil para solicitud enviada a usuario: ${request.userId2}');
+            final profile = await repository.getUserProfile(request.userId2);
+            sentProfiles.add(profile);
+            print('Perfil cargado correctamente para: ${profile.username}');
+          } catch (e) {
+            print('Error loading profile for user ${request.userId2}: $e');
+            // Agregar un perfil de respaldo con información limitada
+            sentProfiles.add(UserProfile(
+              id: request.userId2,
+              username: 'Usuario (Sin datos)',
+            ));
+          }
+        }
       }
-    }
     
-    setState(() {
-      _receivedRequestUsers = receivedProfiles;
-      _sentRequestUsers = sentProfiles;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final state = ref.watch(friendControllerProvider);
-
-    return Scaffold(
-      // Usando PreferredSize para controlar la altura exactamente
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(kToolbarHeight - 8), // Reduciendo la altura
-        child: AppBar(
-          backgroundColor: Colors.blue.shade800,
-          elevation: 0,
-          // Sin título y sin espacio extra
-          flexibleSpace: Container(
-            alignment: Alignment.bottomCenter,
-            child: TabBar(
-              controller: _tabController,
-              indicatorColor: Colors.orange.shade600,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white.withOpacity(0.7),
-              tabs: [
-                Tab(
-                  icon: Icon(Icons.inbox, color: Colors.white),
-                  child: Text(
-                    'Recibidas (${state.pendingReceivedRequests.length})',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-                Tab(
-                  icon: Icon(Icons.outbox, color: Colors.white),
-                  child: Text(
-                    'Enviadas (${state.pendingSentRequests.length})',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF1565C0),
-              Color(0xFF1976D2),
-              Color(0xFF1E88E5),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: _isLoading
-            ? Center(child: CircularProgressIndicator(color: Colors.white))
-            : TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildReceivedRequestsList(),
-                  _buildSentRequestsList(),
-                ],
-              ),
-      ),
-    );
+      setState(() {
+        _receivedRequestUsers = receivedProfiles;
+        _sentRequestUsers = sentProfiles;
+      });
+    } catch (e) {
+      print('Error en _loadUserProfiles: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al cargar perfiles de usuarios')),
+      );
+    }
   }
 
   Widget _buildReceivedRequestsList() {
@@ -421,6 +400,105 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> wit
             ),
           );
         },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(friendControllerProvider);
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.blue.shade800,
+        elevation: 0,
+        toolbarHeight: 56, // Altura estándar de toolbar
+        flexibleSpace: SafeArea(
+          child: Container(
+            alignment: Alignment.bottomCenter,
+            padding: EdgeInsets.only(bottom: 0),
+            child: TabBar(
+              controller: _tabController,
+              indicatorColor: Colors.orange.shade600,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white.withOpacity(0.7),
+              labelPadding: EdgeInsets.symmetric(horizontal: 2.0),
+              indicatorSize: TabBarIndicatorSize.label,
+              tabs: [
+                Tab(
+                  height: 44,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.inbox,
+                        color: _tabController.index == 0 
+                            ? Colors.white 
+                            : Colors.white.withOpacity(0.5),
+                        size: 20,
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        'Recibidas (${state.pendingReceivedRequests.length})',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Tab(
+                  height: 44,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.outbox,
+                        color: _tabController.index == 1 
+                            ? Colors.white 
+                            : Colors.white.withOpacity(0.5),
+                        size: 20,
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        'Enviadas (${state.pendingSentRequests.length})',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF1565C0),
+              Color(0xFF1976D2),
+              Color(0xFF1E88E5),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: _isLoading
+            ? Center(child: CircularProgressIndicator(color: Colors.white))
+            : TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildReceivedRequestsList(),
+                  _buildSentRequestsList(),
+                ],
+              ),
       ),
     );
   }

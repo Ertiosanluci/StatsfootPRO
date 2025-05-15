@@ -339,15 +339,25 @@ class FriendRepository {
   
   Future<UserProfile> getUserProfile(String userId) async {
     try {
+      print('Fetching profile for user ID: $userId');
       final response = await _supabaseClient
           .from('profiles')
           .select()
           .eq('id', userId)
-          .single();
+          .maybeSingle(); // Uso de maybeSingle en lugar de single para no lanzar error si no existe
+      
+      if (response == null) {
+        print('No profile found for user ID: $userId');
+        // Devolver un perfil básico con el ID y un nombre de usuario predeterminado
+        return UserProfile(
+          id: userId,
+          username: 'Usuario',
+        );
+      }
       
       // Calcular edad a partir de la fecha de nacimiento si está disponible
       int? age;
-      if (response['birthdate'] != null) {
+      if (response['birthdate'] != null && response['birthdate'] != '') {
         try {
           final birthDate = DateTime.parse(response['birthdate']);
           final today = DateTime.now();
