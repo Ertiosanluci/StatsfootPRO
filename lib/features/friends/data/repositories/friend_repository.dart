@@ -109,29 +109,53 @@ class FriendRepository {
       throw Exception('Failed to get friends: $e');
     }
   }
-
+  
   Future<List<UserProfile>> getAllUsers({String? searchQuery}) async {
     try {
       final currentUserId = _supabaseClient.auth.currentUser?.id;
       if (currentUserId == null) {
-        print('FriendRepository: User not authenticated');
         throw Exception('User not authenticated');
       }
-
-      print('FriendRepository: Fetching users with query: $searchQuery');
       
-      // Modify the query to ensure we're getting all profile fields
-      var query = _supabaseClient
-          .from('profiles')
-          .select('*')  // Explicitly select all fields
-          .neq('id', currentUserId);
+      // Retry mechanism for better reliability
+      int maxRetries = 3;
+      List<dynamic> response = [];
+      Exception? lastError;
+      
+      for (int attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          // Modify the query to ensure we're getting all profile fields
+          var query = _supabaseClient
+              .from('profiles')
+              .select('*')  // Explicitly select all fields
+              .neq('id', currentUserId);
 
-      if (searchQuery != null && searchQuery.isNotEmpty) {
-        query = query.ilike('username', '%$searchQuery%');
+          if (searchQuery != null && searchQuery.isNotEmpty) {
+            query = query.ilike('username', '%$searchQuery%');
+          }
+
+          print('FriendRepository: Executing query, attempt $attempt of $maxRetries...');
+          response = await query;
+          
+          // Si llegamos aquí, la consulta fue exitosa
+          lastError = null;
+          break;
+        } catch (e) {
+          lastError = Exception('Error al obtener usuarios: $e');
+          print('FriendRepository: Error on attempt $attempt: $e');
+          
+          // Esperar antes de reintentar, con aumento exponencial
+          if (attempt < maxRetries) {
+            await Future.delayed(Duration(milliseconds: 200 * attempt));
+          }
+        }
       }
-
-      print('FriendRepository: Executing query...');
-      final response = await query;
+      
+      // Si después de todos los intentos seguimos teniendo un error
+      if (lastError != null) {
+        throw lastError;
+      }
+      
       print('FriendRepository: Got ${response.length} users with raw data: ${response.toString().substring(0, math.min(100, response.toString().length))}...');
       
       // Transform the response into UserProfile objects with more explicit error handling
@@ -155,19 +179,35 @@ class FriendRepository {
 
   Future<void> sendFriendRequest(String receiverId) async {
     try {
+      print('FriendRepository: Sending friend request to user ID: $receiverId');
+      
       final currentUserId = _supabaseClient.auth.currentUser?.id;
       if (currentUserId == null) {
         throw Exception('User not authenticated');
+      }
+
+      // Verificar si el receiverId existe en la tabla 'profiles'
+      final receiverExists = await _supabaseClient
+          .from('profiles')
+          .select('id')
+          .eq('id', receiverId)
+          .maybeSingle();
+          
+      if (receiverExists == null) {
+        print('FriendRepository: Receiver ID $receiverId does not exist');
+        throw Exception('El usuario destinatario no existe');
       }
 
       // Check if there's already a request between these users
       final existingRequest = await _supabaseClient
           .from('friends')
           .select()
-          .or('and(user_id_1.eq.$currentUserId,user_id_2.eq.$receiverId),and(user_id_1.eq.$receiverId,user_id_2.eq.$currentUserId)');
+          .or('and(user_id_1.eq.$currentUserId,user_id_2.eq.$receiverId),and(user_id_1.eq.$receiverId,user_id_2.eq.$currentUserId)')
+          .maybeSingle();
 
-      if (existingRequest.isNotEmpty) {
-        throw Exception('A friend request already exists between these users');
+      if (existingRequest != null) {
+        print('FriendRepository: Friend request already exists between users $currentUserId and $receiverId');
+        throw Exception('Ya existe una solicitud de amistad entre estos usuarios');
       }
 
       // Get sender's name to include in the notification
@@ -175,36 +215,68 @@ class FriendRepository {
           .from('profiles')
           .select('username')
           .eq('id', currentUserId)
-          .single();
+          .maybeSingle();
       
-      final senderName = senderProfile['username'] as String? ?? 'Usuario';
+      final senderName = (senderProfile != null ? senderProfile['username'] : null) as String? ?? 'Usuario';
+      
+      print('FriendRepository: Creating friend request from $senderName (ID: $currentUserId) to userId: $receiverId');
 
-      // Create new friend request
-      final response = await _supabaseClient.from('friends').insert({
-        'user_id_1': currentUserId,
-        'user_id_2': receiverId,
-        'status': 'pending',
-      }).select();
+      try {
+        // Create new friend request with better error handling
+        final response = await _supabaseClient.from('friends').insert({
+          'user_id_1': currentUserId,
+          'user_id_2': receiverId,
+          'status': 'pending',
+        }).select();
 
-      if (response.isNotEmpty) {
-        // Create a notification for the receiver
-        final requestId = response[0]['id'] as String;
+        print('FriendRepository: Friend request created successfully: ${response.length} records');
         
-        await _supabaseClient.from('notifications').insert({
-          'id': DateTime.now().millisecondsSinceEpoch.toString(),
-          'user_id': receiverId,
-          'sender_id': currentUserId,
-          'type': 'friend_request',
-          'title': 'Nueva solicitud de amistad',
-          'message': '$senderName te ha enviado una solicitud de amistad',
-          'resource_id': requestId,
-          'created_at': DateTime.now().toIso8601String(),
-          'is_read': false,
-        });
+        if (response.isNotEmpty) {
+          // Create a notification for the receiver
+          String requestId;
+          try {
+            requestId = response[0]['id'] as String;
+          } catch (e) {
+            print('FriendRepository: Error extracting request ID: $e');
+            requestId = DateTime.now().millisecondsSinceEpoch.toString(); // Fallback ID
+          }
+          
+          try {
+            // Create notification with better error handling
+            await _supabaseClient.from('notifications').insert({
+              'id': DateTime.now().millisecondsSinceEpoch.toString(),
+              'user_id': receiverId,
+              'sender_id': currentUserId,
+              'type': 'friend_request',
+              'title': 'Nueva solicitud de amistad',
+              'message': '$senderName te ha enviado una solicitud de amistad',
+              'resource_id': requestId,
+              'created_at': DateTime.now().toIso8601String(),
+              'is_read': false,
+            });
+            
+            print('FriendRepository: Notification created successfully');
+          } catch (notifError) {
+            // No interrumpir el flujo principal si falla la notificación
+            print('FriendRepository: Failed to create notification: $notifError');
+            // La solicitud de amistad ya se creó, así que no lanzamos excepción
+          }
+        }
+      } catch (insertError) {
+        print('FriendRepository: Error inserting friend request: $insertError');
+        
+        // Verificar si el error es por una constraint violation (duplicado)
+        if (insertError.toString().contains('duplicate') || 
+            insertError.toString().contains('unique constraint') ||
+            insertError.toString().contains('already exists')) {
+          throw Exception('Ya existe una solicitud de amistad con este usuario');
+        } else {
+          throw Exception('No se pudo enviar la solicitud de amistad: ${insertError.toString()}');
+        }
       }
     } catch (e) {
       print('Error sending friend request: $e');
-      throw Exception('Failed to send friend request: $e');
+      throw Exception('No se pudo enviar la solicitud de amistad: ${e.toString()}');
     }
   }
 

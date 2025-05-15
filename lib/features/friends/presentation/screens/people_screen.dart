@@ -24,6 +24,16 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadUsersWithDelay();
     });
+    
+    // Suscribirse a cambios en el estado para detectar errores automáticamente
+    ref.listenManual(friendControllerProvider, (previous, next) {
+      if (previous?.errorMessage != next.errorMessage && 
+          next.errorMessage != null && 
+          mounted) {
+        // Si hay un nuevo error, programar recuperación automática
+        Future.delayed(Duration(seconds: 3), _autoRecoverFromError);
+      }
+    });
   }
 
   @override
@@ -53,15 +63,58 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al cargar usuarios'),
+            content: Text('Error al cargar usuarios. Reintentando automáticamente...'),
             backgroundColor: Colors.red,
             action: SnackBarAction(
-              label: 'Reintentar',
+              label: 'Reintentar Ahora',
               textColor: Colors.white,
-              onPressed: _loadUsersWithDelay,
+              onPressed: _autoRecoverFromError,
             ),
           ),
         );
+      }
+    }
+  }
+
+  // Añadir un método de recuperación para cuando falla la carga de usuarios
+  Future<void> _autoRecoverFromError() async {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Reintentando cargar la lista de usuarios...'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      
+      // Esperar un momento antes de reintentar
+      await Future.delayed(Duration(seconds: 1));
+      
+      try {
+        // Limpiar el controlador de FriendController para forzar una recarga completa
+        await ref.read(friendControllerProvider.notifier).loadAllUsers();
+        await ref.read(friendControllerProvider.notifier).loadFriends();
+        await ref.read(friendControllerProvider.notifier).loadPendingRequests();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lista de usuarios actualizada'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 1),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('No se pudo cargar la lista. Intente de nuevo más tarde'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
       }
     }
   }
@@ -329,12 +382,56 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
       );
     } else {
       return ElevatedButton(
-        onPressed: () {
-          // Ejecutamos en un futuro para evitar actualizar durante la construcción
-          Future.microtask(() {
-            if (!mounted) return;
-            ref.read(friendControllerProvider.notifier).sendFriendRequest(userId);
-          });
+        onPressed: () async {
+          if (!mounted) return;
+          
+          try {
+            // Mostrar indicador de carga mientras se envía la solicitud
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    ),
+                    SizedBox(width: 16),
+                    Text('Enviando solicitud...'),
+                  ],
+                ),
+                duration: Duration(seconds: 1),
+              ),
+            );
+            
+            // Enviar la solicitud de amistad
+            await ref.read(friendControllerProvider.notifier).sendFriendRequest(userId);
+            
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('¡Solicitud enviada!'),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Error al enviar solicitud: ${e.toString()}'),
+                  backgroundColor: Colors.red,
+                  duration: Duration(seconds: 3),
+                  action: SnackBarAction(
+                    label: 'Reintentar',
+                    textColor: Colors.white,
+                    onPressed: () => _loadUsersWithDelay(),
+                  ),
+                ),
+              );
+            }
+          }
         },
         child: Text('Añadir'),
         style: ElevatedButton.styleFrom(

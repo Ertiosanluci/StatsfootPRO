@@ -55,10 +55,13 @@ class FriendController extends StateNotifier<FriendState> {
       await Future.delayed(Duration.zero);
       
       if (mounted) {
-        state = state.copyWith(isLoading: true, errorMessage: null, searchQuery: searchQuery);
+        // Preservamos la búsqueda anterior si no se proporciona una nueva
+        final effectiveQuery = searchQuery ?? state.searchQuery;
+        
+        state = state.copyWith(isLoading: true, errorMessage: null, searchQuery: effectiveQuery);
         
         print('FriendController: Calling repository getAllUsers');
-        final users = await _friendRepository.getAllUsers(searchQuery: searchQuery);
+        final users = await _friendRepository.getAllUsers(searchQuery: effectiveQuery);
         print('FriendController: Got ${users.length} users from repository');
         
         if (mounted) {
@@ -68,7 +71,13 @@ class FriendController extends StateNotifier<FriendState> {
     } catch (e) {
       print('FriendController ERROR: ${e.toString()}');
       if (mounted) {
-        state = state.copyWith(errorMessage: e.toString(), isLoading: false);
+        // En caso de error, mantenemos la lista de usuarios anterior
+        // para evitar una pantalla vacía y solo actualizamos el estado de error
+        state = state.copyWith(
+          errorMessage: e.toString(), 
+          isLoading: false,
+          // No actualizamos allUsers para preservar los datos anteriores
+        );
       }
     }
   }
@@ -115,13 +124,25 @@ class FriendController extends StateNotifier<FriendState> {
         await _friendRepository.sendFriendRequest(receiverId);
         
         if (mounted) {
+          // Recargamos las solicitudes pendientes
           await loadPendingRequests();
+          
+          // Actualizamos también la lista de usuarios
+          await loadAllUsers(searchQuery: state.searchQuery);
         }
       }
     } catch (e) {
       print('Error sending friend request: $e');
       if (mounted) {
+        // Mantenemos la UI actualizada a pesar del error
         state = state.copyWith(errorMessage: e.toString(), isLoading: false);
+        
+        // Importante: recargar la lista de usuarios incluso después de un error
+        try {
+          await loadAllUsers(searchQuery: state.searchQuery);
+        } catch (_) {
+          // Ignoramos errores secundarios para evitar cascadas
+        }
       }
     }
   }
