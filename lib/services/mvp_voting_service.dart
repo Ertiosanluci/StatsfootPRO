@@ -266,8 +266,7 @@ class MVPVotingService {
       };
     }
   }
-  
-  /// Verifica si una votación ha expirado y la finaliza si es necesario
+    /// Verifica si una votación ha expirado y la finaliza si es necesario
   Future<bool> checkAndFinishExpiredVoting(int matchId) async {
     try {
       final activeVoting = await getActiveVoting(matchId);
@@ -284,6 +283,66 @@ class MVPVotingService {
       return false;
     } catch (e) {
       print('Error al verificar votación expirada: $e');
+      return false;
+    }
+  }
+  
+  /// Finaliza manualmente una votación de MVP antes de tiempo
+  Future<bool> finishVotingManually(int matchId) async {
+    try {
+      // Verificar que el usuario esté autenticado
+      final currentUserId = supabase.auth.currentUser?.id;
+      if (currentUserId == null) {
+        Fluttertoast.showToast(
+          msg: "Debes iniciar sesión para finalizar la votación",
+          backgroundColor: Colors.red,
+        );
+        return false;
+      }
+      
+      // Verificar que la votación esté activa
+      final activeVoting = await getActiveVoting(matchId);
+      if (activeVoting == null) {
+        Fluttertoast.showToast(
+          msg: "No hay votación activa para finalizar",
+          backgroundColor: Colors.red,
+        );
+        return false;
+      }
+      
+      // Verificar que el usuario que intenta finalizar sea el creador de la votación
+      if (activeVoting['created_by'] != currentUserId) {
+        // Verificar si es el creador del partido
+        final matchData = await supabase
+            .from('matches')
+            .select('creador_id')
+            .eq('id', matchId)
+            .single();
+        
+        if (matchData['creador_id'] != currentUserId) {
+          Fluttertoast.showToast(
+            msg: "Solo el creador del partido o de la votación puede finalizarla",
+            backgroundColor: Colors.red,
+          );
+          return false;
+        }
+      }
+      
+      // Finalizar la votación y asignar MVPs
+      await finishVotingAndSetMVPs(matchId);
+      
+      Fluttertoast.showToast(
+        msg: "Votación finalizada manualmente",
+        backgroundColor: Colors.green,
+      );
+      
+      return true;
+    } catch (e) {
+      print('Error al finalizar votación manualmente: $e');
+      Fluttertoast.showToast(
+        msg: "Error al finalizar la votación: $e",
+        backgroundColor: Colors.red,
+      );
       return false;
     }
   }

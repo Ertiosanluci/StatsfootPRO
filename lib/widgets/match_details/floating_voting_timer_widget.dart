@@ -5,11 +5,13 @@ import 'dart:async';
 class FloatingVotingTimerWidget extends StatefulWidget {
   final Map<String, dynamic> votingData;
   final VoidCallback onVoteButtonPressed;
+  final VoidCallback? onFinishVotingPressed; // Callback para finalizar votación
   
   const FloatingVotingTimerWidget({
     Key? key,
     required this.votingData,
     required this.onVoteButtonPressed,
+    this.onFinishVotingPressed,
   }) : super(key: key);
   
   @override
@@ -64,13 +66,25 @@ class _FloatingVotingTimerWidgetState extends State<FloatingVotingTimerWidget> {
     
     return "${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}";
   }
-  
-  @override
+    @override
   Widget build(BuildContext context) {
+    // Calcular la altura del AppBar + TabBar para evitar que el widget se oculte debajo
+    final MediaQueryData mediaQuery = MediaQuery.of(context);
+    final double statusBarHeight = mediaQuery.padding.top;
+    final double appBarHeight = AppBar().preferredSize.height;
+    final double tabBarHeight = 48.0; // Altura aproximada de la TabBar
+    final double minTopPosition = statusBarHeight + appBarHeight + tabBarHeight;
+    
+    // Asegurar que el widget no se posicione por encima del límite superior
+    double topPosition = _position.dy;
+    if (topPosition < minTopPosition) {
+      topPosition = minTopPosition;
+    }
+    
     // Widget posicionable
     return Positioned(
       left: _position.dx,
-      top: _position.dy,
+      top: topPosition,
       child: GestureDetector(
         onPanStart: (details) {
           setState(() {
@@ -79,10 +93,25 @@ class _FloatingVotingTimerWidgetState extends State<FloatingVotingTimerWidget> {
         },
         onPanUpdate: (details) {
           setState(() {
+            // Actualizar posición con desplazamiento
+            double newY = _position.dy + details.delta.dy;
+            
+            // Aplicar restricción para la parte superior
+            if (newY < minTopPosition) {
+              newY = minTopPosition;
+            }
+            
             _position = Offset(
               _position.dx + details.delta.dx,
-              _position.dy + details.delta.dy,
+              newY,
             );
+            
+            // Restricciones para los bordes laterales e inferior
+            if (_position.dx < 0) _position = Offset(0, _position.dy);
+            if (_position.dx > mediaQuery.size.width - 150) 
+              _position = Offset(mediaQuery.size.width - 150, _position.dy);
+            if (_position.dy > mediaQuery.size.height - 150) 
+              _position = Offset(_position.dx, mediaQuery.size.height - 150);
           });
         },
         onPanEnd: (details) {
@@ -112,8 +141,7 @@ class _FloatingVotingTimerWidgetState extends State<FloatingVotingTimerWidget> {
             ),
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+            mainAxisSize: MainAxisSize.min,            children: [
               const Icon(
                 Icons.how_to_vote,
                 color: Colors.amber,
@@ -143,25 +171,56 @@ class _FloatingVotingTimerWidgetState extends State<FloatingVotingTimerWidget> {
                 ],
               ),
               const SizedBox(width: 8),
-              SizedBox(
-                height: 28,
-                width: 40,
-                child: ElevatedButton(
-                  onPressed: _timeRemaining.inSeconds > 0 ? widget.onVoteButtonPressed : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber,
-                    foregroundColor: Colors.black,
-                    padding: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+              // Botones de acciones
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Botón para votar
+                  SizedBox(
+                    height: 28,
+                    width: 40,
+                    child: ElevatedButton(
+                      onPressed: _timeRemaining.inSeconds > 0 ? widget.onVoteButtonPressed : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber,
+                        foregroundColor: Colors.black,
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      child: const Text(
+                        "Votar",
+                        style: TextStyle(fontSize: 10),
+                      ),
                     ),
-                    visualDensity: VisualDensity.compact,
                   ),
-                  child: const Text(
-                    "Votar",
-                    style: TextStyle(fontSize: 10),
-                  ),
-                ),
+                  if (widget.onFinishVotingPressed != null) ...[
+                    const SizedBox(width: 4),
+                    // Botón para finalizar votación (solo disponible para creadores)
+                    SizedBox(
+                      height: 28,
+                      width: 48,
+                      child: ElevatedButton(
+                        onPressed: _timeRemaining.inSeconds > 0 ? widget.onFinishVotingPressed : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        child: const Text(
+                          "Finalizar",
+                          style: TextStyle(fontSize: 9),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
               const SizedBox(width: 4),
               // Indicador de arrastrar

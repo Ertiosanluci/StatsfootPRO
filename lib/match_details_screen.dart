@@ -701,6 +701,93 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
     }
   }
   
+  // Método para finalizar manualmente la votación de MVP
+  Future<void> _finishMVPVotingManually() async {
+    try {
+      // Mostrar un diálogo de confirmación
+      final bool shouldFinish = await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Finalizar votación'),
+          content: Text(
+            '¿Estás seguro de que deseas finalizar la votación de MVP antes de tiempo?\n\n'
+            'Se contabilizarán los votos actuales y se seleccionarán los ganadores del top 3.',
+          ),
+          actions: [
+            TextButton(
+              child: Text('Cancelar'),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+            ElevatedButton(
+              child: Text('Finalizar votación'),
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade700,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ) ?? false;
+      
+      if (!shouldFinish) return;
+      
+      // Mostrar indicador de carga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: CircularProgressIndicator(
+            color: Colors.amber,
+          ),
+        ),
+      );
+      
+      int matchIdInt = _matchData['id'] as int;
+      
+      // Finalizar la votación
+      final success = await _mvpVotingService.finishVotingManually(matchIdInt);
+      
+      // Cerrar el indicador de carga
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      
+      if (success) {
+        // Actualizar UI
+        await _fetchMatchDetails();
+        
+        // Mostrar mensaje de éxito
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Votación finalizada correctamente. Los resultados ya están disponibles.',
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error al finalizar votación manualmente: $e');
+      
+      // Cerrar el indicador de carga si está abierto
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      
+      // Mostrar mensaje de error
+      Fluttertoast.showToast(
+        msg: "Error al finalizar la votación: $e",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+    }
+  }
+
   // Método para obtener los datos de los jugadores MVP
   Map<String, dynamic> _getMVPPlayerData(String? mvpId, List<Map<String, dynamic>> team) {
     if (mvpId == null) return {};
@@ -724,8 +811,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
         ),
       ),
     );
-  }
-  // Método para actualizar los MVPs después de que se completa una votación
+  }  // Método para actualizar los MVPs después de que se completa una votación
   Future<void> _refreshMVPsAfterVoting() async {
     try {
       if (_activeVoting == null) return;
@@ -763,8 +849,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
             ),
           );
         }
-      }
-    } catch (e) {
+      }    } catch (e) {
       print('Error al actualizar MVPs después de votación: $e');
     }
   }
@@ -1041,12 +1126,12 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                 ),              ),
             ],
           ),
-              
-              // Widget flotante de votación (solo si hay votación activa)
+                // Widget flotante de votación (solo si hay votación activa)
               if (_activeVoting != null)
                 FloatingVotingTimerWidget(
                   votingData: _activeVoting!,
                   onVoteButtonPressed: _showMVPVotingDialog,
+                  onFinishVotingPressed: isCreator ? _finishMVPVotingManually : null,
                 ),
             ],
           ),
