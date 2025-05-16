@@ -54,9 +54,8 @@ class _TeamFormationState extends State<TeamFormation> {
                 maxWidth, 
                 maxHeight,
               )),
-              
-              // Información sobre el equipo
-              _buildTeamInfoPanel(),
+                // Información sobre el equipo ha sido eliminada para evitar
+              // que moleste a la hora de colocar jugadores
 
               // Eliminado el marcador flotante que estaba dentro del campo
               
@@ -209,63 +208,8 @@ class _TeamFormationState extends State<TeamFormation> {
       ),
     );
   }
-  
-  Widget _buildTeamInfoPanel() {
-    return Positioned(
-      top: 16,
-      right: 16,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.7),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: widget.isTeamClaro ? Colors.blue.shade400 : Colors.red.shade400,
-            width: 1,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              widget.isTeamClaro ? 'Equipo Claro' : 'Equipo Oscuro',
-              style: TextStyle(
-                color: widget.isTeamClaro ? Colors.blue.shade200 : Colors.red.shade200,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Goles: ${widget.matchData[widget.isTeamClaro ? 'resultado_claro' : 'resultado_oscuro'] ?? 0}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-              ),
-            ),
-            Text(
-              'Jugadores: ${widget.players.length}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-              ),
-            ),
-            // Solo mostrar instrucción de arrastrar si no está en modo de solo lectura
-            if (!widget.isReadOnly)
-              const Text(
-                'Arrastra los jugadores para posicionar',
-                style: TextStyle(
-                  color: Colors.yellow,
-                  fontSize: 10,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            // Eliminado el texto "Modo solo visualización"
-          ],
-        ),
-      ),
-    );
-  }
+    // El método _buildTeamInfoPanel ha sido eliminado para que no aparezca el texto
+  // "Equipo Claro" y "Equipo Oscuro" que molesta a la hora de colocar jugadores
   
   void _showPlayerStatsDialog(Map<String, dynamic> player) {
     // Llamar al callback pasado desde el componente padre

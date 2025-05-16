@@ -12,6 +12,15 @@ import 'widgets/match_details/match_finish_dialog.dart';
 import 'widgets/match_details/player_stats_dialog.dart';
 import 'widgets/match_details/match_services.dart';
 import 'widgets/match_details/position_utils.dart';
+import 'widgets/match_details/mvp_voting_dialog_widget.dart';
+import 'widgets/match_details/start_mvp_voting_dialog.dart';
+import 'widgets/match_details/voting_status_widget.dart';
+import 'widgets/match_details/floating_voting_timer_widget.dart';
+import 'widgets/match_details/mvp_results_widget.dart';
+import 'services/mvp_voting_service.dart';
+import 'services/notification_service.dart';
+import 'screens/mvp_voting_history_screen.dart';
+import 'tests/mvp_voting_test.dart';
 
 class MatchDetailsScreen extends StatefulWidget {
   final dynamic matchId;
@@ -24,6 +33,9 @@ class MatchDetailsScreen extends StatefulWidget {
 
 class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTickerProviderStateMixin {
   final MatchServices _matchServices = MatchServices();
+  final MVPVotingService _mvpVotingService = MVPVotingService();
+  final NotificationService _notificationService = NotificationService();
+  
   bool _isLoading = true;
   Map<String, dynamic> _matchData = {};
   List<Map<String, dynamic>> _teamClaro = [];
@@ -33,12 +45,20 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
   late TabController _tabController;
   String? _mvpTeamClaro;
   String? _mvpTeamOscuro;
-  
-  @override
+  Map<String, dynamic>? _activeVoting; // Para almacenar información de votación activa
+    @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _fetchMatchDetails();
+    _checkForNotifications();
+    
+    // Configurar un temporizador para revisar periódicamente si la votación ha expirado
+    if (mounted) {
+      Future.delayed(Duration(seconds: 3), () {
+        _refreshMVPsAfterVoting();
+      });
+    }
   }
   
   @override
@@ -46,8 +66,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
     _tabController.dispose();
     super.dispose();
   }
-  
-  // Método para cargar los detalles del partido
+    // Método para cargar los detalles del partido
   Future<void> _fetchMatchDetails() async {
     try {
       setState(() => _isLoading = true);
@@ -58,6 +77,15 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
       
       // Obtener datos originales de match_participants para mapear IDs correctamente
       int matchIdInt = _matchData['id'] as int;
+      
+      // Verificar si hay una votación de MVPs activa
+      _activeVoting = await _mvpVotingService.getActiveVoting(matchIdInt);
+      // Verificar si hay votaciones expiradas que deban cerrarse
+      if (_activeVoting != null) {
+        await _mvpVotingService.checkAndFinishExpiredVoting(matchIdInt);
+        // Refrescar estado de votación
+        _activeVoting = await _mvpVotingService.getActiveVoting(matchIdInt);
+      }
       
       // Crear un mapa para relacionar user_id con participant_id
       Map<String, String> userIdToParticipantId = {};
@@ -518,6 +546,276 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
     );
   }
   
+  // Método para mostrar el diálogo de iniciar votación de MVPs
+  void _showStartVotingDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => StartMVPVotingDialog(
+        onConfirm: (hours) => _startMVPVoting(hours),
+        onCancel: () => Navigator.of(context).pop(),
+      ),
+    );
+  }
+  
+  // Método para iniciar la votación de MVPs
+  Future<void> _startMVPVoting(int hours) async {
+    try {
+      Navigator.of(context).pop(); // Cerrar el diálogo actual
+      
+      // Mostrar indicador de carga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: CircularProgressIndicator(
+            color: Colors.amber,
+          ),
+        ),
+      );
+      
+      int matchIdInt = _matchData['id'] as int;
+      
+      // Iniciar la votación
+      final success = await _mvpVotingService.startMVPVoting(matchIdInt, votingDurationHours: hours);
+      
+      // Cerrar el indicador de carga
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      
+      if (success) {
+        // Actualizar estado de votación
+        setState(() {
+          _activeVoting = {
+            'match_id': matchIdInt,
+            'voting_started_at': DateTime.now().toIso8601String(),
+            'voting_ends_at': DateTime.now().add(Duration(hours: hours)).toIso8601String(),
+            'status': 'active',
+          };
+        });
+        
+        // Mostrar mensaje de éxito
+        Fluttertoast.showToast(
+          msg: "Votación de MVPs iniciada correctamente. Duración: $hours horas",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+        );
+      } else {
+        // Mostrar mensaje de error
+        Fluttertoast.showToast(
+          msg: "Error al iniciar la votación de MVPs",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+      }
+    } catch (e) {
+      print('Error al iniciar votación de MVPs: $e');
+      
+      // Cerrar el indicador de carga si está abierto
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      
+      // Mostrar mensaje de error
+      Fluttertoast.showToast(
+        msg: "Error al iniciar la votación: $e",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+    }
+  }
+    // Método para mostrar el diálogo de votación de MVPs
+  void _showMVPVotingDialog() {
+    int matchIdInt = _matchData['id'] as int;
+    showDialog(
+      context: context,
+      builder: (context) => MVPVotingDialog(
+        teamClaro: _teamClaro,
+        teamOscuro: _teamOscuro,
+        matchId: matchIdInt,
+        onVoteSubmit: _submitMVPVote,
+      ),
+    );
+  }
+  
+  // Método para enviar los votos de MVP
+  Future<void> _submitMVPVote(String? mvpClaroId, String? mvpOscuroId) async {
+    try {
+      int matchIdInt = _matchData['id'] as int;
+      bool hasVoted = false;
+      
+      // Votar por MVP del equipo claro si se seleccionó
+      if (mvpClaroId != null) {
+        final success = await _mvpVotingService.voteForMVP(
+          matchId: matchIdInt,
+          votedPlayerId: mvpClaroId,
+          team: 'claro',
+        );
+        
+        if (success) {
+          hasVoted = true;
+        }
+      }
+      
+      // Votar por MVP del equipo oscuro si se seleccionó
+      if (mvpOscuroId != null) {
+        final success = await _mvpVotingService.voteForMVP(
+          matchId: matchIdInt,
+          votedPlayerId: mvpOscuroId,
+          team: 'oscuro',
+        );
+        
+        if (success) {
+          hasVoted = true;
+        }
+      }
+      
+      // Mostrar mensaje según el resultado
+      if (hasVoted) {
+        Fluttertoast.showToast(
+          msg: "¡Gracias por tu voto!",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+        );
+      } else if (mvpClaroId == null && mvpOscuroId == null) {
+        Fluttertoast.showToast(
+          msg: "No has seleccionado ningún jugador para votar",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.orange,
+          textColor: Colors.white,
+        );
+      }
+    } catch (e) {
+      print('Error al votar por MVPs: $e');
+      Fluttertoast.showToast(
+        msg: "Error al registrar tu voto: $e",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+    }
+  }
+  
+  // Método para obtener los datos de los jugadores MVP
+  Map<String, dynamic> _getMVPPlayerData(String? mvpId, List<Map<String, dynamic>> team) {
+    if (mvpId == null) return {};
+    
+    for (var player in team) {
+      if (player['id'].toString() == mvpId) {
+        return player;
+      }
+    }
+    
+    return {};
+  }
+  
+  // Método para navegar a la pantalla de historial de votaciones
+  void _navigateToVotingHistory() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => MVPVotingHistoryScreen(
+          matchId: _matchData['id'],
+          matchName: _matchData['nombre'] ?? 'Partido',
+        ),
+      ),
+    );
+  }
+
+  // Método para actualizar los MVPs después de que se completa una votación
+  Future<void> _refreshMVPsAfterVoting() async {
+    try {
+      if (_activeVoting == null) return;
+      
+      int matchIdInt = _matchData['id'] as int;
+      
+      // Verificar si la votación ha expirado
+      final votingEnded = await _mvpVotingService.checkAndFinishExpiredVoting(matchIdInt);
+      
+      if (votingEnded) {
+        // La votación ha terminado, obtener los nuevos MVPs
+        final matchDetails = await _matchServices.getMatchDetails(widget.matchId);
+        
+        setState(() {
+          _mvpTeamClaro = matchDetails['mvp_team_claro'];
+          _mvpTeamOscuro = matchDetails['mvp_team_oscuro'];
+          _activeVoting = null; // La votación ya no está activa
+          _matchData['mvp_team_claro'] = matchDetails['mvp_team_claro'];
+          _matchData['mvp_team_oscuro'] = matchDetails['mvp_team_oscuro'];
+        });
+        
+        // Mostrar mensaje de que se ha completado la votación
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'La votación de MVPs ha finalizado. Los resultados ya están disponibles.',
+                style: TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error al actualizar MVPs después de votación: $e');
+    }
+  }
+
+  // Método para ejecutar pruebas del sistema de votación (solo para desarrollo)
+  void _runVotingSystemTest() async {
+    try {
+      int matchIdInt = _matchData['id'] as int;
+      
+      // Mostrar diálogo de confirmación
+      final bool shouldRun = await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Test del Sistema'),
+          content: Text(
+            'Esto ejecutará un test completo del sistema de votación de MVP. '
+            'Se creará una votación real y se establecerán MVPs. '
+            '¿Deseas continuar?'
+          ),
+          actions: [
+            TextButton(
+              child: Text('Cancelar'),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+            ElevatedButton(
+              child: Text('Ejecutar Test'),
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber,
+              ),
+            ),
+          ],
+        ),
+      ) ?? false;
+      
+      if (shouldRun) {
+        // Ejecutar el test
+        MVPVotingTester tester = MVPVotingTester();
+        await tester.testVotingFlow(matchIdInt, context);
+        
+        // Refrescar la pantalla al finalizar el test
+        await _fetchMatchDetails();
+      }
+    } catch (e) {
+      print('Error al ejecutar test: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final int golesEquipoClaro = _matchData['resultado_claro'] ?? 0;
@@ -575,52 +873,107 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           indicatorColor: Colors.orange.shade600,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
-        ),
-        // Mostrar opciones de edición solo al creador del partido
-        actions: isReadOnly ? [] : [
-          if (!isPartidoFinalizado && !_isLoading)
+        ),        // Mostrar opciones de edición solo al creador del partido
+        actions: [          // Mostrar botón de votación para usuarios (si hay votación activa)
+          if (isPartidoFinalizado && _activeVoting != null && !isReadOnly)
             IconButton(
               icon: Icon(
-                Icons.sports_score,
+                Icons.how_to_vote,
                 color: Colors.white,
                 size: 26,
               ),
-              tooltip: 'Editar estadísticas',
-              onPressed: () {
-                Fluttertoast.showToast(
-                  msg: "Toca en un jugador para editar sus estadísticas",
-                  toastLength: Toast.LENGTH_LONG,
-                  gravity: ToastGravity.CENTER,
-                  backgroundColor: Colors.blue.shade700,
-                  textColor: Colors.white,
-                  fontSize: 16.0
-                );
-              },
+              tooltip: 'Votar por MVP',
+              onPressed: _showMVPVotingDialog,
             ),
-          if (!isPartidoFinalizado && !_isLoading)
+          
+          // Botón para ver historial de votaciones (solo visible si partido finalizado)
+          if (isPartidoFinalizado)
             IconButton(
               icon: Icon(
-                Icons.flag_outlined,
-                color: Colors.white,
-                size: 26,
+                Icons.history,
+                color: Colors.white70,
+                size: 24,
               ),
-              tooltip: 'Finalizar partido',
-              onPressed: _showFinalizarPartidoDialog,
+              tooltip: 'Historial de votaciones',
+              onPressed: _navigateToVotingHistory,
             ),
-        ],
-      ),
-      body: _isLoading 
-        ? Center(child: CircularProgressIndicator(color: Colors.blue))
-        : Column(
-            children: [
-              // Marcador
-              ScoreboardWidget(
-                golesEquipoClaro: golesEquipoClaro,
-                golesEquipoOscuro: golesEquipoOscuro,
-                isPartidoFinalizado: isPartidoFinalizado,
+          // Mostrar opciones para el creador del partido
+          if (!isReadOnly && !_isLoading) ...[
+            if (!isPartidoFinalizado)
+              IconButton(
+                icon: Icon(
+                  Icons.sports_score,
+                  color: Colors.white,
+                  size: 26,
+                ),
+                tooltip: 'Editar estadísticas',
+                onPressed: () {
+                  Fluttertoast.showToast(
+                    msg: "Toca en un jugador para editar sus estadísticas",
+                    toastLength: Toast.LENGTH_LONG,
+                    gravity: ToastGravity.CENTER,
+                    backgroundColor: Colors.blue.shade700,
+                    textColor: Colors.white,
+                    fontSize: 16.0
+                  );
+                },
+              ),
+            if (!isPartidoFinalizado)
+              IconButton(
+                icon: Icon(
+                  Icons.flag_outlined,
+                  color: Colors.white,
+                  size: 26,
+                ),
+                tooltip: 'Finalizar partido',
+                onPressed: _showFinalizarPartidoDialog,
+              ),            if (isPartidoFinalizado && _activeVoting == null)
+              IconButton(
+                icon: Icon(
+                  Icons.how_to_vote,
+                  color: Colors.amber,
+                  size: 26,
+                ),
+                tooltip: 'Iniciar votación MVPs',
+                onPressed: _showStartVotingDialog,
               ),
               
-              // Eliminar el banner informativo fijo
+            // Botón de test (solo visible en desarrollo y para el creador)
+            if (isPartidoFinalizado && isCreator)
+              IconButton(
+                icon: Icon(
+                  Icons.bug_report,
+                  color: Colors.grey.withOpacity(0.7),
+                  size: 22,
+                ),
+                tooltip: 'Test de votación',
+                onPressed: _runVotingSystemTest,
+              ),
+          ],
+        ],      ),
+      body: _isLoading 
+        ? Center(child: CircularProgressIndicator(color: Colors.blue))
+        : Stack(
+            children: [
+              // Contenido principal
+              Column(
+                children: [              
+                  // Marcador
+                  ScoreboardWidget(
+                    golesEquipoClaro: golesEquipoClaro,
+                    golesEquipoOscuro: golesEquipoOscuro,
+                    isPartidoFinalizado: isPartidoFinalizado,
+                  ),
+                  
+                  // Mostrar resultados de MVP si el partido está finalizado y hay MVPs
+                  if (isPartidoFinalizado && (_mvpTeamClaro != null || _mvpTeamOscuro != null))
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                      child: MVPResultsWidget(
+                        playerDataClaro: _getMVPPlayerData(_mvpTeamClaro, _teamClaro),
+                        playerDataOscuro: _getMVPPlayerData(_mvpTeamOscuro, _teamOscuro),
+                      ),
+                    ),
               
               // Campo y jugadores
               Expanded(
@@ -669,10 +1022,68 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                       ),
                     ],
                   ),
+                ),              ),
+            ],
+          ),
+              
+              // Widget flotante de votación (solo si hay votación activa)
+              if (_activeVoting != null)
+                FloatingVotingTimerWidget(
+                  votingData: _activeVoting!,
+                  onVoteButtonPressed: _showMVPVotingDialog,
                 ),
-              ),
             ],
           ),
     );
+  }
+  
+  // Método para revisar y mostrar notificaciones relevantes
+  Future<void> _checkForNotifications() async {
+    try {
+      // Esperar a que los datos del partido estén cargados
+      await Future.delayed(Duration(seconds: 2));
+      
+      // Verificar si hay notificaciones sin leer
+      final notifications = await _notificationService.getUnreadNotifications();
+      
+      if (notifications.isNotEmpty && mounted) {
+        // Filtrar notificaciones relacionadas con este partido
+        final matchId = widget.matchId;
+        final relevantNotifications = notifications
+            .where((n) => n['match_id'] == matchId)
+            .toList();
+            
+        // Mostrar la notificación más reciente si existe
+        if (relevantNotifications.isNotEmpty && mounted) {
+          final latestNotification = relevantNotifications.first;
+          
+          // Mostrar la notificación en la UI
+          _notificationService.showNotification(
+            context,
+            latestNotification['title'],
+            latestNotification['message'],
+            backgroundColor: latestNotification['action_type'] == 'mvp_voting' 
+                ? Colors.purple.shade800
+                : Colors.blue.shade800,
+            onTap: () {
+              // Marcar como leída
+              _notificationService.markNotificationAsRead(latestNotification['id']);
+              
+              // Si es una notificación de votación, mostrar el diálogo
+              if (latestNotification['action_type'] == 'mvp_voting' && _activeVoting != null) {
+                _showMVPVotingDialog();
+              }
+            },
+          );
+          
+          // Marcar como leída
+          for (var notification in relevantNotifications) {
+            _notificationService.markNotificationAsRead(notification['id']);
+          }
+        }
+      }
+    } catch (e) {
+      print('Error al revisar notificaciones: $e');
+    }
   }
 }

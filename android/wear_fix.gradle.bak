@@ -1,0 +1,54 @@
+// Script para corregir problemas con el módulo wear
+// Este archivo debe ser incluido en settings.gradle
+
+// Include our wear_fix module
+include ':wear_fix'
+project(':wear_fix').projectDir = new File(rootProject.projectDir, 'wear_fix')
+
+// Código a ejecutar después de que todos los proyectos han sido evaluados
+gradle.projectsLoaded { gradle ->
+    // Configuramos un listener para cuando se creen todos los proyectos
+    gradle.addListener(new org.gradle.api.execution.TaskExecutionListener() {
+        void beforeExecute(org.gradle.api.Task task) {
+            // No necesitamos hacer nada antes de la ejecución
+        }
+        
+        void afterExecute(org.gradle.api.Task task, org.gradle.api.tasks.TaskState state) {
+            // Solo ejecutamos nuestro código en la primera tarea
+            if (task.project.rootProject.tasks.indexOf(task) == 0) {
+                try {
+                    def projects = task.project.rootProject.subprojects
+                    def wearProject = projects.find { it.name == 'wear' }
+                    
+                    if (wearProject != null) {
+                        println 'Overriding wear plugin with fixed version'
+                        
+                        // Actualizamos la versión de Kotlin para el proyecto wear                        wearProject.buildscript {
+                            dependencies {
+                                classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.5.20"
+                            }
+                        }
+                        
+                        // Remap wear dependencies to wear_fix
+                        projects.each { subproject ->
+                            subproject.afterEvaluate {
+                                subproject.configurations?.each { configuration ->
+                                    def wearDeps = configuration.dependencies.findAll { dep ->
+                                        dep.group == null && dep.name == 'wear'
+                                    }
+                                    
+                                    wearDeps.each { dep ->
+                                        println "Remapping wear dependency in ${subproject.name}"
+                                        configuration.dependencies.remove(dep)
+                                        configuration.dependencies.add(subproject.dependencies.project(':wear_fix'))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    println "Error en wear_fix.gradle: ${e.message}"
+                }
+            }
+    }
+}
