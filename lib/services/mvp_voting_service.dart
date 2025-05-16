@@ -134,6 +134,28 @@ class MVPVotingService {
     }
   }
   
+  /// Obtener el voto previo del usuario en un partido específico
+  Future<Map<String, dynamic>?> getPreviousVote(int matchId) async {
+    try {
+      final currentUserId = supabase.auth.currentUser?.id;
+      if (currentUserId == null) {
+        return null;
+      }
+      
+      final vote = await supabase
+          .from('mvp_votes')
+          .select('*')
+          .eq('match_id', matchId)
+          .eq('voter_id', currentUserId)
+          .maybeSingle();
+          
+      return vote;
+    } catch (e) {
+      print('Error al obtener voto previo: $e');
+      return null;
+    }
+  }
+  
   /// Obtener los 3 mejores jugadores según los votos
   Future<List<Map<String, dynamic>>> getTopVotedPlayers(int matchId, {int limit = 3}) async {
     try {

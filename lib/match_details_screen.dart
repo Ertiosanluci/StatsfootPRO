@@ -631,9 +631,16 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
       );
     }
   }
-    // Método para mostrar el diálogo de votación de MVPs
-  void _showMVPVotingDialog() {
+    // Método para mostrar el diálogo de votación de MVPs  // Método para mostrar el diálogo de votación de MVP
+  void _showMVPVotingDialog() async {
     int matchIdInt = _matchData['id'] as int;
+    
+    // Obtener el voto previo del usuario si existe
+    final previousVote = await _mvpVotingService.getPreviousVote(matchIdInt);
+    final previousVotedPlayerId = previousVote != null ? previousVote['voted_player_id'] as String? : null;
+    
+    if (!mounted) return;
+    
     showDialog(
       context: context,
       builder: (context) => MVPVotingDialog(
@@ -641,6 +648,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
         teamOscuro: _teamOscuro,
         matchId: matchIdInt,
         onVoteSubmit: _submitMVPVote,
+        previousVotedPlayerId: previousVotedPlayerId,
       ),
     );
   }

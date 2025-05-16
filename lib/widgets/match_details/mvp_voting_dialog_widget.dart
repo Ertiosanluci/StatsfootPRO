@@ -7,6 +7,7 @@ class MVPVotingDialog extends StatefulWidget {
   final List<Map<String, dynamic>> teamOscuro;
   final int matchId;
   final Function(String?, String?) onVoteSubmit; // Mantenemos la misma firma por compatibilidad
+  final String? previousVotedPlayerId; // Jugador previamente votado por el usuario
   
   const MVPVotingDialog({
     Key? key,
@@ -14,6 +15,7 @@ class MVPVotingDialog extends StatefulWidget {
     required this.teamOscuro,
     required this.matchId,
     required this.onVoteSubmit,
+    this.previousVotedPlayerId,
   }) : super(key: key);
   
   @override
@@ -22,7 +24,17 @@ class MVPVotingDialog extends StatefulWidget {
 
 class _MVPVotingDialogState extends State<MVPVotingDialog> {
   String? _selectedPlayerId;
-    @override
+
+  @override
+  void initState() {
+    super.initState();
+    // Inicializar con el voto previo si existe
+    if (widget.previousVotedPlayerId != null) {
+      _selectedPlayerId = widget.previousVotedPlayerId;
+    }
+  }
+  
+  @override
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.blue.shade900,
