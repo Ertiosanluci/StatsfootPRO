@@ -32,8 +32,8 @@ class MVPVotingService {
       // Enviar notificaciones a todos los participantes
       await _notificationService.notifyMatchParticipants(
         matchId: matchId,
-        title: '¡Votación de MVPs iniciada!',
-        message: 'La votación para MVP del partido $matchName está abierta por $votingDurationHours horas. ¡Vota ahora!',
+        title: '¡Votación de MVP iniciada!',
+        message: 'La votación para MVP del partido $matchName está abierta por $votingDurationHours horas. ¡Vota ahora! Se reconocerán los 3 más votados.',
         actionType: 'mvp_voting',
       );
       
@@ -60,8 +60,7 @@ class MVPVotingService {
       return null;
     }
   }
-  
-  /// Votar por un jugador como MVP
+    /// Votar por un jugador como MVP
   Future<bool> voteForMVP({
     required int matchId,
     required String votedPlayerId,
@@ -88,20 +87,22 @@ class MVPVotingService {
         return false;
       }
       
-      // Verificar si el usuario ya ha votado para este equipo
+      // Verificar si el usuario ya ha votado por algún jugador
       final existingVote = await supabase
           .from('mvp_votes')
           .select()
           .eq('match_id', matchId)
           .eq('voter_id', currentUserId)
-          .eq('team', team)
           .maybeSingle();
           
       if (existingVote != null) {
         // Actualizar voto existente
         await supabase
             .from('mvp_votes')
-            .update({'voted_player_id': votedPlayerId})
+            .update({
+              'voted_player_id': votedPlayerId,
+              'team': team // Actualizar el equipo según sea necesario
+            })
             .eq('id', existingVote['id']);
             
         Fluttertoast.showToast(
@@ -121,8 +122,7 @@ class MVPVotingService {
           msg: "Voto registrado correctamente",
           backgroundColor: Colors.green,
         );
-      }
-      
+      }      
       return true;
     } catch (e) {
       print('Error al votar por MVP: $e');
@@ -133,38 +133,56 @@ class MVPVotingService {
       return false;
     }
   }
-    /// Finaliza la votación y establece los MVPs basados en los votos
-  Future<Map<String, String?>> finishVotingAndSetMVPs(int matchId) async {
+  
+  /// Obtener los 3 mejores jugadores según los votos
+  Future<List<Map<String, dynamic>>> getTopVotedPlayers(int matchId, {int limit = 3}) async {
     try {
-      // Obtener el recuento de votos para el equipo claro
-      final votesClaroResult = await supabase.rpc(
-        'count_mvp_votes',
+      final result = await supabase.rpc(
+        'get_top_mvp_votes',
         params: {
           'match_id_param': matchId,
-          'team_param': 'claro'
+          'limit_param': limit
         }
       );
       
-      // Obtener el recuento de votos para el equipo oscuro
-      final votesOscuroResult = await supabase.rpc(
-        'count_mvp_votes',
-        params: {
-          'match_id_param': matchId,
-          'team_param': 'oscuro'
-        }
-      );
+      return List<Map<String, dynamic>>.from(result);
+    } catch (e) {
+      print('Error al obtener los mejores jugadores: $e');
+      return [];
+    }
+  }
+  
+  /// Finaliza la votación y establece los MVPs basados en los votos
+  Future<Map<String, String?>> finishVotingAndSetMVPs(int matchId) async {
+    try {
+      // Obtener los 3 mejores jugadores votados
+      final topPlayers = await getTopVotedPlayers(matchId, limit: 3);
       
       String? mvpClaroId;
       String? mvpOscuroId;
+      List<Map<String, dynamic>> top3Players = [];
       
-      // Determinar MVP del equipo claro
-      if (votesClaroResult != null && votesClaroResult.isNotEmpty) {
-        mvpClaroId = votesClaroResult[0]['voted_player_id'];
-      }
-      
-      // Determinar MVP del equipo oscuro
-      if (votesOscuroResult != null && votesOscuroResult.isNotEmpty) {
-        mvpOscuroId = votesOscuroResult[0]['voted_player_id'];
+      if (topPlayers.isNotEmpty) {
+        // Guardar los 3 mejores jugadores en una tabla especial
+        for (var player in topPlayers) {
+          await supabase.from('mvp_top_players').upsert({
+            'match_id': matchId,
+            'player_id': player['voted_player_id'],
+            'votes': player['vote_count'],
+            'rank': topPlayers.indexOf(player) + 1,
+            'team': player['team']
+          });
+          
+          // Para mantener compatibilidad con el sistema actual
+          // Establecemos los MVPs de cada equipo basados en los jugadores con más votos de cada equipo
+          if (player['team'] == 'claro' && mvpClaroId == null) {
+            mvpClaroId = player['voted_player_id'];
+          } else if (player['team'] == 'oscuro' && mvpOscuroId == null) {
+            mvpOscuroId = player['voted_player_id'];
+          }
+        }
+        
+        top3Players = topPlayers;
       }
       
       // Actualizar el estado de la votación a completado
@@ -181,8 +199,7 @@ class MVPVotingService {
             'mvp_team_oscuro': mvpOscuroId
           })
           .eq('id', matchId);
-      
-      // Obtener información del partido y de los MVP para la notificación
+        // Obtener información del partido para la notificación
       final matchData = await supabase
           .from('matches')
           .select('nombre')
@@ -191,39 +208,27 @@ class MVPVotingService {
       
       final matchName = matchData['nombre'] ?? 'Partido';
       
-      // Obtener nombres de los MVP
-      String mvpClaroNombre = "Sin MVP";
-      String mvpOscuroNombre = "Sin MVP";
-      
-      if (mvpClaroId != null) {
-        final userClaroData = await supabase
-            .from('users_profiles')
-            .select('nombre')
-            .eq('user_id', mvpClaroId)
-            .maybeSingle();
-            
-        if (userClaroData != null) {
-          mvpClaroNombre = userClaroData['nombre'] ?? "Jugador Claro";
+      // Construir mensaje con los 3 mejores jugadores
+      String topPlayersMessage = "";
+      if (top3Players.isNotEmpty) {
+        for (int i = 0; i < top3Players.length; i++) {
+          final player = top3Players[i];
+          final playerName = player['player_name'] ?? 'Jugador';
+          final playerTeam = player['team'] == 'claro' ? 'Equipo Claro' : 'Equipo Oscuro';
+          final position = i + 1;
+          
+          if (i > 0) topPlayersMessage += ", ";
+          topPlayersMessage += "$position° $playerName ($playerTeam)";
         }
-      }
-      
-      if (mvpOscuroId != null) {
-        final userOscuroData = await supabase
-            .from('users_profiles')
-            .select('nombre')
-            .eq('user_id', mvpOscuroId)
-            .maybeSingle();
-            
-        if (userOscuroData != null) {
-          mvpOscuroNombre = userOscuroData['nombre'] ?? "Jugador Oscuro";
-        }
+      } else {
+        topPlayersMessage = "No se registraron suficientes votos";
       }
       
       // Enviar notificaciones con los resultados
       await _notificationService.notifyMatchParticipants(
         matchId: matchId,
-        title: '¡Votación de MVPs finalizada!',
-        message: 'Los MVPs del partido $matchName son: $mvpClaroNombre (Equipo Claro) y $mvpOscuroNombre (Equipo Oscuro)',
+        title: '¡Votación de MVP finalizada!',
+        message: 'Top 3 jugadores del partido $matchName: $topPlayersMessage',
         actionType: 'mvp_results',
       );
       

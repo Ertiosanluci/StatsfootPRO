@@ -17,6 +17,7 @@ import 'widgets/match_details/start_mvp_voting_dialog.dart';
 import 'widgets/match_details/voting_status_widget.dart';
 import 'widgets/match_details/floating_voting_timer_widget.dart';
 import 'widgets/match_details/mvp_results_widget.dart';
+import 'widgets/match_details/top_mvp_players_widget.dart';
 import 'services/mvp_voting_service.dart';
 import 'services/notification_service.dart';
 import 'screens/mvp_voting_history_screen.dart';
@@ -643,32 +644,18 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
       ),
     );
   }
-  
   // Método para enviar los votos de MVP
-  Future<void> _submitMVPVote(String? mvpClaroId, String? mvpOscuroId) async {
+  Future<void> _submitMVPVote(String? selectedPlayerId, String? playerTeam) async {
     try {
       int matchIdInt = _matchData['id'] as int;
       bool hasVoted = false;
       
-      // Votar por MVP del equipo claro si se seleccionó
-      if (mvpClaroId != null) {
+      // Votar por el jugador seleccionado
+      if (selectedPlayerId != null && playerTeam != null) {
         final success = await _mvpVotingService.voteForMVP(
           matchId: matchIdInt,
-          votedPlayerId: mvpClaroId,
-          team: 'claro',
-        );
-        
-        if (success) {
-          hasVoted = true;
-        }
-      }
-      
-      // Votar por MVP del equipo oscuro si se seleccionó
-      if (mvpOscuroId != null) {
-        final success = await _mvpVotingService.voteForMVP(
-          matchId: matchIdInt,
-          votedPlayerId: mvpOscuroId,
-          team: 'oscuro',
+          votedPlayerId: selectedPlayerId,
+          team: playerTeam,
         );
         
         if (success) {
@@ -685,7 +672,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           backgroundColor: Colors.green,
           textColor: Colors.white,
         );
-      } else if (mvpClaroId == null && mvpOscuroId == null) {
+      } else if (selectedPlayerId == null) {
         Fluttertoast.showToast(
           msg: "No has seleccionado ningún jugador para votar",
           toastLength: Toast.LENGTH_LONG,
@@ -730,7 +717,6 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
       ),
     );
   }
-
   // Método para actualizar los MVPs después de que se completa una votación
   Future<void> _refreshMVPsAfterVoting() async {
     try {
@@ -742,7 +728,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
       final votingEnded = await _mvpVotingService.checkAndFinishExpiredVoting(matchIdInt);
       
       if (votingEnded) {
-        // La votación ha terminado, obtener los nuevos MVPs
+        // La votación ha terminado, obtener los detalles actualizados y los top jugadores
         final matchDetails = await _matchServices.getMatchDetails(widget.matchId);
         
         setState(() {
@@ -752,6 +738,9 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           _matchData['mvp_team_claro'] = matchDetails['mvp_team_claro'];
           _matchData['mvp_team_oscuro'] = matchDetails['mvp_team_oscuro'];
         });
+        
+        // Actualizar la UI para mostrar el widget de top 3
+        setState(() {});
         
         // Mostrar mensaje de que se ha completado la votación
         if (mounted) {
@@ -970,9 +959,28 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                       child: MVPResultsWidget(
-                        playerDataClaro: _getMVPPlayerData(_mvpTeamClaro, _teamClaro),
-                        playerDataOscuro: _getMVPPlayerData(_mvpTeamOscuro, _teamOscuro),
+                        playerDataClaro: _getMVPPlayerData(_mvpTeamClaro, _teamClaro),                        playerDataOscuro: _getMVPPlayerData(_mvpTeamOscuro, _teamOscuro),
                       ),
+                    ),
+                    
+                  // Mostrar el top 3 de jugadores más votados
+                  if (isPartidoFinalizado)
+                    FutureBuilder<List<Map<String, dynamic>>>(
+                      future: _mvpVotingService.getTopVotedPlayers(_matchData['id'] as int),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                            child: TopMVPPlayersWidget(topPlayers: [], isLoading: true),
+                          );
+                        }
+                        
+                        final topPlayers = snapshot.data ?? [];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                          child: TopMVPPlayersWidget(topPlayers: topPlayers),
+                        );
+                      },
                     ),
               
               // Campo y jugadores

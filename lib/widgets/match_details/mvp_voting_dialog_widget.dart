@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-/// Widget para mostrar un diálogo de votación para MVPs
-/// Permite seleccionar un MVP de cada equipo (claro y oscuro)
+/// Widget para mostrar un diálogo de votación para MVP
+/// Permite seleccionar al mejor jugador del partido de ambos equipos
 class MVPVotingDialog extends StatefulWidget {
   final List<Map<String, dynamic>> teamClaro;
   final List<Map<String, dynamic>> teamOscuro;
   final int matchId;
-  final Function(String?, String?) onVoteSubmit;
+  final Function(String?, String?) onVoteSubmit; // Mantenemos la misma firma por compatibilidad
   
   const MVPVotingDialog({
     Key? key,
@@ -21,10 +21,8 @@ class MVPVotingDialog extends StatefulWidget {
 }
 
 class _MVPVotingDialogState extends State<MVPVotingDialog> {
-  String? _mvpClaroId;
-  String? _mvpOscuroId;
-  
-  @override
+  String? _selectedPlayerId;
+    @override
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.blue.shade900,
@@ -32,20 +30,22 @@ class _MVPVotingDialogState extends State<MVPVotingDialog> {
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(color: Colors.white.withOpacity(0.2), width: 1),
       ),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildDialogHeader(),
-            const SizedBox(height: 16),
-            _buildExplanation(),
-            const SizedBox(height: 20),
-            _buildMVPSelection(),
-            const SizedBox(height: 20),
-            _buildActionButtons(),
-          ],
+      child: SingleChildScrollView(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildDialogHeader(),
+              const SizedBox(height: 16),
+              _buildExplanation(),
+              const SizedBox(height: 20),
+              _buildMVPSelection(),
+              const SizedBox(height: 20),
+              _buildActionButtons(),
+            ],
+          ),
         ),
       ),
     );
@@ -59,7 +59,7 @@ class _MVPVotingDialogState extends State<MVPVotingDialog> {
         const SizedBox(width: 12),
         Expanded(
           child: Text(
-            'Votación para MVPs',
+            'Votación para MVP',
             style: TextStyle(
               color: Colors.white,
               fontSize: 20,
@@ -83,7 +83,7 @@ class _MVPVotingDialogState extends State<MVPVotingDialog> {
       ),
       width: double.infinity,
       child: const Text(
-        'Selecciona a los mejores jugadores del partido. Puedes votar por un jugador de cada equipo.',
+        'Selecciona al mejor jugador del partido. Los 3 más votados serán reconocidos como los MVPs.',
         style: TextStyle(
           color: Colors.white,
           fontSize: 13,
@@ -92,15 +92,21 @@ class _MVPVotingDialogState extends State<MVPVotingDialog> {
       ),
     );
   }
-  
   /// Construye la sección de selección de MVPs
   Widget _buildMVPSelection() {
+    // Combinar los jugadores de ambos equipos
+    List<Map<String, dynamic>> allPlayers = [...widget.teamClaro, ...widget.teamOscuro];
+    
+    // Calcular altura máxima para el grid (para evitar overflow)
+    final screenHeight = MediaQuery.of(context).size.height;
+    final gridMaxHeight = screenHeight * 0.5; // Limitar a 50% de la altura de la pantalla
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Título de la sección
         const Text(
-          'Selecciona a los mejores jugadores:',
+          'Selecciona al mejor jugador:',
           style: TextStyle(
             color: Colors.white,
             fontSize: 16,
@@ -109,88 +115,36 @@ class _MVPVotingDialogState extends State<MVPVotingDialog> {
         ),
         const SizedBox(height: 16),
         
-        // Selección del MVP del equipo claro
-        _buildTeamSection(
-          title: 'Equipo Claro',
-          teamColor: Colors.blue.shade700,
-          players: widget.teamClaro,
-          selectedPlayerId: _mvpClaroId,
-          onSelectPlayer: (playerId) {
-            setState(() {
-              _mvpClaroId = playerId;
-            });
-          },
-        ),
-        
-        const SizedBox(height: 20),
-        
-        // Selección del MVP del equipo oscuro
-        _buildTeamSection(
-          title: 'Equipo Oscuro',
-          teamColor: Colors.red.shade700,
-          players: widget.teamOscuro,
-          selectedPlayerId: _mvpOscuroId,
-          onSelectPlayer: (playerId) {
-            setState(() {
-              _mvpOscuroId = playerId;
-            });
-          },
-        ),
-      ],
-    );
-  }
-  
-  /// Construye una sección para seleccionar el MVP de un equipo
-  Widget _buildTeamSection({
-    required String title,
-    required Color teamColor,
-    required List<Map<String, dynamic>> players,
-    required String? selectedPlayerId,
-    required Function(String?) onSelectPlayer,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Título del equipo
-        Row(
-          children: [
-            Icon(
-              Icons.emoji_events,
-              color: teamColor,
-              size: 20,
+        // Contenedor con scroll para el grid de jugadores
+        ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: gridMaxHeight,
+          ),
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: const BouncingScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              childAspectRatio: 0.7,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
             ),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 16,
-                color: teamColor,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        
-        // Lista horizontal de jugadores
-        SizedBox(
-          height: 100,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: players.length,
+            itemCount: allPlayers.length,
             itemBuilder: (context, index) {
-              final player = players[index];
+              final player = allPlayers[index];
               final playerId = player['id'].toString();
-              final isSelected = selectedPlayerId == playerId;
+              final isSelected = _selectedPlayerId == playerId;
+              final isTeamClaro = widget.teamClaro.any((p) => p['id'].toString() == playerId);
+              final teamColor = isTeamClaro ? Colors.blue.shade700 : Colors.red.shade700;
               
               return GestureDetector(
                 onTap: () {
-                  onSelectPlayer(isSelected ? null : playerId);
+                  setState(() {
+                    _selectedPlayerId = isSelected ? null : playerId;
+                  });
                 },
                 child: Container(
-                  width: 70,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: isSelected 
                         ? teamColor.withOpacity(0.3)
@@ -206,16 +160,27 @@ class _MVPVotingDialogState extends State<MVPVotingDialog> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      // Indicador de equipo
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: teamColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      
                       // Avatar del jugador
                       CircleAvatar(
-                        radius: 20,
+                        radius: 24,
                         backgroundColor: teamColor,
                         child: player['foto_perfil'] != null
                             ? ClipOval(
                                 child: Image.network(
                                   player['foto_perfil'],
-                                  width: 36,
-                                  height: 36,
+                                  width: 44,
+                                  height: 44,
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, __, ___) => Text(
                                     player['nombre']?.isNotEmpty == true 
@@ -234,26 +199,28 @@ class _MVPVotingDialogState extends State<MVPVotingDialog> {
                                 ),
                               ),
                       ),
-                      const SizedBox(height: 5),
+                      const SizedBox(height: 6),
                       
                       // Nombre del jugador
-                      Text(
-                        player['nombre'] ?? 'Jugador',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
+                      Expanded(
+                        child: Text(
+                          player['nombre'] ?? 'Jugador',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
                       
                       // Estrella si está seleccionado
                       if (isSelected)
                         const Icon(
-                          Icons.star,
+                          Icons.stars_rounded,
                           color: Colors.amber,
-                          size: 14,
+                          size: 18,
                         ),
                     ],
                   ),
@@ -265,10 +232,9 @@ class _MVPVotingDialogState extends State<MVPVotingDialog> {
       ],
     );
   }
-  
   /// Construye los botones de acción (votar/cancelar)
   Widget _buildActionButtons() {
-    bool hasSelection = _mvpClaroId != null || _mvpOscuroId != null;
+    bool hasSelection = _selectedPlayerId != null;
     
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -284,7 +250,13 @@ class _MVPVotingDialogState extends State<MVPVotingDialog> {
         ElevatedButton(
           onPressed: hasSelection
               ? () {
-                  widget.onVoteSubmit(_mvpClaroId, _mvpOscuroId);
+                  // Determinamos a qué equipo pertenece el jugador seleccionado
+                  final isTeamClaro = widget.teamClaro.any((p) => p['id'].toString() == _selectedPlayerId);
+                  final playerTeam = isTeamClaro ? 'claro' : 'oscuro';
+                  
+                  // Enviamos el ID del jugador seleccionado y su equipo
+                  widget.onVoteSubmit(_selectedPlayerId, playerTeam);
+                  
                   Navigator.pop(context);
                 }
               : null,
