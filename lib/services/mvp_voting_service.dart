@@ -346,4 +346,66 @@ class MVPVotingService {
       return false;
     }
   }
+  /// Resetea una votación de MVP y elimina todos los datos relacionados
+  /// Este método borra todos los votos existentes, el estado de la votación y los resultados de MVP
+  /// Solamente el creador del partido puede ejecutar esta acción
+  Future<bool> resetMVPVoting(int matchId) async {
+    try {
+      // Verificar que el usuario esté autenticado
+      final currentUserId = supabase.auth.currentUser?.id;
+      if (currentUserId == null) {
+        Fluttertoast.showToast(
+          msg: "Debes iniciar sesión para rehacer la votación",
+          backgroundColor: Colors.red,
+        );
+        return false;
+      }
+      
+      // Verificar que el usuario sea el creador del partido
+      final matchData = await supabase
+          .from('matches')
+          .select('creador_id, nombre')
+          .eq('id', matchId)
+          .single();
+      
+      if (matchData['creador_id'] != currentUserId) {
+        Fluttertoast.showToast(
+          msg: "Solo el creador del partido puede rehacer la votación",
+          backgroundColor: Colors.red,
+        );
+        return false;      }
+      
+      // Iniciar una transacción para asegurar que todas las operaciones se realizan o ninguna
+      // Utilizar la función de reseteo en SQL dentro de la transacción
+      await supabase.rpc(
+        'reset_mvp_votes',
+        params: {
+          'match_id_param': matchId
+        }
+      );
+
+      // Notificar a los participantes
+      final matchName = matchData['nombre'] ?? 'Partido';
+      await _notificationService.notifyMatchParticipants(
+        matchId: matchId,
+        title: 'Votación de MVP reiniciada',
+        message: 'La votación para MVP del partido $matchName ha sido reiniciada por el organizador.',
+        actionType: 'mvp_voting_reset',
+      );
+      
+      Fluttertoast.showToast(
+        msg: "Votación reiniciada correctamente",
+        backgroundColor: Colors.green,
+      );
+      
+      return true;
+    } catch (e) {
+      print('Error al rehacer votación de MVP: $e');
+      Fluttertoast.showToast(
+        msg: "Error al rehacer la votación: $e",
+        backgroundColor: Colors.red,
+      );
+      return false;
+    }
+  }
 }

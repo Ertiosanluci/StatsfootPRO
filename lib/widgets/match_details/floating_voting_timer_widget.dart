@@ -2,16 +2,17 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 /// Widget flotante para mostrar el contador de votación de MVP
-class FloatingVotingTimerWidget extends StatefulWidget {
-  final Map<String, dynamic> votingData;
+class FloatingVotingTimerWidget extends StatefulWidget {  final Map<String, dynamic> votingData;
   final VoidCallback onVoteButtonPressed;
   final VoidCallback? onFinishVotingPressed; // Callback para finalizar votación
+  final VoidCallback? onResetVotingPressed; // Callback para rehacer votación
   
   const FloatingVotingTimerWidget({
     Key? key,
     required this.votingData,
     required this.onVoteButtonPressed,
     this.onFinishVotingPressed,
+    this.onResetVotingPressed,
   }) : super(key: key);
   
   @override
@@ -195,8 +196,7 @@ class _FloatingVotingTimerWidgetState extends State<FloatingVotingTimerWidget> {
                         style: TextStyle(fontSize: 10),
                       ),
                     ),
-                  ),
-                  if (widget.onFinishVotingPressed != null) ...[
+                  ),                  if (widget.onFinishVotingPressed != null) ...[
                     const SizedBox(width: 4),
                     // Botón para finalizar votación (solo disponible para creadores)
                     SizedBox(
@@ -215,6 +215,30 @@ class _FloatingVotingTimerWidgetState extends State<FloatingVotingTimerWidget> {
                         ),
                         child: const Text(
                           "Finalizar",
+                          style: TextStyle(fontSize: 9),
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (widget.onResetVotingPressed != null) ...[
+                    const SizedBox(width: 4),
+                    // Botón para rehacer votación (solo disponible para creadores)
+                    SizedBox(
+                      height: 28,
+                      width: 48,
+                      child: ElevatedButton(
+                        onPressed: _timeRemaining.inSeconds > 0 ? widget.onResetVotingPressed : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        child: const Text(
+                          "Rehacer",
                           style: TextStyle(fontSize: 9),
                         ),
                       ),

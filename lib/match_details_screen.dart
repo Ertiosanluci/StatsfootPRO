@@ -787,6 +787,99 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
       );
     }
   }
+  // Método para rehacer la votación de MVP
+  // Esto permitirá al creador del partido borrar todos los votos y resultados actuales
+  // y comenzar una nueva votación desde cero
+  Future<void> _rehacerMVPVotacion() async {
+    try {
+      // Mostrar un diálogo de confirmación
+      final bool shouldReset = await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Rehacer votación de MVP'),
+          content: Text(
+            '¿Estás seguro de que deseas rehacer la votación de MVP?\n\n'
+            'Esto eliminará todos los votos actuales y permitirá iniciar una nueva votación. '
+            'Esta acción no se puede deshacer.',
+          ),
+          actions: [
+            TextButton(
+              child: Text('Cancelar'),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+            ElevatedButton(
+              child: Text('Rehacer votación'),
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange.shade700,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ) ?? false;
+      
+      if (!shouldReset) return;
+      
+      // Mostrar indicador de carga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: CircularProgressIndicator(
+            color: Colors.amber,
+          ),
+        ),
+      );
+      
+      int matchIdInt = _matchData['id'] as int;
+      
+      // Resetear la votación
+      final success = await _mvpVotingService.resetMVPVoting(matchIdInt);
+      
+      // Cerrar el indicador de carga
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      
+      if (success) {        // Actualizar UI
+        await _fetchMatchDetails();
+        
+        // Mostrar mensaje de éxito
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Votación de MVP reiniciada correctamente. Ya puedes iniciar una nueva votación.',
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'INICIAR AHORA',
+              textColor: Colors.amber,
+              onPressed: _showStartVotingDialog,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error al rehacer votación de MVP: $e');
+      
+      // Cerrar el indicador de carga si está abierto
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      
+      // Mostrar mensaje de error
+      Fluttertoast.showToast(
+        msg: "Error al rehacer la votación: $e",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+    }
+  }
 
   // Método para obtener los datos de los jugadores MVP
   Map<String, dynamic> _getMVPPlayerData(String? mvpId, List<Map<String, dynamic>> team) {
@@ -1019,6 +1112,17 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                 tooltip: 'Iniciar votación MVPs',
                 onPressed: _showStartVotingDialog,
               ),
+                // Botón para rehacer votación (solo para el creador y si el partido está finalizado)
+            if (isPartidoFinalizado && isCreator)
+              IconButton(
+                icon: Icon(
+                  Icons.replay_circle_filled,
+                  color: Colors.orange.shade600,
+                  size: 26,
+                ),
+                tooltip: 'Rehacer votación MVP',
+                onPressed: _rehacerMVPVotacion,
+              ),
               
             // Botón de test (solo visible en desarrollo y para el creador)
             if (isPartidoFinalizado && isCreator)
@@ -1125,13 +1229,13 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                   ),
                 ),              ),
             ],
-          ),
-                // Widget flotante de votación (solo si hay votación activa)
+          ),                // Widget flotante de votación (solo si hay votación activa)
               if (_activeVoting != null)
                 FloatingVotingTimerWidget(
                   votingData: _activeVoting!,
                   onVoteButtonPressed: _showMVPVotingDialog,
                   onFinishVotingPressed: isCreator ? _finishMVPVotingManually : null,
+                  onResetVotingPressed: isCreator ? _rehacerMVPVotacion : null,
                 ),
             ],
           ),
