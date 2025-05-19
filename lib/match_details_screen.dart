@@ -4,8 +4,6 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'dart:convert'; // Añadir para usar jsonDecode
 
 // Importar los widgets y servicios creados
-import 'widgets/match_details/football_field.dart';
-import 'widgets/match_details/player_avatar.dart';
 import 'widgets/match_details/scoreboard_widget.dart';
 import 'widgets/match_details/team_formation.dart';
 import 'widgets/match_details/match_finish_dialog.dart';
@@ -14,14 +12,13 @@ import 'widgets/match_details/match_services.dart';
 import 'widgets/match_details/position_utils.dart';
 import 'widgets/match_details/mvp_voting_dialog_widget.dart';
 import 'widgets/match_details/start_mvp_voting_dialog.dart';
-import 'widgets/match_details/voting_status_widget.dart';
 import 'widgets/match_details/floating_voting_timer_widget.dart';
-import 'widgets/match_details/mvp_results_widget.dart';
 import 'widgets/match_details/top_mvp_players_widget.dart';
 import 'services/mvp_voting_service.dart';
 import 'services/notification_service.dart';
 import 'screens/mvp_voting_history_screen.dart';
-import 'tests/mvp_voting_test.dart';
+import 'screens/mvp_results_reveal_screen.dart';
+import 'tests/mvp_voting_test.dart' as mvp_tester;
 
 class MatchDetailsScreen extends StatefulWidget {
   final dynamic matchId;
@@ -904,6 +901,46 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
         ),
       ),
     );
+  }
+  
+  // Método para navegar a la pantalla de revelación de resultados MVP
+  void _navigateToMVPResultsReveal() async {
+    final topPlayers = await _mvpVotingService.getTopVotedPlayers(_matchData['id'] as int);
+    
+    // Obtener los datos de los MVP para pasarlos a la pantalla de resultados
+    final mvpClaroData = _getMVPPlayerData(_mvpTeamClaro, _teamClaro);
+    final mvpOscuroData = _getMVPPlayerData(_mvpTeamOscuro, _teamOscuro);
+    
+    if (mounted) {
+      Navigator.of(context).push(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => MVPResultsRevealScreen(
+            matchId: _matchData['id'],
+            matchName: _matchData['nombre'] ?? 'Partido',
+            topPlayers: topPlayers,
+            mvpClaroData: mvpClaroData,
+            mvpOscuroData: mvpOscuroData,
+          ),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(0.0, 1.0);
+            const end = Offset.zero;
+            const curve = Curves.easeInOutCubic;
+            
+            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+            var offsetAnimation = animation.drive(tween);
+            
+            return SlideTransition(
+              position: offsetAnimation,
+              child: FadeTransition(
+                opacity: animation,
+                child: child,
+              ),
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 800),
+        ),
+      );
+    }
   }  // Método para actualizar los MVPs después de que se completa una votación
   Future<void> _refreshMVPsAfterVoting() async {
     try {
@@ -979,8 +1016,8 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
       ) ?? false;
       
       if (shouldRun) {
-        // Ejecutar el test
-        MVPVotingTester tester = MVPVotingTester();
+        // Ejecutar el tester usando el namespace importado
+        final tester = mvp_tester.MVPVotingTester();
         await tester.testVotingFlow(matchIdInt, context);
         
         // Refrescar la pantalla al finalizar el test
@@ -1124,19 +1161,24 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                 onPressed: _rehacerMVPVotacion,
               ),
               
-            // Botón de test (solo visible en desarrollo y para el creador)
-            if (isPartidoFinalizado && isCreator)
-              IconButton(
-                icon: Icon(
-                  Icons.bug_report,
-                  color: Colors.grey.withOpacity(0.7),
-                  size: 22,
-                ),
-                tooltip: 'Test de votación',
-                onPressed: _runVotingSystemTest,
-              ),
+            // Botón de test eliminado
           ],
         ],      ),
+      floatingActionButton: isPartidoFinalizado 
+        ? FloatingActionButton.extended(
+            onPressed: _navigateToMVPResultsReveal,
+            backgroundColor: Colors.amber.shade700,
+            icon: Icon(Icons.emoji_events, color: Colors.white),
+            label: Text(
+              'Ver Resultados de Votación',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            elevation: 4,
+          ) 
+        : null,
       body: _isLoading 
         ? Center(child: CircularProgressIndicator(color: Colors.blue))
         : Stack(
@@ -1151,34 +1193,9 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                     isPartidoFinalizado: isPartidoFinalizado,
                   ),
                   
-                  // Mostrar resultados de MVP si el partido está finalizado y hay MVPs
-                  if (isPartidoFinalizado && (_mvpTeamClaro != null || _mvpTeamOscuro != null))
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                      child: MVPResultsWidget(
-                        playerDataClaro: _getMVPPlayerData(_mvpTeamClaro, _teamClaro),                        playerDataOscuro: _getMVPPlayerData(_mvpTeamOscuro, _teamOscuro),
-                      ),
-                    ),
+                  // Ya no mostraremos resultados de MVP aquí, sino en la pantalla dedicada
                     
-                  // Mostrar el top 3 de jugadores más votados
-                  if (isPartidoFinalizado)
-                    FutureBuilder<List<Map<String, dynamic>>>(
-                      future: _mvpVotingService.getTopVotedPlayers(_matchData['id'] as int),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                            child: TopMVPPlayersWidget(topPlayers: [], isLoading: true),
-                          );
-                        }
-                        
-                        final topPlayers = snapshot.data ?? [];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                          child: TopMVPPlayersWidget(topPlayers: topPlayers),
-                        );
-                      },
-                    ),
+                  // Se ha eliminado el widget de visualización de Top 3 jugadores
               
               // Campo y jugadores
               Expanded(
