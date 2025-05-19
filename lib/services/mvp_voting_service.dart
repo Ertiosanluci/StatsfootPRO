@@ -344,8 +344,8 @@ class MVPVotingService {
         backgroundColor: Colors.red,
       );
       return false;
-    }
-  }
+    }  }
+  
   /// Resetea una votación de MVP y elimina todos los datos relacionados
   /// Este método borra todos los votos existentes, el estado de la votación y los resultados de MVP
   /// Solamente el creador del partido puede ejecutar esta acción
@@ -373,10 +373,30 @@ class MVPVotingService {
           msg: "Solo el creador del partido puede rehacer la votación",
           backgroundColor: Colors.red,
         );
-        return false;      }
-      
-      // Iniciar una transacción para asegurar que todas las operaciones se realizan o ninguna
-      // Utilizar la función de reseteo en SQL dentro de la transacción
+        return false;
+      }
+        // Primero eliminamos los votos actuales directamente
+      await supabase
+        .from('mvp_votes')
+        .delete()
+        .eq('match_id', matchId);
+          // Eliminamos cualquier registro de votación existente para este partido
+      // En lugar de intentar cambiar el estado, eliminamos el registro por completo
+      await supabase
+        .from('mvp_voting_status')
+        .delete()
+        .eq('match_id', matchId);
+        
+      // Eliminamos los MVPs del partido
+      await supabase
+        .from('matches')
+        .update({
+          'mvp_team_claro': null,
+          'mvp_team_oscuro': null
+        })
+        .eq('id', matchId);
+          // Finalmente ejecutamos la función RPC por compatibilidad 
+      // (en caso de que haya lógica adicional en el lado del servidor)
       await supabase.rpc(
         'reset_mvp_votes',
         params: {
