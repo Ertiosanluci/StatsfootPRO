@@ -18,6 +18,15 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
   List<Map<String, dynamic>> _myMatches = []; // Partidos organizados por el usuario
   List<Map<String, dynamic>> _friendsMatches = []; // Partidos de amigos (privados)
   List<Map<String, dynamic>> _publicMatches = []; // Partidos públicos
+  
+  // Listas filtradas por tiempo (próximos/pasados)
+  List<Map<String, dynamic>> _filteredMyMatches = [];
+  List<Map<String, dynamic>> _filteredFriendsMatches = [];
+  List<Map<String, dynamic>> _filteredPublicMatches = [];
+  
+  // Variable para el filtro de tiempo
+  String _timeFilter = 'Todos'; // 'Próximos', 'Pasados', 'Todos'
+  
   bool _isLoading = true;
   late TabController _tabController;
   String? _error;
@@ -33,6 +42,54 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+  
+  // Método para aplicar el filtro de tiempo a las listas de partidos
+  void _applyTimeFilter() {
+    final now = DateTime.now();
+    
+    setState(() {
+      if (_timeFilter == 'Próximos') {
+        // Filtrar solo partidos con fecha futura
+        _filteredMyMatches = _myMatches.where((match) {
+          final matchDate = DateTime.parse(match['fecha']);
+          return matchDate.isAfter(now);
+        }).toList();
+        
+        _filteredFriendsMatches = _friendsMatches.where((match) {
+          final matchDate = DateTime.parse(match['fecha']);
+          return matchDate.isAfter(now);
+        }).toList();
+        
+        _filteredPublicMatches = _publicMatches.where((match) {
+          final matchDate = DateTime.parse(match['fecha']);
+          return matchDate.isAfter(now);
+        }).toList();
+      } 
+      else if (_timeFilter == 'Pasados') {
+        // Filtrar solo partidos con fecha pasada
+        _filteredMyMatches = _myMatches.where((match) {
+          final matchDate = DateTime.parse(match['fecha']);
+          return matchDate.isBefore(now);
+        }).toList();
+        
+        _filteredFriendsMatches = _friendsMatches.where((match) {
+          final matchDate = DateTime.parse(match['fecha']);
+          return matchDate.isBefore(now);
+        }).toList();
+        
+        _filteredPublicMatches = _publicMatches.where((match) {
+          final matchDate = DateTime.parse(match['fecha']);
+          return matchDate.isBefore(now);
+        }).toList();
+      } 
+      else {
+        // Mostrar todos los partidos
+        _filteredMyMatches = List.from(_myMatches);
+        _filteredFriendsMatches = List.from(_friendsMatches);
+        _filteredPublicMatches = List.from(_publicMatches);
+      }
+    });
   }
 
   Future<void> _fetchMatches() async {
@@ -249,6 +306,9 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
           _publicMatches = publicMatchesList;
           _friendsMatches = friendsMatchesList;
           _isLoading = false;
+          
+          // Aplicar el filtro de tiempo actual
+          _applyTimeFilter();
         });
       } catch (e) {
         print('Error en consulta específica: $e');
@@ -403,12 +463,22 @@ Hora: $formattedTime
             ? Center(child: CircularProgressIndicator(color: Colors.white))
             : _error != null
                 ? _buildErrorMessage()
-                : TabBarView(
-                    controller: _tabController,
+                : Column(
                     children: [
-                      _buildMatchListView(_myMatches, isOrganizer: true, listType: "my"),
-                      _buildMatchListView(_friendsMatches, isOrganizer: false, listType: "friends"),
-                      _buildMatchListView(_publicMatches, isOrganizer: false, listType: "public"),
+                      // Filtro de tiempo (Próximos/Pasados/Todos)
+                      _buildTimeFilterRow(),
+                      
+                      // Lista de partidos
+                      Expanded(
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: [
+                            _buildMatchListView(_filteredMyMatches, isOrganizer: true, listType: "my"),
+                            _buildMatchListView(_filteredFriendsMatches, isOrganizer: false, listType: "friends"),
+                            _buildMatchListView(_filteredPublicMatches, isOrganizer: false, listType: "public"),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
       ),
@@ -422,6 +492,66 @@ Hora: $formattedTime
         },
         child: Icon(Icons.add, color: Colors.white),
         backgroundColor: Colors.orange.shade600,
+      ),
+    );
+  }
+
+  Widget _buildTimeFilterRow() {
+    return Container(
+      padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade900.withOpacity(0.5),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(16),
+          bottomRight: Radius.circular(16),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.filter_list, color: Colors.white),
+          SizedBox(width: 8),
+          Text(
+            'Mostrar:',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _timeFilter,
+                  isDense: true,
+                  dropdownColor: Colors.blue.shade800,
+                  icon: Icon(Icons.arrow_drop_down, color: Colors.white),
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                  onChanged: (String? newValue) {
+                    if (newValue != null) {
+                      setState(() {
+                        _timeFilter = newValue;
+                        _applyTimeFilter();
+                      });
+                    }
+                  },
+                  items: ['Todos', 'Próximos', 'Pasados']
+                      .map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

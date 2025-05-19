@@ -1,4 +1,4 @@
--- Función para contar los votos de MVPs y obtener los jugadores más votados (hasta 3)
+ -- Función para contar los votos de MVPs y obtener los jugadores más votados (hasta 3)
 CREATE OR REPLACE FUNCTION get_top_mvp_votes(match_id_param BIGINT, limit_param INT DEFAULT 3)
 RETURNS TABLE (
   voted_player_id TEXT,
