@@ -155,7 +155,6 @@ class MVPVotingService {
       return null;
     }
   }
-  
   /// Obtener los 3 mejores jugadores según los votos
   Future<List<Map<String, dynamic>>> getTopVotedPlayers(int matchId, {int limit = 3}) async {
     try {
@@ -167,7 +166,28 @@ class MVPVotingService {
         }
       );
       
-      return List<Map<String, dynamic>>.from(result);
+      if (result == null) {
+        return [];
+      }
+      
+      // Transformar el resultado para que coincida con el formato esperado
+      final List<Map<String, dynamic>> formattedResult = [];
+      for (var vote in result) {
+        formattedResult.add({
+          'voted_player_id': vote['voted_player_id'],
+          'vote_count': vote['vote_count'],
+          'team': vote['team'],
+          'nombre': vote['player_name'],
+          'foto_url': vote['foto_url'],
+        });
+      }
+      
+      print('Jugadores más votados encontrados: ${formattedResult.length}');
+      formattedResult.forEach((player) {
+        print('Jugador: ${player['nombre']}, Votos: ${player['vote_count']}, Equipo: ${player['team']}');
+      });
+      
+      return formattedResult;
     } catch (e) {
       print('Error al obtener los mejores jugadores: $e');
       return [];

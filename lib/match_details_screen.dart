@@ -907,6 +907,14 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
   void _navigateToMVPResultsReveal() async {
     final topPlayers = await _mvpVotingService.getTopVotedPlayers(_matchData['id'] as int);
     
+    // Log para verificar los datos recibidos
+    print('==== RESULTADOS MVP RECIBIDOS ====');
+    print('Total de jugadores recibidos: ${topPlayers.length}');
+    for (var i = 0; i < topPlayers.length; i++) {
+      print('Jugador ${i+1}: ${topPlayers[i]['nombre']} - Votos: ${topPlayers[i]['votes']}');
+    }
+    print('================================');
+    
     // Obtener los datos de los MVP para pasarlos a la pantalla de resultados
     final mvpClaroData = _getMVPPlayerData(_mvpTeamClaro, _teamClaro);
     final mvpOscuroData = _getMVPPlayerData(_mvpTeamOscuro, _teamOscuro);

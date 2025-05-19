@@ -32,6 +32,16 @@ class _MVPResultsRevealScreenState extends State<MVPResultsRevealScreen> with Ti
   void initState() {
     super.initState();
     
+    // Log para verificar que se recibieron los datos correctamente
+    print('==== MVP RESULTS SCREEN DATA ====');
+    print('Top Players recibidos: ${widget.topPlayers.length}');
+    for (var i = 0; i < widget.topPlayers.length; i++) {
+      print('Top Player ${i+1}: ${widget.topPlayers[i]['nombre']}');
+    }
+    print('MVP Claro: ${widget.mvpClaroData['nombre'] ?? "No disponible"}');
+    print('MVP Oscuro: ${widget.mvpOscuroData['nombre'] ?? "No disponible"}');
+    print('================================');
+    
     // Animation controller for the initial reveal animation
     _revealController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -51,10 +61,14 @@ class _MVPResultsRevealScreenState extends State<MVPResultsRevealScreen> with Ti
   }
 
   void _onRevealButtonPressed() {
-    setState(() {
-      _isRevealed = true;
+    // Añadir animación de pulsación al botón
+    Future.delayed(const Duration(milliseconds: 150), () {
+      setState(() {
+        _isRevealed = true;
+      });
+      // Reproducir la animación con efecto de rebote
+      _revealController.forward();
     });
-    _revealController.forward();
   }
 
   void _onPlayerCardTap(int index) {
@@ -70,10 +84,14 @@ class _MVPResultsRevealScreenState extends State<MVPResultsRevealScreen> with Ti
     return Scaffold(
       backgroundColor: Colors.blue.shade900,
       appBar: AppBar(
-        title: Text('Resultados MVP: ${widget.matchName}'),
+        title: Text(
+          widget.matchName,
+          style: const TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.blue.shade800,
         elevation: 0,
         centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white), // Flecha de atrás en blanco
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -111,45 +129,86 @@ class _MVPResultsRevealScreenState extends State<MVPResultsRevealScreen> with Ti
               ),
             ],
           ),
-          child: Icon(
+          child: const Icon(
             Icons.emoji_events,
             color: Colors.amber,
             size: 70,
           ),
         ),
         const SizedBox(height: 40),
-        // Circular button
-        GestureDetector(
-          onTap: _onRevealButtonPressed,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 180,
-            height: 180,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [Colors.amber.shade600, Colors.orange.shade700],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+        // Circular button with press animation
+        TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: 1.0, end: 1.05),
+          duration: const Duration(milliseconds: 1000),
+          builder: (context, value, child) {
+            return Transform.scale(
+              scale: 1.0 + (value - 1.0) * 0.05 * math.sin(value * 3 * math.pi),
+              child: child,
+            );
+          },
+          child: GestureDetector(
+            onTap: _onRevealButtonPressed,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [Colors.amber.shade600, Colors.orange.shade700],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.amber.withOpacity(0.4),
+                    blurRadius: 12,
+                    spreadRadius: 2,
+                  ),
+                ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.amber.withOpacity(0.4),
-                  blurRadius: 12,
-                  spreadRadius: 2,
+              child: const Center(
+                child: Text(
+                  'Revelar\nResultados',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        // Instrucción sutil al usuario
+        const SizedBox(height: 20),
+        Text(
+          'Pulsa para descubrir los MVPs',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 14,
+          ),
+        ),
+        // Añadir indicador de número de jugadores
+        const SizedBox(height: 30),
+        Card(
+          color: Colors.blue.shade800.withOpacity(0.7),
+          elevation: 4,
+          margin: const EdgeInsets.symmetric(horizontal: 30),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.people, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Jugadores destacados: ${widget.topPlayers.length}',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
                 ),
               ],
-            ),
-            child: Center(
-              child: Text(
-                'Revelar\nResultados',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
             ),
           ),
         ),
@@ -224,11 +283,15 @@ class _MVPResultsRevealScreenState extends State<MVPResultsRevealScreen> with Ti
   Widget _buildPlayerCard(int index) {
     final Map<String, dynamic> playerData = index < widget.topPlayers.length
         ? widget.topPlayers[index]
-        : {"nombre": "Sin datos", "foto_url": null, "votes": 0};
+        : {
+            "nombre": "Sin datos",
+            "foto_url": null,
+            "vote_count": 0
+          };
     
     final String playerName = playerData["nombre"] ?? "Sin nombre";
     final String? photoUrl = playerData["foto_url"];
-    final int votes = playerData["votes"] ?? 0;
+    final int votes = playerData["vote_count"]?.toInt() ?? 0;
     final String position = index == 0 ? "1er" : index == 1 ? "2do" : "3er";
 
     return GestureDetector(
