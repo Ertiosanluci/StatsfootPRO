@@ -1373,21 +1373,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
               ),
               
             // Botón de test eliminado
-          ],        ],      ),      floatingActionButton: isPartidoFinalizado
-        ? FloatingActionButton.extended(
-            onPressed: _navigateToMVPResultsReveal,
-            backgroundColor: Colors.amber.shade700,
-            icon: Icon(Icons.emoji_events, color: Colors.white),
-            label: Text(
-              'Ver Resultados de Votación',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            elevation: 4,
-          ) 
-        : null,
+          ],        ],      ),
       body: _isLoading 
         ? Center(child: CircularProgressIndicator(color: Colors.blue))
         : Stack(
@@ -1399,7 +1385,10 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                   ScoreboardWidget(
                     golesEquipoClaro: golesEquipoClaro,
                     golesEquipoOscuro: golesEquipoOscuro,
-                    isPartidoFinalizado: isPartidoFinalizado,                  ),
+                    isPartidoFinalizado: isPartidoFinalizado,
+                    onViewResultsTap: isPartidoFinalizado ? _navigateToMVPResultsReveal : null,
+                    hasCompletedVoting: isPartidoFinalizado && _activeVoting == null && (_mvpTeamClaro != null || _mvpTeamOscuro != null),
+                  ),
               
               // Campo y jugadores
               Expanded(

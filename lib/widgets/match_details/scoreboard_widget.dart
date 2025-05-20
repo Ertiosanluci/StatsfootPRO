@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'scrolling_text_widget.dart';
 
 /// Widget que muestra el marcador de un partido con la puntuación de ambos equipos
 /// y el estado del partido (finalizado o en curso)
@@ -8,6 +9,8 @@ class ScoreboardWidget extends StatelessWidget {
   final bool isPartidoFinalizado;
   final String equipoClaroNombre;
   final String equipoOscuroNombre;
+  final VoidCallback? onViewResultsTap;
+  final bool hasCompletedVoting;  // Indica si hay una votación completada
   
   const ScoreboardWidget({
     Key? key,
@@ -16,6 +19,8 @@ class ScoreboardWidget extends StatelessWidget {
     required this.isPartidoFinalizado,
     this.equipoClaroNombre = 'EQUIPO CLARO',
     this.equipoOscuroNombre = 'EQUIPO OSCURO',
+    this.onViewResultsTap,
+    this.hasCompletedVoting = false,  // Por defecto, asumimos que no hay votación completada
   }) : super(key: key);
   
   @override
@@ -67,11 +72,11 @@ class ScoreboardWidget extends StatelessWidget {
                         fontSize: 24,
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
                       child: Text(
                         '-',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 24,
@@ -109,8 +114,8 @@ class ScoreboardWidget extends StatelessWidget {
             ],
           ),
           
-          // Indicador de estado del partido
-          if (isPartidoFinalizado)
+          // Indicador de estado del partido y texto deslizante
+          if (isPartidoFinalizado) ...[
             Container(
               margin: const EdgeInsets.only(top: 4),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
@@ -127,6 +132,25 @@ class ScoreboardWidget extends StatelessWidget {
                 ),
               ),
             ),
+            if (hasCompletedVoting && onViewResultsTap != null) 
+              GestureDetector(
+                onTap: onViewResultsTap,
+                child: Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(top: 2),
+                  child: ScrollingTextWidget(
+                    text: '🏆 VER RESULTADOS DE VOTACIÓN 🏆',
+                    duration: const Duration(seconds: 8),
+                    textStyle: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                    onTap: onViewResultsTap,
+                  ),
+                ),
+              ),
+          ],
         ],
       ),
     );
