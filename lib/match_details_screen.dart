@@ -1399,75 +1399,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                   ScoreboardWidget(
                     golesEquipoClaro: golesEquipoClaro,
                     golesEquipoOscuro: golesEquipoOscuro,
-                    isPartidoFinalizado: isPartidoFinalizado,
-                  ),
-                    // Mostrar resultados de MVP si el partido está finalizado y hay una votación completada
-                  if (isPartidoFinalizado && (_mvpTeamClaro != null || _mvpTeamOscuro != null)) ...[  
-                    // Título que solo muestra el nombre del partido
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      child: Row(
-                        children: [
-                          Icon(Icons.emoji_events, color: Colors.amber, size: 18),
-                          SizedBox(width: 8),
-                          Text(
-                            _matchData['nombre'] ?? 'Partido',
-                            style: TextStyle(
-                              color: Colors.black87,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    FutureBuilder<List<Map<String, dynamic>>>(                      future: _mvpVotingService.getTopVotedPlayers(_matchData['id'] as int),
-                      builder: (context, snapshot) {
-                        print('FutureBuilder estado: ${snapshot.connectionState}');
-                        
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          print('TopMVPPlayersWidget: Cargando datos...');
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: TopMVPPlayersWidget(
-                              topPlayers: [],
-                              isLoading: true,
-                            ),
-                          );
-                        }
-                        
-                        if (snapshot.hasError) {
-                          print('Error al cargar top players: ${snapshot.error}');
-                          return SizedBox();
-                        }
-                        
-                        print('TopMVPPlayersWidget: Datos recibidos: ${snapshot.data?.length ?? 0} jugadores');
-                        if (snapshot.data != null) {
-                          for (var player in snapshot.data!) {
-                            print('Player en match_details: ${player['player_name']}, Votos: ${player['vote_count']}, Equipo: ${player['team']}');
-                          }
-                        }
-                        
-                        if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                          // Aseguramos que la lista de jugadores sea visible y clara
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.amber.withOpacity(0.5), width: 1),
-                              ),
-                              child: TopMVPPlayersWidget(
-                                topPlayers: snapshot.data!,
-                              ),
-                            ),
-                          );
-                        }
-                        
-                        return SizedBox(); // Si no hay datos, no mostramos nada
-                      },
-                    ),
-                  ],
+                    isPartidoFinalizado: isPartidoFinalizado,                  ),
               
               // Campo y jugadores
               Expanded(
