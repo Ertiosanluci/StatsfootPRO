@@ -32,6 +32,13 @@ class _MVPResultsRevealScreenState extends State<MVPResultsRevealScreen> with Ti
   void initState() {
     super.initState();
     
+    // Add debug logging for the data received
+    print('MVPResultsReveal - Received topPlayers: ${widget.topPlayers}');
+    for (int i = 0; i < widget.topPlayers.length; i++) {
+      final player = widget.topPlayers[i];
+      print('Player $i: player_name=${player["player_name"]}, vote_count=${player["vote_count"]}, foto_url=${player["foto_url"]}');
+    }
+    
     // Animation controller for the initial reveal animation
     _revealController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -221,14 +228,14 @@ class _MVPResultsRevealScreenState extends State<MVPResultsRevealScreen> with Ti
     );
   }
 
-  Widget _buildPlayerCard(int index) {
-    final Map<String, dynamic> playerData = index < widget.topPlayers.length
+  Widget _buildPlayerCard(int index) {    final Map<String, dynamic> playerData = index < widget.topPlayers.length
         ? widget.topPlayers[index]
-        : {"nombre": "Sin datos", "foto_url": null, "votes": 0};
+        : {"player_name": "Sin datos", "foto_url": null, "vote_count": 0};
     
-    final String playerName = playerData["nombre"] ?? "Sin nombre";
+    // Using player_name and vote_count instead of nombre and votes
+    final String playerName = playerData["player_name"] ?? "Sin nombre";
     final String? photoUrl = playerData["foto_url"];
-    final int votes = playerData["votes"] ?? 0;
+    final int votes = playerData["vote_count"] ?? 0;
     final String position = index == 0 ? "1er" : index == 1 ? "2do" : "3er";
 
     return GestureDetector(
@@ -297,9 +304,11 @@ class _MVPResultsRevealScreenState extends State<MVPResultsRevealScreen> with Ti
       ],
     );
   }
-
   Widget _buildRevealedPlayerContent(
       String playerName, String? photoUrl, int votes, String position) {
+    // Debug log to verify data being passed to this method
+    print('Rendering player card: name=$playerName, votes=$votes, position=$position, photoUrl=$photoUrl');
+        
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Row(
@@ -312,7 +321,7 @@ class _MVPResultsRevealScreenState extends State<MVPResultsRevealScreen> with Ti
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  playerName,
+                  playerName.isNotEmpty ? playerName : "Jugador Sin Nombre",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -331,7 +340,7 @@ class _MVPResultsRevealScreenState extends State<MVPResultsRevealScreen> with Ti
                     ),
                     SizedBox(width: 4),
                     Text(
-                      '$votes votos',
+                      votes.toString() + ' votos',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.9),
                         fontSize: 14,

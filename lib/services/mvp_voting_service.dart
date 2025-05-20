@@ -155,10 +155,11 @@ class MVPVotingService {
       return null;
     }
   }
-  
-  /// Obtener los 3 mejores jugadores según los votos
+    /// Obtener los 3 mejores jugadores según los votos
   Future<List<Map<String, dynamic>>> getTopVotedPlayers(int matchId, {int limit = 3}) async {
     try {
+      print('Obteniendo top $limit jugadores para el partido $matchId');
+      
       final result = await supabase.rpc(
         'get_top_mvp_votes',
         params: {
@@ -167,16 +168,66 @@ class MVPVotingService {
         }
       );
       
-      return List<Map<String, dynamic>>.from(result);
+      print('Resultado bruto de la función SQL: $result');
+        
+      if (result == null) {
+        print('No se encontraron resultados (null)');
+        return [];
+      }
+        // Transformar el resultado para que coincida con el formato esperado
+      final List<Map<String, dynamic>> formattedResult = [];
+      for (var vote in result) {
+        print('Datos crudos del jugador: $vote'); // Debug
+        
+        // Imprimir cada campo individualmente para diagnosticar
+        print(' - voted_player_id: ${vote['voted_player_id']}');
+        print(' - vote_count: ${vote['vote_count']}');
+        print(' - team: ${vote['team']}');
+        print(' - player_name: ${vote['player_name']}');
+        print(' - foto_url: ${vote['foto_url']}');
+          // Asegurarnos de que todos los campos necesarios estén presentes
+        Map<String, dynamic> playerData = {
+          'voted_player_id': vote['voted_player_id'],
+          'vote_count': vote['vote_count'],
+          'team': vote['team'],
+          'player_name': vote['player_name'] ?? 'Jugador Sin Nombre', // Nombre por defecto si es nulo
+          'foto_url': vote['foto_url'],
+          // Add aliases for backward compatibility, but our primary fix is to use the correct field names
+          'nombre': vote['player_name'] ?? 'Jugador Sin Nombre',
+          'votes': vote['vote_count']
+        };
+        
+        // Imprimir el objeto formateado para diagnosticar
+        print('Objeto formateado para la UI: $playerData');
+        
+        formattedResult.add(playerData);
+      }
+      
+      print('Jugadores más votados encontrados: ${formattedResult.length}');
+      for (var player in formattedResult) {
+        print('Jugador: ${player['player_name']}, Votos: ${player['vote_count']}, Equipo: ${player['team']}');
+      }      
+      return formattedResult;
     } catch (e) {
       print('Error al obtener los mejores jugadores: $e');
       return [];
     }
   }
-  
-  /// Finaliza la votación y establece los MVPs basados en los votos
+    /// Finaliza la votación y establece los MVPs basados en los votos
   Future<Map<String, String?>> finishVotingAndSetMVPs(int matchId) async {
-    try {
+    try {      // Verificar que existe una votación activa
+      final activeVoting = await supabase
+          .from('mvp_voting_status')
+          .select()
+          .eq('match_id', matchId)
+          .eq('status', 'active')
+          .maybeSingle();
+          
+      if (activeVoting == null) {
+        print('No hay votación activa para finalizar');
+        return {'mvp_team_claro': null, 'mvp_team_oscuro': null};
+      }
+
       // Obtener los 3 mejores jugadores votados
       final topPlayers = await getTopVotedPlayers(matchId, limit: 3);
       
@@ -205,13 +256,11 @@ class MVPVotingService {
         }
         
         top3Players = topPlayers;
-      }
-      
-      // Actualizar el estado de la votación a completado
+      }      // Actualizar el estado de la votación a completado
       await supabase
           .from('mvp_voting_status')
           .update({'status': 'completed'})
-          .eq('match_id', matchId);
+          .eq('id', activeVoting['id']);
       
       // Actualizar los MVPs en la tabla de partidos
       await supabase
@@ -266,7 +315,7 @@ class MVPVotingService {
       };
     }
   }
-    /// Verifica si una votación ha expirado y la finaliza si es necesario
+  /// Verifica si una votación ha expirado y la finaliza si es necesario
   Future<bool> checkAndFinishExpiredVoting(int matchId) async {
     try {
       final activeVoting = await getActiveVoting(matchId);
@@ -275,8 +324,12 @@ class MVPVotingService {
       final DateTime votingEndsAt = DateTime.parse(activeVoting['voting_ends_at']);
       final bool isExpired = DateTime.now().isAfter(votingEndsAt);
       
+      print('Verificando votación expirada: match_id=$matchId, expires=${activeVoting['voting_ends_at']}, isExpired=$isExpired');
+      
       if (isExpired) {
-        await finishVotingAndSetMVPs(matchId);
+        print('La votación para el partido $matchId ha expirado. Finalizando automáticamente...');
+        final results = await finishVotingAndSetMVPs(matchId);
+        print('Resultados de la votación finalizada: $results');
         return true;
       }
       

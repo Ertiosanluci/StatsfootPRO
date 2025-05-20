@@ -905,53 +905,104 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
   
   // Método para navegar a la pantalla de revelación de resultados MVP
   void _navigateToMVPResultsReveal() async {
-    final topPlayers = await _mvpVotingService.getTopVotedPlayers(_matchData['id'] as int);
-    
-    // Obtener los datos de los MVP para pasarlos a la pantalla de resultados
-    final mvpClaroData = _getMVPPlayerData(_mvpTeamClaro, _teamClaro);
-    final mvpOscuroData = _getMVPPlayerData(_mvpTeamOscuro, _teamOscuro);
-    
-    if (mounted) {
-      Navigator.of(context).push(
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => MVPResultsRevealScreen(
-            matchId: _matchData['id'],
-            matchName: _matchData['nombre'] ?? 'Partido',
-            topPlayers: topPlayers,
-            mvpClaroData: mvpClaroData,
-            mvpOscuroData: mvpOscuroData,
+    try {
+      // Mostrar indicador de carga mientras obtenemos los datos
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                SizedBox(width: 12),
+                Text('Cargando resultados...'),
+              ],
+            ),
+            duration: Duration(seconds: 1),
+            backgroundColor: Colors.blue.shade800,
           ),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            const begin = Offset(0.0, 1.0);
-            const end = Offset.zero;
-            const curve = Curves.easeInOutCubic;
-            
-            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-            var offsetAnimation = animation.drive(tween);
-            
-            return SlideTransition(
-              position: offsetAnimation,
-              child: FadeTransition(
-                opacity: animation,
-                child: child,
-              ),
-            );
-          },
-          transitionDuration: const Duration(milliseconds: 800),
-        ),
-      );
+        );      }
+      
+      final topPlayers = await _mvpVotingService.getTopVotedPlayers(_matchData['id'] as int);
+      print('Navegando a pantalla de resultados con ${topPlayers.length} jugadores');
+      
+      // More detailed logging to debug data format
+      for (int i = 0; i < topPlayers.length; i++) {
+        final player = topPlayers[i];
+        print('Jugador #$i details:');
+        print('  - player_name: ${player["player_name"]}');
+        print('  - vote_count: ${player["vote_count"]}');
+        print('  - team: ${player["team"]}');
+        print('  - foto_url: ${player["foto_url"]}');
+      }
+      
+      // Obtener los datos de los MVP para pasarlos a la pantalla de resultados
+      final mvpClaroData = _getMVPPlayerData(_mvpTeamClaro, _teamClaro);
+      final mvpOscuroData = _getMVPPlayerData(_mvpTeamOscuro, _teamOscuro);
+      
+      if (mounted) {
+        // Usamos Navigator.push directamente para asegurar la transición
+        await Navigator.of(context).push(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => MVPResultsRevealScreen(
+              matchId: _matchData['id'],
+              matchName: _matchData['nombre'] ?? 'Partido',
+              topPlayers: topPlayers,
+              mvpClaroData: mvpClaroData,
+              mvpOscuroData: mvpOscuroData,
+            ),            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              // Fix for red screen error - Ensuring opacity is clamped within valid range
+              final fadeAnimation = animation.drive(
+                Tween<double>(begin: 0.0, end: 1.0).chain(
+                  CurveTween(curve: Curves.easeIn)
+                )
+              );
+              
+              return FadeTransition(
+                opacity: fadeAnimation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.5),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutQuad,
+                  )),
+                  child: child,
+                ),
+              );
+            },
+            transitionDuration: const Duration(milliseconds: 500),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error al navegar a pantalla de resultados: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar los resultados'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
-  }  // Método para actualizar los MVPs después de que se completa una votación
+  }
+  // Método para actualizar los MVPs después de que se completa una votación
   Future<void> _refreshMVPsAfterVoting() async {
     try {
-      if (_activeVoting == null) return;
+      if (_activeVoting == null) {
+        print('No hay votación activa para refrescar MVPs');
+        return;
+      }
       
       int matchIdInt = _matchData['id'] as int;
+      print('Revisando si la votación del partido $matchIdInt ha finalizado...');
       
       // Verificar si la votación ha expirado
       final votingEnded = await _mvpVotingService.checkAndFinishExpiredVoting(matchIdInt);
       
       if (votingEnded) {
+        print('La votación del partido $matchIdInt ha finalizado. Actualizando datos...');
         // La votación ha terminado, obtener los detalles actualizados y los top jugadores
         final matchDetails = await _matchServices.getMatchDetails(widget.matchId);
         
@@ -961,6 +1012,8 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           _activeVoting = null; // La votación ya no está activa
           _matchData['mvp_team_claro'] = matchDetails['mvp_team_claro'];
           _matchData['mvp_team_oscuro'] = matchDetails['mvp_team_oscuro'];
+          
+          print('MVPs actualizados: Claro=${_mvpTeamClaro}, Oscuro=${_mvpTeamOscuro}');
         });
         
         // Actualizar la UI para mostrar el widget de top 3
@@ -979,7 +1032,10 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
             ),
           );
         }
-      }    } catch (e) {
+      } else {
+        print('La votación del partido $matchIdInt sigue activa.');
+      }
+    } catch (e) {
       print('Error al actualizar MVPs después de votación: $e');
     }
   }
@@ -1192,10 +1248,73 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                     golesEquipoOscuro: golesEquipoOscuro,
                     isPartidoFinalizado: isPartidoFinalizado,
                   ),
-                  
-                  // Ya no mostraremos resultados de MVP aquí, sino en la pantalla dedicada
-                    
-                  // Se ha eliminado el widget de visualización de Top 3 jugadores
+                    // Mostrar resultados de MVP si el partido está finalizado y hay una votación completada
+                  if (isPartidoFinalizado && (_mvpTeamClaro != null || _mvpTeamOscuro != null)) ...[  
+                    // Título que solo muestra el nombre del partido
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: Row(
+                        children: [
+                          Icon(Icons.emoji_events, color: Colors.amber, size: 18),
+                          SizedBox(width: 8),
+                          Text(
+                            _matchData['nombre'] ?? 'Partido',
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    FutureBuilder<List<Map<String, dynamic>>>(                      future: _mvpVotingService.getTopVotedPlayers(_matchData['id'] as int),
+                      builder: (context, snapshot) {
+                        print('FutureBuilder estado: ${snapshot.connectionState}');
+                        
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          print('TopMVPPlayersWidget: Cargando datos...');
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: TopMVPPlayersWidget(
+                              topPlayers: [],
+                              isLoading: true,
+                            ),
+                          );
+                        }
+                        
+                        if (snapshot.hasError) {
+                          print('Error al cargar top players: ${snapshot.error}');
+                          return SizedBox();
+                        }
+                        
+                        print('TopMVPPlayersWidget: Datos recibidos: ${snapshot.data?.length ?? 0} jugadores');
+                        if (snapshot.data != null) {
+                          for (var player in snapshot.data!) {
+                            print('Player en match_details: ${player['player_name']}, Votos: ${player['vote_count']}, Equipo: ${player['team']}');
+                          }
+                        }
+                        
+                        if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                          // Aseguramos que la lista de jugadores sea visible y clara
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.amber.withOpacity(0.5), width: 1),
+                              ),
+                              child: TopMVPPlayersWidget(
+                                topPlayers: snapshot.data!,
+                              ),
+                            ),
+                          );
+                        }
+                        
+                        return SizedBox(); // Si no hay datos, no mostramos nada
+                      },
+                    ),
+                  ],
               
               // Campo y jugadores
               Expanded(
