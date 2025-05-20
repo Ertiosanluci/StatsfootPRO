@@ -1,4 +1,4 @@
-#Tue May 20 12:02:29 CEST 2025
+#Tue May 20 19:42:56 CEST 2025
 base.0=C\:\\Users\\edusa\\Documents\\GitHub\\StatsfootPRO\\build\\app\\intermediates\\dex\\debug\\mergeExtDexDebug\\classes.dex
 base.1=C\:\\Users\\edusa\\Documents\\GitHub\\StatsfootPRO\\build\\app\\intermediates\\dex\\debug\\mergeLibDexDebug\\0\\classes.dex
 base.2=C\:\\Users\\edusa\\Documents\\GitHub\\StatsfootPRO\\build\\app\\intermediates\\dex\\debug\\mergeProjectDexDebug\\0\\classes.dex

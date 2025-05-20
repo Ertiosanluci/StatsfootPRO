@@ -213,9 +213,10 @@ class MVPVotingService {
       return [];
     }
   }
-    /// Finaliza la votación y establece los MVPs basados en los votos
+  /// Finaliza la votación y establece los MVPs basados en los votos
   Future<Map<String, String?>> finishVotingAndSetMVPs(int matchId) async {
-    try {      // Verificar que existe una votación activa
+    try {
+      // Verificar que existe una votación activa
       final activeVoting = await supabase
           .from('mvp_voting_status')
           .select()
@@ -224,12 +225,15 @@ class MVPVotingService {
           .maybeSingle();
           
       if (activeVoting == null) {
-        print('No hay votación activa para finalizar');
+        print('No hay votación activa para finalizar en partido $matchId');
         return {'mvp_team_claro': null, 'mvp_team_oscuro': null};
       }
 
+      print('Finalizando votación ID: ${activeVoting['id']} para partido $matchId');
+
       // Obtener los 3 mejores jugadores votados
       final topPlayers = await getTopVotedPlayers(matchId, limit: 3);
+      print('Top jugadores obtenidos: ${topPlayers.length}');
       
       String? mvpClaroId;
       String? mvpOscuroId;
@@ -238,39 +242,64 @@ class MVPVotingService {
       if (topPlayers.isNotEmpty) {
         // Guardar los 3 mejores jugadores en una tabla especial
         for (var player in topPlayers) {
-          await supabase.from('mvp_top_players').upsert({
-            'match_id': matchId,
-            'player_id': player['voted_player_id'],
-            'votes': player['vote_count'],
-            'rank': topPlayers.indexOf(player) + 1,
-            'team': player['team']
-          });
+          print('Guardando jugador top: ${player['player_name']}, ID: ${player['voted_player_id']}, Equipo: ${player['team']}');
+          
+          try {
+            await supabase.from('mvp_top_players').upsert({
+              'match_id': matchId,
+              'player_id': player['voted_player_id'],
+              'votes': player['vote_count'],
+              'rank': topPlayers.indexOf(player) + 1,
+              'team': player['team']
+            });
+          } catch (e) {
+            print('Error al guardar jugador top: $e');
+          }
           
           // Para mantener compatibilidad con el sistema actual
           // Establecemos los MVPs de cada equipo basados en los jugadores con más votos de cada equipo
           if (player['team'] == 'claro' && mvpClaroId == null) {
             mvpClaroId = player['voted_player_id'];
+            print('MVP equipo claro establecido: $mvpClaroId (${player['player_name']})');
           } else if (player['team'] == 'oscuro' && mvpOscuroId == null) {
             mvpOscuroId = player['voted_player_id'];
+            print('MVP equipo oscuro establecido: $mvpOscuroId (${player['player_name']})');
           }
         }
         
         top3Players = topPlayers;
-      }      // Actualizar el estado de la votación a completado
-      await supabase
+      }
+      
+      // Actualizar el estado de la votación a completado (usando match_id en lugar de id)
+      print('Actualizando estado de la votación a completado');
+      try {
+        await supabase
           .from('mvp_voting_status')
           .update({'status': 'completed'})
-          .eq('id', activeVoting['id']);
+          .eq('match_id', matchId);
+        
+        print('Estado de la votación actualizado correctamente');
+      } catch (e) {
+        print('Error al actualizar estado de la votación: $e');
+      }
       
       // Actualizar los MVPs en la tabla de partidos
-      await supabase
+      print('Actualizando MVPs en la tabla de partidos');
+      try {
+        await supabase
           .from('matches')
           .update({
             'mvp_team_claro': mvpClaroId,
             'mvp_team_oscuro': mvpOscuroId
           })
           .eq('id', matchId);
-        // Obtener información del partido para la notificación
+        
+        print('MVPs actualizados correctamente en el partido');
+      } catch (e) {
+        print('Error al actualizar MVPs en el partido: $e');
+      }
+      
+      // Obtener información del partido para la notificación
       final matchData = await supabase
           .from('matches')
           .select('nombre')
@@ -296,12 +325,18 @@ class MVPVotingService {
       }
       
       // Enviar notificaciones con los resultados
-      await _notificationService.notifyMatchParticipants(
-        matchId: matchId,
-        title: '¡Votación de MVP finalizada!',
-        message: 'Top 3 jugadores del partido $matchName: $topPlayersMessage',
-        actionType: 'mvp_results',
-      );
+      print('Enviando notificación de resultados');
+      try {
+        await _notificationService.notifyMatchParticipants(
+          matchId: matchId,
+          title: '¡Votación de MVP finalizada!',
+          message: 'Top 3 jugadores del partido $matchName: $topPlayersMessage',
+          actionType: 'mvp_results',
+        );
+        print('Notificación enviada correctamente');
+      } catch (e) {
+        print('Error al enviar notificación: $e');
+      }
       
       return {
         'mvp_team_claro': mvpClaroId,
@@ -339,8 +374,7 @@ class MVPVotingService {
       return false;
     }
   }
-  
-  /// Finaliza manualmente una votación de MVP antes de tiempo
+    /// Finaliza manualmente una votación de MVP antes de tiempo
   Future<bool> finishVotingManually(int matchId) async {
     try {
       // Verificar que el usuario esté autenticado
@@ -381,8 +415,21 @@ class MVPVotingService {
         }
       }
       
+      print('Finalizando votación manualmente para el partido $matchId');
+      
       // Finalizar la votación y asignar MVPs
-      await finishVotingAndSetMVPs(matchId);
+      final results = await finishVotingAndSetMVPs(matchId);
+      
+      print('Resultados de la votación finalizada manualmente: $results');
+      
+      // Verificar que la votación realmente se actualizó a "completed"
+      final votingStatus = await supabase
+          .from('mvp_voting_status')
+          .select('status')
+          .eq('match_id', matchId)
+          .maybeSingle();
+          
+      print('Estado de la votación después de finalizar: ${votingStatus ?? "No encontrado"}');
       
       Fluttertoast.showToast(
         msg: "Votación finalizada manualmente",
@@ -397,7 +444,8 @@ class MVPVotingService {
         backgroundColor: Colors.red,
       );
       return false;
-    }  }
+    }
+  }
   
   /// Resetea una votación de MVP y elimina todos los datos relacionados
   /// Este método borra todos los votos existentes, el estado de la votación y los resultados de MVP
