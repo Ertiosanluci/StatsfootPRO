@@ -1,45 +1,105 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:math' as math;
 
+/// Enum para las posiciones de los triángulos en la pantalla
+enum TrianglePosition {
+  top,
+  bottomLeft,
+  bottomRight,
+  revealButton, // Nueva posición para el botón de revelar
+}
+
+/// Clipper personalizado para recortar widgets en forma de triángulo
+class TriangleClipper extends CustomClipper<Path> {
+  final TrianglePosition position;
+  final double size;
+  
+  const TriangleClipper({
+    required this.position,
+    required this.size,
+  });
+  
+  @override
+  Path getClip(Size size) {
+    final Path path = Path();
+    
+    switch (position) {
+      case TrianglePosition.top:
+        // Triángulo superior (apunta hacia abajo) - según el tercer croquis
+        path.moveTo(size.width / 2, size.height);
+        path.lineTo(0, 0);
+        path.lineTo(size.width, 0);
+        path.close();
+        break;
+      case TrianglePosition.bottomLeft:
+        // Triángulo inferior izquierdo según el tercer croquis
+        // Forma rectangular con diagonal
+        path.moveTo(0, 0); // Esquina superior izquierda
+        path.lineTo(size.width, size.height); // Esquina inferior derecha
+        path.lineTo(0, size.height); // Esquina inferior izquierda
+        path.close();
+        break;
+      case TrianglePosition.bottomRight:
+        // Triángulo inferior derecho según el tercer croquis
+        // Forma rectangular con diagonal
+        path.moveTo(size.width, 0); // Esquina superior derecha
+        path.lineTo(size.width, size.height); // Esquina inferior derecha
+        path.lineTo(0, size.height); // Esquina inferior izquierda
+        path.close();
+        break;
+      case TrianglePosition.revealButton:
+        // Triángulo equilátero con base mirando hacia la derecha (invertido)
+        path.moveTo(size.width, size.height / 2); // Punto medio derecho (nueva base)
+        path.lineTo(0, 0); // Esquina superior izquierda
+        path.lineTo(0, size.height); // Esquina inferior izquierda
+        path.close();
+        break;
+    }
+    
+    return path;
+  }
+  
+  @override
+  bool shouldReclip(TriangleClipper oldClipper) {
+    return oldClipper.position != position || oldClipper.size != size;
+  }
+}
+
+/// Widget principal para la pantalla de revelación de resultados MVP
 class MVPResultsRevealScreen extends StatefulWidget {
-  final int matchId;
   final String matchName;
   final List<Map<String, dynamic>> topPlayers;
-  final Map<String, dynamic> mvpClaroData;
-  final Map<String, dynamic> mvpOscuroData;
-
+  
   const MVPResultsRevealScreen({
     Key? key,
-    required this.matchId,
     required this.matchName,
     required this.topPlayers,
-    required this.mvpClaroData,
-    required this.mvpOscuroData,
   }) : super(key: key);
-
+  
   @override
-  State<MVPResultsRevealScreen> createState() => _MVPResultsRevealScreenState();
+  _MVPResultsRevealScreenState createState() => _MVPResultsRevealScreenState();
 }
 
 class _MVPResultsRevealScreenState extends State<MVPResultsRevealScreen> with TickerProviderStateMixin {
-  late final AnimationController _revealController;
-  late final Animation<double> _revealAnimation;
+  bool _resultsRevealed = false;
+  bool _playerInfoVisible = false;
+  late AnimationController _revealController;
+  late Animation<double> _revealAnimation;
+  late List<AnimationController> _playerControllers;
+  final Duration _staggerDelay = const Duration(milliseconds: 300);
   
-  bool _isRevealed = false;
-  List<bool> _isPlayerRevealed = [false, false, false];
-
+  // Colores utilizados en la pantalla
+  final Color _primaryColor = const Color(0xFF1E2761);
+  final Color _secondaryColor = const Color(0xFF7A89C2);
+  final Color _accentColor = const Color(0xFFFF3A5E);
+  final Color _backgroundColor = const Color(0xFF408EC6);
+  
   @override
   void initState() {
     super.initState();
     
-    // Add debug logging for the data received
-    print('MVPResultsReveal - Received topPlayers: ${widget.topPlayers}');
-    for (int i = 0; i < widget.topPlayers.length; i++) {
-      final player = widget.topPlayers[i];
-      print('Player $i: player_name=${player["player_name"]}, vote_count=${player["vote_count"]}, foto_url=${player["foto_url"]}');
-    }
-    
-    // Animation controller for the initial reveal animation
+    // Inicializar controlador de animación principal
     _revealController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -47,380 +107,514 @@ class _MVPResultsRevealScreenState extends State<MVPResultsRevealScreen> with Ti
     
     _revealAnimation = CurvedAnimation(
       parent: _revealController,
-      curve: Curves.easeInOutBack,
+      curve: Curves.easeInOut,
+    );
+    
+    // Inicializar controladores para cada jugador (hasta 3)
+    _playerControllers = List.generate(
+      math.min(widget.topPlayers.length, 3), 
+      (index) => AnimationController(
+        duration: const Duration(milliseconds: 500),
+        vsync: this,
+      ),
     );
   }
-
+  
   @override
   void dispose() {
     _revealController.dispose();
+    for (var controller in _playerControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
-
-  void _onRevealButtonPressed() {
+  
+  /// Revela los resultados con animaciones escalonadas
+  void _revealResults() {
     setState(() {
-      _isRevealed = true;
+      _resultsRevealed = true;
     });
-    _revealController.forward();
-  }
-
-  void _onPlayerCardTap(int index) {
-    if (!_isPlayerRevealed[index]) {
+    
+    _revealController.forward().then((_) {
       setState(() {
-        _isPlayerRevealed[index] = true;
+        _playerInfoVisible = true;
       });
+      
+      // Animar cada triángulo de jugador con un retraso escalonado
+      for (var i = 0; i < _playerControllers.length; i++) {
+        Future.delayed(
+          _staggerDelay * i,
+          () => _playerControllers[i].forward(),
+        );
+      }
+    });
+  }
+  
+  /// Construye un triángulo para un jugador específico
+  Widget _buildPlayerTriangle(int index, TrianglePosition position) {
+    final Map<String, dynamic> playerData = widget.topPlayers[index];
+    final Color triangleColor = _getPlayerColor(index);
+    
+    // Ajustar dimensiones según la posición
+    double width, height;
+    
+    switch (position) {
+      case TrianglePosition.top:
+        // Triángulo del MVP - más grande
+        width = MediaQuery.of(context).size.width * 0.9;
+        height = MediaQuery.of(context).size.height * 0.4;
+        break;
+      case TrianglePosition.bottomLeft:
+      case TrianglePosition.bottomRight:
+        // Triángulos del 2° y 3° lugar - tamaño medio
+        width = MediaQuery.of(context).size.width * 0.5;
+        height = MediaQuery.of(context).size.height * 0.5;
+        break;
+      default:
+        width = 200;
+        height = 200;
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.blue.shade900,
-      appBar: AppBar(
-        title: Text('Resultados MVP: ${widget.matchName}'),
-        backgroundColor: Colors.blue.shade800,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blue.shade900, Colors.purple.shade900],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Center(
-          child: _isRevealed
-              ? _buildRevealedContent()
-              : _buildInitialContent(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInitialContent() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Trophy icon with glow effect
-        Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.amber.withOpacity(0.2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.amber.withOpacity(0.3),
-                blurRadius: 20,
-                spreadRadius: 5,
-              ),
-            ],
-          ),
-          child: Icon(
-            Icons.emoji_events,
-            color: Colors.amber,
-            size: 70,
-          ),
-        ),
-        const SizedBox(height: 40),
-        // Circular button
-        GestureDetector(
-          onTap: _onRevealButtonPressed,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 180,
-            height: 180,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [Colors.amber.shade600, Colors.orange.shade700],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.amber.withOpacity(0.4),
-                  blurRadius: 12,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                'Revelar\nResultados',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRevealedContent() {
+    
     return AnimatedBuilder(
-      animation: _revealAnimation,
+      animation: _playerControllers[index],
       builder: (context, child) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildHeader(),
-              SizedBox(height: 30),
-              ...List.generate(
-                math.min(widget.topPlayers.length, 3),
-                (index) => Padding(
-                  padding: EdgeInsets.only(bottom: 16),
-                  child: Transform.translate(
-                    offset: Offset(
-                      0, 
-                      50 * (1 - _revealAnimation.value) * (index + 1)
-                    ),
-                    child: Opacity(
-                      opacity: _revealAnimation.value,
-                      child: _buildPlayerCard(index),
-                    ),
-                  ),
+        // Usamos la animación para hacer una entrada escalonada
+        final double scale = 0.7 + (_playerControllers[index].value * 0.3);
+        final double opacity = _playerInfoVisible ? _playerControllers[index].value : 0.0;
+        
+        return Opacity(
+          opacity: opacity,
+          child: Transform.scale(
+            scale: scale,
+            child: SizedBox(
+              width: width,
+              height: height,
+              child: ClipPath(
+                clipper: TriangleClipper(
+                  position: position,
+                  size: width, // Usamos el ancho como referencia para el clipper
+                ),
+                child: Container(
+                  color: triangleColor,
+                  child: _buildPlayerContent(playerData, position),
                 ),
               ),
-            ],
+            ),
           ),
         );
       },
     );
   }
-
-  Widget _buildHeader() {
-    return Column(
-      children: [
-        Icon(
-          Icons.emoji_events,
-          color: Colors.amber,
-          size: 40,
-        ),
-        SizedBox(height: 8),
-        Text(
-          'TOP JUGADORES MVP',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
-          ),
-        ),
-        SizedBox(height: 8),
-        Text(
-          'Pulsa en cada tarjeta para revelar',
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.7),
-            fontSize: 14,
-          ),
-        ),
-      ],
-    );
+  
+  /// Devuelve el color correspondiente según la posición del jugador y el croquis
+  Color _getPlayerColor(int index) {
+    switch (index) {
+      case 0: return const Color(0xFF1E3171);  // Primer lugar (MVP) - Azul oscuro
+      case 1: return const Color(0xFF6C77C4);  // Segundo lugar - Azul claro/morado
+      case 2: return const Color(0xFFF05366);  // Tercer lugar - Rojo/rosa
+      default: return Colors.grey;  // Caso no esperado
+    }
   }
-
-  Widget _buildPlayerCard(int index) {    final Map<String, dynamic> playerData = index < widget.topPlayers.length
-        ? widget.topPlayers[index]
-        : {"player_name": "Sin datos", "foto_url": null, "vote_count": 0};
+  
+  /// Construye el contenido dentro de cada triángulo
+  Widget _buildPlayerContent(Map<String, dynamic> playerData, TrianglePosition position) {
+    final String playerName = playerData["player_name"] as String;
+    final int voteCount = playerData["vote_count"] as int;
+    final String? imageUrl = playerData["foto_url"] as String?;
     
-    // Using player_name and vote_count instead of nombre and votes
-    final String playerName = playerData["player_name"] ?? "Sin nombre";
-    final String? photoUrl = playerData["foto_url"];
-    final int votes = playerData["vote_count"] ?? 0;
-    final String position = index == 0 ? "1er" : index == 1 ? "2do" : "3er";
-
-    return GestureDetector(
-      onTap: () => _onPlayerCardTap(index),
-      child: Container(
-        height: 100,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
-          gradient: LinearGradient(
-            colors: index == 0
-                ? [Colors.amber.shade600, Colors.amber.shade800]
-                : index == 1
-                    ? [Colors.grey.shade300, Colors.grey.shade500]
-                    : [Colors.brown.shade400, Colors.brown.shade600],
+    // Diferentes layouts según la posición del triángulo
+    switch (position) {
+      case TrianglePosition.top:
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              const SizedBox(height: 10),
+              _buildAvatar(imageUrl, 60),
+              const SizedBox(height: 8),
+              Text(
+                playerName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              Text(
+                "$voteCount votos",
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 5),
+              const Icon(
+                Icons.emoji_events,
+                color: Colors.amber,
+                size: 30,
+              ),
+              const Text(
+                "MVP",
+                style: TextStyle(
+                  color: Colors.amber,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+            ],
           ),
-          boxShadow: [
-            BoxShadow(
-              color: (index == 0
-                  ? Colors.amber
-                  : index == 1
-                      ? Colors.grey
-                      : Colors.brown)
-                  .withOpacity(0.5),
-              blurRadius: 10,
-              spreadRadius: 1,
+        );
+      
+      case TrianglePosition.bottomLeft:
+        // Segundo lugar - rediseñado según el tercer croquis (rectángulo con diagonal)
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Align(
+            alignment: Alignment.bottomLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 20.0, bottom: 30.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildAvatar(imageUrl, 45),
+                  const SizedBox(height: 8),
+                  Text(
+                    playerName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(
+                    "$voteCount votos",
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.emoji_events, color: Colors.grey, size: 20),
+                      SizedBox(width: 4),
+                      Text(
+                        "2° Lugar",
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 500),
-          switchInCurve: Curves.easeInOutBack,
-          child: _isPlayerRevealed[index]
-              ? _buildRevealedPlayerContent(playerName, photoUrl, votes, position)
-              : _buildHiddenPlayerContent(position),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHiddenPlayerContent(String position) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.lock,
-          color: Colors.white,
-          size: 28,
-        ),
-        SizedBox(width: 8),
-        Text(
-          '$position Lugar',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
           ),
-        ),
-        SizedBox(width: 8),
-        Text(
-          'Pulsa para revelar',
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
-            fontSize: 14,
+        );
+      
+      case TrianglePosition.bottomRight:
+        // Tercer lugar - rediseñado según el tercer croquis (rectángulo con diagonal)
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Align(
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 20.0, bottom: 30.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _buildAvatar(imageUrl, 45),
+                  const SizedBox(height: 8),
+                  Text(
+                    playerName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                  Text(
+                    "$voteCount votos",
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Text(
+                        "3° Lugar",
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(Icons.emoji_events, color: Colors.grey, size: 20),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-      ],
-    );
-  }
-  Widget _buildRevealedPlayerContent(
-      String playerName, String? photoUrl, int votes, String position) {
-    // Debug log to verify data being passed to this method
-    print('Rendering player card: name=$playerName, votes=$votes, position=$position, photoUrl=$photoUrl');
-        
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        children: [
-          _buildPlayerAvatar(photoUrl),
-          SizedBox(width: 12),
-          Expanded(
+        );
+      case TrianglePosition.revealButton:
+        return const Center(
+          child: Padding(
+            padding: EdgeInsets.only(right: 16.0), // Ajustado el padding hacia la derecha debido a la nueva orientación
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
+                Icon(
+                  Icons.emoji_events,
+                  color: Colors.white,
+                  size: 40,
+                ),
+                SizedBox(height: 8),
                 Text(
-                  playerName.isNotEmpty ? playerName : "Jugador Sin Nombre",
+                  "REVELAR\nRESULTADOS",
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    fontSize: 14,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.star,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    SizedBox(width: 4),
-                    Text(
-                      votes.toString() + ' votos',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              position,
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+        );
+    }
+  }
+  
+  /// Construye un avatar de jugador circular
+  Widget _buildAvatar(String? imageUrl, double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 5,
+            spreadRadius: 1,
+          ),
+        ],
+        image: imageUrl != null ? DecorationImage(
+          fit: BoxFit.cover,
+          image: NetworkImage(imageUrl),
+        ) : null,
+      ),
+      child: imageUrl == null ? const Icon(Icons.person, size: 30, color: Colors.grey) : null,
+    );
+  }
+  
+  /// Construye el botón triangular para revelar los resultados
+  Widget _buildRevealButton() {
+    // Dimensiones para un triángulo equilátero más grande
+    final double triangleHeight = 180.0;
+    final double triangleWidth = 160.0;
+    
+    return AnimatedBuilder(
+      animation: _revealAnimation,
+      builder: (context, child) {
+        final double scale = 1.0 - (_revealAnimation.value * 0.3);
+        final double opacity = 1.0 - _revealAnimation.value;
+        
+        return Opacity(
+          opacity: opacity,
+          child: Transform.scale(
+            scale: scale,
+            child: GestureDetector(
+              onTap: _resultsRevealed ? null : _revealResults,
+              child: Container(
+                width: triangleWidth,
+                height: triangleHeight,
+                child: Stack(
+                  children: [
+                    // Sombra para dar profundidad
+                    Positioned(
+                      left: 3,
+                      top: 3,
+                      child: ClipPath(
+                        clipper: TriangleClipper(
+                          position: TrianglePosition.revealButton,
+                          size: triangleWidth,
+                        ),
+                        child: Container(
+                          width: triangleWidth,
+                          height: triangleHeight,
+                          color: Colors.black.withOpacity(0.3),
+                        ),
+                      ),
+                    ),
+                    // Triángulo principal
+                    ClipPath(
+                      clipper: TriangleClipper(
+                        position: TrianglePosition.revealButton,
+                        size: triangleWidth,
+                      ),
+                      child: Container(
+                        color: const Color(0xFFF05366), // Color rojo/rosa como en la imagen
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 10.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(
+                                  Icons.emoji_events,
+                                  color: Colors.white,
+                                  size: 45,
+                                ),
+                                SizedBox(height: 10),
+                                Text(
+                                  "REVELAR\nRESULTADOS",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ],
+        );
+      },
+    );
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    // Obtener el tamaño de la pantalla
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double screenHeight = MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top - kToolbarHeight;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          widget.matchName,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: _primaryColor,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white), // Iconos de la appbar en blanco
+      ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        color: _backgroundColor,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Fondo y elementos decorativos
+            ..._buildBackgroundElements(),
+            
+            // Contenido principal: triángulos o botón revelar
+            if (_resultsRevealed) ...[  // Si ya se revelaron los resultados
+              // Triángulo superior (MVP - 1er lugar) - Ajustado según el tercer croquis
+              if (widget.topPlayers.isNotEmpty)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: screenHeight * 0.45, // Ligeramente más grande
+                  child: _buildPlayerTriangle(0, TrianglePosition.top),
+                ),
+              
+              // Rectángulo inferior con diagonal - según el tercer croquis
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: screenHeight * 0.45, // Mitad inferior de la pantalla
+                child: Container(
+                  child: Stack(
+                    children: [
+                      // Triángulo inferior izquierdo (2do lugar)
+                      if (widget.topPlayers.length > 1)
+                        Positioned(
+                          left: 0,
+                          top: 0,
+                          width: screenWidth * 0.5,
+                          height: screenHeight * 0.45,
+                          child: _buildPlayerTriangle(1, TrianglePosition.bottomLeft),
+                        ),
+                      
+                      // Triángulo inferior derecho (3er lugar)
+                      if (widget.topPlayers.length > 2)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          width: screenWidth * 0.5,
+                          height: screenHeight * 0.45,
+                          child: _buildPlayerTriangle(2, TrianglePosition.bottomRight),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ] else ...[  // Corregido para usar el spread operator correctamente
+              // Botón triangular para revelar resultados centrado
+              Center(
+                child: _buildRevealButton(),
+              )
+            ],
+          ],
+        ),
       ),
     );
   }
-
-  Widget _buildPlayerAvatar(String? photoUrl) {
-    return Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.white.withOpacity(0.8),
-          width: 2,
+  
+  /// Elementos decorativos de fondo
+  List<Widget> _buildBackgroundElements() {
+    return [
+      // Círculos decorativos
+      Positioned(
+        top: -50,
+        right: -50,
+        child: Container(
+          width: 150,
+          height: 150,
+          decoration: BoxDecoration(
+            color: _secondaryColor.withOpacity(0.2),
+            shape: BoxShape.circle,
+          ),
         ),
       ),
-      child: ClipOval(
-        child: photoUrl != null && photoUrl.isNotEmpty
-            ? Image.network(
-                photoUrl,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    color: Colors.grey.shade800,
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                            : null,
-                      ),
-                    ),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey.shade800,
-                    child: Icon(
-                      Icons.person,
-                      size: 30,
-                      color: Colors.white70,
-                    ),
-                  );
-                },
-              )
-            : Container(
-                color: Colors.grey.shade800,
-                child: Icon(
-                  Icons.person,
-                  size: 30,
-                  color: Colors.white70,
-                ),
-              ),
+      Positioned(
+        bottom: -60,
+        left: -60,
+        child: Container(
+          width: 180,
+          height: 180,
+          decoration: BoxDecoration(
+            color: _accentColor.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+        ),
       ),
-    );
+    ];
   }
 }

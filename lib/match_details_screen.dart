@@ -17,7 +17,7 @@ import 'widgets/match_details/top_mvp_players_widget.dart';
 import 'services/mvp_voting_service.dart';
 import 'services/notification_service.dart';
 import 'screens/mvp_voting_history_screen.dart';
-import 'screens/mvp_results_reveal_screen.dart';
+import 'package:statsfoota/screens/mvp_results_reveal_screen.dart';
 import 'tests/mvp_voting_test.dart' as mvp_tester;
 
 class MatchDetailsScreen extends StatefulWidget {
@@ -878,18 +878,6 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
     }
   }
 
-  // Método para obtener los datos de los jugadores MVP
-  Map<String, dynamic> _getMVPPlayerData(String? mvpId, List<Map<String, dynamic>> team) {
-    if (mvpId == null) return {};
-    
-    for (var player in team) {
-      if (player['id'].toString() == mvpId) {
-        return player;
-      }
-    }
-    
-    return {};
-  }
   
   // Método para navegar a la pantalla de historial de votaciones
   void _navigateToVotingHistory() {
@@ -935,20 +923,15 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
         print('  - foto_url: ${player["foto_url"]}');
       }
       
-      // Obtener los datos de los MVP para pasarlos a la pantalla de resultados
-      final mvpClaroData = _getMVPPlayerData(_mvpTeamClaro, _teamClaro);
-      final mvpOscuroData = _getMVPPlayerData(_mvpTeamOscuro, _teamOscuro);
+      // Navegamos a la pantalla de resultados con los jugadores más votados
       
       if (mounted) {
         // Usamos Navigator.push directamente para asegurar la transición
         await Navigator.of(context).push(
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) => MVPResultsRevealScreen(
-              matchId: _matchData['id'],
               matchName: _matchData['nombre'] ?? 'Partido',
               topPlayers: topPlayers,
-              mvpClaroData: mvpClaroData,
-              mvpOscuroData: mvpOscuroData,
             ),            transitionsBuilder: (context, animation, secondaryAnimation, child) {
               // Fix for red screen error - Ensuring opacity is clamped within valid range
               final fadeAnimation = animation.drive(
