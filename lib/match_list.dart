@@ -697,13 +697,12 @@ Hora: $formattedTime
     // Verificar si el usuario actual es participante del partido
     final currentUser = supabase.auth.currentUser;
     bool isParticipant = false;
-    
-    if (currentUser != null && !isOrganizer) {
+      if (currentUser != null && !isOrganizer) {
       // Verificar si el usuario está en la lista de participantes
       try {
         isParticipant = _myMatches.any((m) => 
           m['id'] == match['id'] && 
-          !m['isOrganizer'] == true
+          m['isOrganizer'] == false
         );
       } catch (e) {
         print('Error al verificar participación: $e');
@@ -992,9 +991,7 @@ Hora: $formattedTime
                                 label: 'Eliminar',
                                 onPressed: () => _deleteMatch(match),
                                 color: Colors.red,
-                              ),
-                          ]
-                        : isParticipant // Si el usuario es participante pero no organizador
+                              ),                          ]                        : isParticipant // Si el usuario es participante pero no organizador
                           ? [
                               _buildActionButton(
                                 icon: Icons.article,
@@ -1326,7 +1323,7 @@ Hora: $formattedTime
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Abandonar partido'),
-          content: Text('¿Estás seguro de que quieres abandonar este partido?'),
+          content: Text('¿Estás seguro de que quieres abandonar este partido? Ya no aparecerá en tus partidos.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -1375,17 +1372,91 @@ Hora: $formattedTime
           ),
         );
         return;
+      }      // Obtener el ID del partido y asegurarse de que es un entero
+      final dynamic rawMatchId = match['id'];
+      late int matchId;
+      
+      // Asegurarnos de que el ID sea un entero
+      try {
+        if (rawMatchId is int) {
+          matchId = rawMatchId;
+        } else if (rawMatchId is String) {
+          matchId = int.parse(rawMatchId);
+        } else {
+          matchId = int.tryParse(rawMatchId.toString()) ?? -1;
+        }
+        
+        print('ID del partido a abandonar: $matchId (tipo: ${matchId.runtimeType})');
+        
+        if (matchId <= 0) {
+          throw Exception('ID de partido inválido');
+        }
+      } catch (e) {
+        print('Error al convertir el ID del partido: $e');
+        Navigator.of(context).pop(); // Cerrar diálogo
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al identificar el partido'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
       }
 
-      // Obtener el ID del partido
-      final matchId = match['id'];
+      // Verificar que el usuario no es el creador (pues el creador no puede abandonar, debe eliminar)
+      if (match['creador_id'] == currentUser.id) {
+        Navigator.of(context).pop(); // Cerrar diálogo
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Como creador, no puedes abandonar. Debes eliminar el partido si ya no quieres participar.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      
+      print('Intentando eliminar participante: user_id=${currentUser.id}, match_id=$matchId');
+      
+      // Eliminar al participante del partido - usando transacción para mayor fiabilidad
+      try {
+        final response = await supabase
+            .from('match_participants')
+            .delete()
+            .eq('match_id', matchId)
+            .eq('user_id', currentUser.id)
+            .select();
+            
+        print('Resultado de eliminar participante: $response');
+      } catch (deleteError) {
+        print('Error específico al eliminar participante: $deleteError');
+        // Intentar un enfoque alternativo si el primero falla
+        try {
+          await supabase.rpc(
+            'remove_participant',
+            params: {
+              'match_id_param': matchId,
+              'user_id_param': currentUser.id
+            }
+          );
+          print('Eliminación mediante RPC completada');
+        } catch (rpcError) {
+          print('Error al intentar RPC: $rpcError');
+          // Continuar con el flujo normal para manejar el error general
+          throw rpcError;
+        }
+      }
 
-      // Eliminar al usuario de match_participants
-      await supabase
-          .from('match_participants')
-          .delete()
-          .eq('match_id', matchId)
-          .eq('user_id', currentUser.id);
+      // Eliminar votos MVP del usuario en este partido, si existen
+      try {
+        await supabase
+            .from('mvp_votes')
+            .delete()
+            .eq('match_id', matchId)
+            .eq('voter_id', currentUser.id);
+      } catch (e) {
+        print('Error al eliminar votos MVP: $e');
+        // Continuamos con la eliminación aunque falle este paso
+      }
 
       // Cerrar diálogo y mostrar mensaje de éxito
       Navigator.of(context).pop();
@@ -1485,16 +1556,42 @@ Hora: $formattedTime
       }
 
       // Obtener el ID del partido
-      final matchId = match['id'];
-
-      // Eliminar el partido y todos los registros relacionados
-      // Primero eliminar los participantes
+      final matchId = match['id'];      // Eliminar el partido y todos los registros relacionados
+      
+      // 1. Eliminar votos MVP y estado de votaciones
+      await supabase
+          .from('mvp_votes')
+          .delete()
+          .eq('match_id', matchId);
+          
+      await supabase
+          .from('mvp_voting_status')
+          .delete()
+          .eq('match_id', matchId);
+          
+      await supabase
+          .from('mvp_top_players')
+          .delete()
+          .eq('match_id', matchId);
+      
+      // 2. Eliminar los participantes
       await supabase
           .from('match_participants')
           .delete()
           .eq('match_id', matchId);
+      
+      // 3. Eliminar cualquier notificación relacionada con el partido
+      try {
+        await supabase
+            .from('notifications')
+            .delete()
+            .eq('match_id', matchId);
+      } catch (e) {
+        print('Error al eliminar notificaciones: $e');
+        // Continuamos con la eliminación aunque falle este paso
+      }
 
-      // Luego eliminar el partido
+      // 4. Finalmente eliminar el partido
       await supabase
           .from('matches')
           .delete()
