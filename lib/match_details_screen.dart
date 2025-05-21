@@ -1387,7 +1387,6 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                     golesEquipoOscuro: golesEquipoOscuro,
                     isPartidoFinalizado: isPartidoFinalizado,
                     onViewResultsTap: isPartidoFinalizado ? _navigateToMVPResultsReveal : null,
-                    hasCompletedVoting: isPartidoFinalizado && _activeVoting == null && (_mvpTeamClaro != null || _mvpTeamOscuro != null),
                   ),
               
               // Campo y jugadores

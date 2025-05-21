@@ -27,6 +27,9 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
   // Variable para el filtro de tiempo
   String _timeFilter = 'Todos'; // 'Próximos', 'Pasados', 'Todos'
   
+  // Caché para almacenar los conteos de participantes para cada partido
+  final Map<dynamic, int> _participantCountCache = {};
+  
   bool _isLoading = true;
   late TabController _tabController;
   String? _error;
@@ -55,49 +58,37 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
           final matchDate = DateTime.parse(match['fecha']);
           return matchDate.isAfter(now);
         }).toList();
-        
-        _filteredFriendsMatches = _friendsMatches.where((match) {
-          final matchDate = DateTime.parse(match['fecha']);
-          return matchDate.isAfter(now);
-        }).toList();
-        
-        _filteredPublicMatches = _publicMatches.where((match) {
-          final matchDate = DateTime.parse(match['fecha']);
-          return matchDate.isAfter(now);
-        }).toList();
-      } 
-      else if (_timeFilter == 'Pasados') {
-        // Filtrar solo partidos con fecha pasada
+          // For friends and public matches, we already filtered for future matches during load
+        _filteredFriendsMatches = List.from(_friendsMatches);
+        _filteredPublicMatches = List.from(_publicMatches);
+      }      else if (_timeFilter == 'Pasados') {
+        // Filtrar solo partidos con fecha pasada en mis partidos
         _filteredMyMatches = _myMatches.where((match) {
           final matchDate = DateTime.parse(match['fecha']);
           return matchDate.isBefore(now);
         }).toList();
         
-        _filteredFriendsMatches = _friendsMatches.where((match) {
-          final matchDate = DateTime.parse(match['fecha']);
-          return matchDate.isBefore(now);
-        }).toList();
-        
-        _filteredPublicMatches = _publicMatches.where((match) {
-          final matchDate = DateTime.parse(match['fecha']);
-          return matchDate.isBefore(now);
-        }).toList();
-      } 
-      else {
-        // Mostrar todos los partidos
+        // Para amigos y públicos, mostramos listas vacías ya que solo cargamos partidos futuros
+        _filteredFriendsMatches = [];
+        _filteredPublicMatches = [];
+      }      else {
+        // "Todos" - Para mis partidos mostraremos todos
         _filteredMyMatches = List.from(_myMatches);
+        // Para amigos y públicos, solo tenemos los futuros disponibles en memoria
         _filteredFriendsMatches = List.from(_friendsMatches);
         _filteredPublicMatches = List.from(_publicMatches);
       }
     });
   }
-
   Future<void> _fetchMatches() async {
     try {
       setState(() {
         _isLoading = true;
         _error = null;
       });
+      
+      // Limpiar caché de conteo de participantes
+      _participantCountCache.clear();
 
       final currentUser = supabase.auth.currentUser;
       if (currentUser == null) {
@@ -192,13 +183,14 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
             }
           }
         }
-        
-        // 3. Cargar partidos públicos (que no son del usuario actual)
+          // 3. Cargar partidos públicos (que no son del usuario actual y que sean próximos)
+        final now = DateTime.now();
         final publicMatchesResponse = await supabase
             .from('matches')
             .select('*')
             .eq('publico', true)
             .neq('creador_id', currentUser.id) // No incluir los partidos del usuario actual
+            .gte('fecha', now.toIso8601String()) // Solo partidos futuros
             .order('fecha', ascending: false);
 
         for (final match in publicMatchesResponse) {
@@ -247,15 +239,15 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
           friendIds.add(friend['user_id_1']);
         }
         
-        print('Amigos encontrados: ${friendIds.length}');
-
-        // 5. Cargar partidos privados de amigos
+        print('Amigos encontrados: ${friendIds.length}');        // 5. Cargar partidos privados de amigos (solo próximos)
         if (friendIds.isNotEmpty) {
+          final now = DateTime.now();
           final friendsMatchesResponse = await supabase
               .from('matches')
               .select('*')
               .eq('publico', false) // Solo partidos privados
               .filter('creador_id', 'in', friendIds) // Creados por amigos - Método correcto
+              .gte('fecha', now.toIso8601String()) // Solo partidos futuros
               .order('fecha', ascending: false);
 
           for (final match in friendsMatchesResponse) {
@@ -419,36 +411,53 @@ Hora: $formattedTime
     if (result == true) {
       _fetchMatches();
     }
-  }
-  @override
+  }  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        // Eliminamos el contenedor vacío del título
-        toolbarHeight: 0, // Reducimos la altura de la barra a 0 para eliminar el espacio
-        backgroundColor: Colors.blue.shade800,
-        automaticallyImplyLeading: false, // Eliminado la flecha de navegación
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.orange.shade600,
-          indicatorWeight: 3,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white.withOpacity(0.7),
-          labelStyle: TextStyle(fontWeight: FontWeight.bold),
-          tabs: [
-            Tab(
-              icon: Icon(Icons.person),
-              text: 'Mis Partidos',
+    return Scaffold(      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(kToolbarHeight + 8),
+        child: AppBar(
+          backgroundColor: Colors.blue.shade800,
+          automaticallyImplyLeading: false, // Eliminado la flecha de navegación
+          elevation: 0, // Sin sombra para un look más limpio
+          flexibleSpace: SafeArea(
+            child: Container(
+              alignment: Alignment.bottomCenter,
+              child: TabBar(
+                controller: _tabController,
+                indicatorColor: Colors.orange.shade600,
+                indicatorWeight: 3,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white.withOpacity(0.7),
+                labelStyle: TextStyle(fontWeight: FontWeight.bold),
+                tabs: [
+                  Tab(
+                    height: 60,
+                    icon: Icon(Icons.person, size: 24),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Mis Partidos', style: TextStyle(fontSize: 12)),
+                    ),
+                  ),
+                  Tab(
+                    height: 60,
+                    icon: Icon(Icons.group, size: 24),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Amigos', style: TextStyle(fontSize: 12)),
+                    ),
+                  ),
+                  Tab(
+                    height: 60,
+                    icon: Icon(Icons.public, size: 24),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Públicos', style: TextStyle(fontSize: 12)),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            Tab(
-              icon: Icon(Icons.group),
-              text: 'Amigos',
-            ),
-            Tab(
-              icon: Icon(Icons.public),
-              text: 'Públicos',
-            ),
-          ],
+          ),
         ),
       ),
       body: Container(
@@ -877,7 +886,78 @@ Hora: $formattedTime
                           ),
                       ],
                     ),
-                  ),
+                  ),                
+                // Participant information section
+                SizedBox(height: 12),
+                FutureBuilder<int>(
+                  future: _getParticipantCount(match['id']),
+                  builder: (context, snapshot) {
+                    int participantCount = snapshot.data ?? 0;
+                    String format = match['formato'] ?? '5v5';
+                    int formatSize = 0;
+                    
+                    try {
+                      // Extract the format size (e.g., "5" from "5v5")
+                      formatSize = int.parse(format.split('v')[0]) * 2;
+                    } catch (e) {
+                      formatSize = 10; // Default if format parsing fails
+                    }
+                    
+                    return Container(
+                      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.people,
+                            color: Colors.blue.shade800,
+                            size: 18,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Participantes:',
+                            style: TextStyle(
+                              color: Colors.blue.shade800,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            '$participantCount/$formatSize',
+                            style: TextStyle(
+                              color: participantCount >= formatSize ? Colors.green.shade700 : Colors.orange.shade700,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Spacer(),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: participantCount >= formatSize ? Colors.green.shade100 : Colors.orange.shade100,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: participantCount >= formatSize ? Colors.green.shade300 : Colors.orange.shade300,
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              participantCount >= formatSize ? 'Completo' : 'Disponible',
+                              style: TextStyle(
+                                color: participantCount >= formatSize ? Colors.green.shade700 : Colors.orange.shade700,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
                 
                 SizedBox(height: 16),
                   // Action buttons
@@ -1072,6 +1152,30 @@ Hora: $formattedTime
         ),
       ),
     );
+  }
+  // Método para obtener el número de participantes de un partido con caché
+  Future<int> _getParticipantCount(dynamic matchId) async {
+    // Si ya tenemos el valor en caché, lo devolvemos directamente
+    if (_participantCountCache.containsKey(matchId)) {
+      return _participantCountCache[matchId]!;
+    }
+    
+    try {
+      final response = await supabase
+          .from('match_participants')
+          .select()
+          .eq('match_id', matchId);
+      
+      int count = response.length;
+      
+      // Guardar en caché
+      _participantCountCache[matchId] = count;
+      
+      return count;
+    } catch (e) {
+      print('Error al obtener recuento de participantes: $e');
+      return 0;
+    }
   }
 
   // Método para que el usuario se una a un partido público

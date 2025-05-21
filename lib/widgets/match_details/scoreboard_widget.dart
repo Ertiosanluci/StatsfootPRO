@@ -72,11 +72,11 @@ class ScoreboardWidget extends StatelessWidget {
                         fontSize: 24,
                       ),
                     ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: Text(
                         '-',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 24,
@@ -114,7 +114,7 @@ class ScoreboardWidget extends StatelessWidget {
             ],
           ),
           
-          // Indicador de estado del partido y texto deslizante
+          // Indicador de estado del partido
           if (isPartidoFinalizado) ...[
             Container(
               margin: const EdgeInsets.only(top: 4),
@@ -132,24 +132,21 @@ class ScoreboardWidget extends StatelessWidget {
                 ),
               ),
             ),
-            if (hasCompletedVoting && onViewResultsTap != null) 
-              GestureDetector(
-                onTap: onViewResultsTap,
-                child: Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.only(top: 2),
-                  child: ScrollingTextWidget(
-                    text: '🏆 VER RESULTADOS DE VOTACIÓN 🏆',
-                    duration: const Duration(seconds: 8),
-                    textStyle: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                    onTap: onViewResultsTap,
-                  ),
+            // Texto deslizante para ver resultados de votación (solo si hay votación completada)
+            if (hasCompletedVoting) Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(top: 2),
+              child: ScrollingTextWidget(
+                text: '🏆 VER RESULTADOS DE VOTACIÓN 🏆',
+                duration: const Duration(seconds: 8),
+                textStyle: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
                 ),
+                onTap: onViewResultsTap,
               ),
+            ),
           ],
         ],
       ),
