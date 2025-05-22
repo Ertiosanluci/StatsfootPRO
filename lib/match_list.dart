@@ -883,8 +883,7 @@ Hora: $formattedTime
                           ),
                       ],
                     ),                  ),
-                
-                // Mostrar número de participantes
+                  // Mostrar número de participantes con dropdown
                 Container(
                   margin: EdgeInsets.symmetric(vertical: 12),
                   padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -893,42 +892,113 @@ Hora: $formattedTime
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: Colors.grey.shade300),
                   ),
-                  child: Row(
+                  child: Column(
                     children: [
-                      Icon(Icons.group, color: Colors.blue.shade700, size: 20),
-                      SizedBox(width: 8),
-                      FutureBuilder<int>(
-                        future: _getMatchParticipantsCount(match['id']),
-                        builder: (context, snapshot) {
-                          final int count = snapshot.data ?? 0;
-                          final String formato = match['formato'] ?? '?v?';
-                          final int totalPlayers = int.parse(formato.split('v')[0]) * 2; // 5v5 = 10 jugadores en total
-                          
-                          return Text(
-                            '$count/$totalPlayers jugadores unidos',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue.shade800,
-                            ),
-                          );
-                        }
-                      ),
-                      Spacer(),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.shade100,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.orange.shade300),
-                        ),
-                        child: Text(
-                          match['formato'],
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.orange.shade800,
+                      Row(
+                        children: [
+                          Icon(Icons.group, color: Colors.blue.shade700, size: 20),
+                          SizedBox(width: 8),
+                          FutureBuilder<int>(
+                            future: _getMatchParticipantsCount(match['id']),
+                            builder: (context, snapshot) {
+                              final int count = snapshot.data ?? 0;
+                              final String formato = match['formato'] ?? '?v?';
+                              final int totalPlayers = int.parse(formato.split('v')[0]) * 2;
+                              
+                              return Text(
+                                '$count/$totalPlayers jugadores unidos',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue.shade800,
+                                ),
+                              );
+                            }
                           ),
-                        ),
+                          Spacer(),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.shade100,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.orange.shade300),
+                            ),
+                            child: Text(
+                              match['formato'],
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.orange.shade800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),                      FutureBuilder<List<Map<String, dynamic>>>(
+                        future: _getMatchParticipants(match['id']),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              ),
+                            );
+                          }
+                          
+                          if (!snapshot.hasData || snapshot.data == null) {
+                            return SizedBox.shrink();
+                          }
+                          
+                          final participants = snapshot.data!;
+                          if (participants.isEmpty) {
+                            return Text(
+                              'No hay participantes aún',
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 12,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            );
+                          }
+
+                          return ExpansionTile(
+                            title: Text(
+                              'Ver participantes (${participants.length})',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.blue.shade800,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            tilePadding: EdgeInsets.zero,
+                            childrenPadding: EdgeInsets.symmetric(vertical: 8),
+                            children: participants.map((participant) {
+                              final username = participant['username'] ?? 'Usuario desconocido';
+                              final avatarUrl = participant['avatar_url'];
+                              
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  radius: 14,
+                                  backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                                  child: avatarUrl == null ? Icon(Icons.person, size: 14) : null,
+                                ),
+                                title: Text(
+                                  username,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.blue.shade900,
+                                  ),
+                                ),
+                                dense: true,
+                                visualDensity: VisualDensity.compact,
+                              );
+                            }).toList(),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -1064,7 +1134,52 @@ Hora: $formattedTime
       return 0;
     }
   }
-  
+    Future<List<Map<String, dynamic>>> _getMatchParticipants(dynamic matchId) async {
+    try {
+      // Obtener los IDs de participantes primero
+      final participantsResponse = await supabase
+          .from('match_participants')
+          .select('user_id')
+          .eq('match_id', matchId);
+      
+      // Lista para almacenar la información completa de los participantes
+      List<Map<String, dynamic>> participantsWithProfiles = [];
+      
+      // Para cada participante, obtener su perfil
+      for (final participant in participantsResponse) {
+        final userId = participant['user_id'];
+        
+        // Obtener datos del perfil
+        final profileData = await supabase
+            .from('profiles')
+            .select('username, avatar_url')
+            .eq('id', userId)
+            .maybeSingle();
+        
+        if (profileData != null) {
+          participantsWithProfiles.add({
+            'user_id': userId,
+            'username': profileData['username'] ?? 'Usuario',
+            'avatar_url': profileData['avatar_url']
+          });
+        } else {
+          // Si no hay perfil, añadir datos básicos
+          participantsWithProfiles.add({
+            'user_id': userId,
+            'username': 'Usuario ${userId.substring(0, 4)}',
+            'avatar_url': null
+          });
+        }
+      }
+      
+      print('Participantes obtenidos: ${participantsWithProfiles.length}');
+      return participantsWithProfiles;
+    } catch (e) {
+      print('Error al obtener participantes: $e');
+      return [];
+    }
+  }
+
   Widget _buildInfoBadge(IconData icon, String text) {
     return Container(
       decoration: BoxDecoration(
