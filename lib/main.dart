@@ -20,10 +20,55 @@ import 'package:statsfoota/features/friends/presentation/screens/friends_main_sc
 import 'package:statsfoota/features/friends/presentation/screens/friend_requests_screen.dart';
 import 'package:statsfoota/features/friends/presentation/screens/people_screen.dart';
 
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+
+// Clase para personalizar las localizaciones de Material
+class _MyMaterialLocalizationsDelegate extends LocalizationsDelegate<MaterialLocalizations> {
+  @override
+  bool isSupported(Locale locale) => locale.languageCode == 'es';
+
+  @override
+  Future<MaterialLocalizations> load(Locale locale) async {
+    return _SpanishMaterialLocalizations();
+  }
+
+  @override
+  bool shouldReload(_MyMaterialLocalizationsDelegate old) => false;
+}
+
+// Clase para implementar localizaciones en español con semana que comienza en lunes
+class _SpanishMaterialLocalizations extends DefaultMaterialLocalizations {
+  _SpanishMaterialLocalizations() : super();
+
+  @override
+  String get firstDayOfWeek => 'lunes';
+
+  @override
+  String get selectedDateLabel => 'Fecha seleccionada';
+
+  @override
+  List<String> get narrowWeekdays => ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
+  @override
+  List<String> get weekdaysShort => ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+  @override
+  List<String> get weekdays => ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+  @override
+  int get firstDayOfWeekIndex => 1; // 0 is Sunday, 1 is Monday
+}
+
 bool _initialUriIsHandled = false;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inicializar localización para español
+  await initializeDateFormatting('es_ES', null);
+  Intl.defaultLocale = 'es_ES';
   
   // Forzar orientación vertical
   SystemChrome.setPreferredOrientations([
@@ -161,6 +206,17 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: _navigatorKey, // Añadido para manejar la navegación desde fuera de un BuildContext
+      // Configuración de localización
+      locale: const Locale('es', 'ES'),
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        _MyMaterialLocalizationsDelegate(), // Nuestra delegación personalizada
+      ],
+      supportedLocales: [
+        const Locale('es', 'ES'), // Español
+      ],
       routes: {
         '/': (context) => SplashScreen(),
         '/login': (context) => LoginScreen(),

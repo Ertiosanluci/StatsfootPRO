@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:intl/intl.dart';
 import 'create_match.dart';
 import 'match_join_screen.dart';
 import 'match_details_screen.dart';
@@ -339,11 +340,10 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
   }
 
   void _shareMatchLink(Map<String, dynamic> match) async {
-    try {
-      // Obtener información del partido
+    try {      // Obtener información del partido
       final int matchId = match['id'];
       final DateTime matchDate = DateTime.parse(match['fecha']);
-      final String formattedDate = '${matchDate.day}/${matchDate.month}/${matchDate.year}';
+      final String formattedDate = DateFormat('EEEE, d MMM yyyy', 'es_ES').format(matchDate);
       final String formattedTime = '${matchDate.hour.toString().padLeft(2, '0')}:${matchDate.minute.toString().padLeft(2, '0')}';
 
       // Usar el dominio real de Netlify para el enlace
@@ -686,10 +686,9 @@ Hora: $formattedTime
             ),
     );
   }
-
   Widget _buildMatchCard(Map<String, dynamic> match, {required bool isOrganizer}) {
     final DateTime matchDate = DateTime.parse(match['fecha']);
-    final String formattedDate = '${matchDate.day}/${matchDate.month}/${matchDate.year}';
+    final String formattedDate = DateFormat('EEEE, d MMM yyyy', 'es_ES').format(matchDate);
     final String formattedTime = '${matchDate.hour.toString().padLeft(2, '0')}:${matchDate.minute.toString().padLeft(2, '0')}';
     
     // Determine if the match is upcoming or past

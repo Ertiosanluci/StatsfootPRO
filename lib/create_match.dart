@@ -4,6 +4,8 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:statsfoota/user_menu.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'dart:math';
 import 'dart:ui' as ui;
 
@@ -452,12 +454,17 @@ class _CreateMatchDetailsScreenState extends State<CreateMatchDetailsScreen> {
   bool _isLoading = false;
   bool _matchCreated = false;
   int? _matchId;
-  
-  @override
+    @override
   void initState() {
     super.initState();
     _selectedTime = TimeOfDay.now();
     _selectedDate = DateTime.now();
+    
+    // Inicializar localización para español
+    initializeDateFormatting('es_ES', null).then((_) {
+      // Configuración completada
+      Intl.defaultLocale = 'es_ES';
+    });
   }
   
   Future<void> _selectTime(BuildContext context) async {
@@ -482,19 +489,27 @@ class _CreateMatchDetailsScreenState extends State<CreateMatchDetailsScreen> {
       });
     }
   }
-  
-  Future<void> _selectDate(BuildContext context) async {
+    Future<void> _selectDate(BuildContext context) async {
+    // Inicializar los datos de localización en español
+    await initializeDateFormatting('es_ES', null);
+    
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(Duration(days: 365)),
+      // Configurar el idioma a español      locale: const Locale('es', 'ES'),
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
             colorScheme: ColorScheme.light(
               primary: Colors.orange.shade600,
               onPrimary: Colors.white,
+            ),
+            // Personalización adicional para textos en español
+            textTheme: TextTheme(
+              bodyMedium: TextStyle(fontFamily: 'Roboto', color: Colors.black87),
+              titleMedium: TextStyle(fontFamily: 'Roboto', color: Colors.black87),
             ),
           ),
           child: child!,
@@ -631,10 +646,9 @@ class _CreateMatchDetailsScreenState extends State<CreateMatchDetailsScreen> {
     }
   }
   
-  void _shareMatchLink() {
-    if (_matchLink != null) {
+  void _shareMatchLink() {    if (_matchLink != null) {
       // Formatear fecha y hora del partido para el mensaje
-      final String formattedDate = '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
+      final String formattedDate = DateFormat('EEEE d/M/yyyy', 'es_ES').format(_selectedDate);
       final String formattedTime = '${_selectedTime.format(context)}';
       
       // Crear un mensaje más atractivo para compartir
@@ -800,7 +814,7 @@ Hora: $formattedTime
                         leading: Icon(Icons.calendar_today, color: Colors.blue),
                         title: Text('Fecha'),
                         subtitle: Text(
-                          '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                          DateFormat('EEEE, d MMM yyyy', 'es_ES').format(_selectedDate),
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -1025,9 +1039,8 @@ Hora: $formattedTime
                       children: [
                         Expanded(
                           child: ElevatedButton.icon(
-                            icon: Icon(Icons.calendar_today),
-                            label: Text(
-                              '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                            icon: Icon(Icons.calendar_today),                            label: Text(
+                              DateFormat('EEEE, d MMM', 'es_ES').format(_selectedDate),
                               style: TextStyle(color: Colors.white),
                             ),
                             onPressed: () => _selectDate(context),
