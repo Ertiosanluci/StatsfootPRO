@@ -971,14 +971,13 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
                   }
                 });
               }
-            },
-            onLongPressEnd: (_) {
+            },            onLongPressEnd: (_) {
               setState(() {
                 _elevatedPlayers[playerId] = false;
                 _draggingPlayerId = null;
               });
             },
-            onTap: () => _showPlayerOptions(player),
+            onTap: () => _showPlayerActionsDialog(player),
             child: _buildPlayerAvatar(player, isTeamA),
           ),
         ),
@@ -1932,8 +1931,8 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
       final String userEmail = userData != null 
           ? userData['email'] 
           : currentUser.email ?? '';
-      final String userName = userEmail.split('@')[0]; // Usar parte del email como nombre
-      
+      final String userName = userEmail.split('@')[0]; // Usar parte del email como nombre provisional
+
       // Determinar el equipo
       final String? team = isTeamA ? 'claro' : 'oscuro';
       
@@ -2842,6 +2841,342 @@ ALTER TABLE matches ADD COLUMN mvp_team_oscuro UUID;
         .eq('id', participantId);
     } catch (e) {
       print('Error al actualizar equipo del jugador $participantId: $e');
+    }
+  }
+  void _showPlayerActionsDialog(Map<String, dynamic> player) {
+    final bool isCreator = widget.match['creador_id'] == supabase.auth.currentUser?.id;
+    
+    if (!isCreator) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Solo el organizador puede gestionar a los participantes'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    String teamText = player['equipo'] == 'claro' 
+        ? 'Equipo Claro' 
+        : player['equipo'] == 'oscuro' 
+            ? 'Equipo Oscuro' 
+            : 'Sin asignar';
+    
+    Color teamColor = player['equipo'] == 'claro'
+        ? Colors.blue.shade700
+        : player['equipo'] == 'oscuro'
+            ? Colors.red.shade700
+            : Colors.grey.shade700;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundImage: player['avatar_url'] != null ? NetworkImage(player['avatar_url']) : null,
+              child: player['avatar_url'] == null 
+                ? Text(
+                    (player['nombre'] ?? 'U')[0].toUpperCase(),
+                    style: TextStyle(fontWeight: FontWeight.bold)
+                  ) 
+                : null,
+            ),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Opciones para ${player['nombre']}',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Información del jugador
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.person, color: teamColor),
+                      SizedBox(width: 10),
+                      Text(
+                        player['nombre'],
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        player['equipo'] == 'claro'
+                            ? Icons.brightness_5_outlined
+                            : player['equipo'] == 'oscuro'
+                                ? Icons.brightness_2_outlined
+                                : Icons.person_outline,
+                        color: teamColor,
+                        size: 20,
+                      ),
+                      SizedBox(width: 10),
+                      Text(
+                        teamText,
+                        style: TextStyle(
+                          color: teamColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (player['es_organizador'] == true) ...[
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.star, color: Colors.amber, size: 20),
+                        SizedBox(width: 10),
+                        Text(
+                          'Organizador',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.amber.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            SizedBox(height: 20),
+            // Acciones disponibles
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: ListTile(
+                leading: Icon(Icons.delete_forever, color: Colors.red),
+                title: Text('Expulsar jugador'),
+                subtitle: Text('Eliminar al jugador del partido'),
+                tileColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _confirmRemovePlayer(player);
+                },
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancelar'),
+          ),
+        ],
+      ),
+    );
+  }
+  // Mostrar diálogo de confirmación para expulsar a un jugador
+  void _confirmRemovePlayer(Map<String, dynamic> player) {
+    final bool isOrganizer = player['es_organizador'] == true;
+    
+    if (isOrganizer) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No puedes expulsar al organizador del partido'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red),
+            SizedBox(width: 10),
+            Text('Expulsar jugador')
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '¿Seguro que deseas expulsar a ${player['nombre']} del partido?',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 12),
+            Text('Esta acción no se puede deshacer y el jugador será eliminado completamente del partido.'),
+            SizedBox(height: 16),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundImage: player['avatar_url'] != null ? NetworkImage(player['avatar_url']) : null,
+                    child: player['avatar_url'] == null 
+                      ? Text((player['nombre'] ?? 'U')[0].toUpperCase()) 
+                      : null,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${player['nombre']}',
+                      style: TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _removePlayerFromMatch(player);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: Colors.red,
+            ),
+            child: Text('Expulsar'),
+          ),
+        ],
+      ),
+    );
+  }
+  // Expulsar al jugador del partido
+  Future<void> _removePlayerFromMatch(Map<String, dynamic> player) async {
+    try {
+      // Mostrar indicador de carga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+      
+      final int participantId = player['id'];
+      final String userId = player['user_id'];
+      final String playerName = player['nombre'];
+      final String? currentTeam = player['equipo'];
+      
+      // Guardar información sobre el equipo para el mensaje de confirmación
+      String teamName = currentTeam == 'claro' 
+          ? 'Equipo Claro' 
+          : currentTeam == 'oscuro' 
+              ? 'Equipo Oscuro' 
+              : 'sin equipo asignado';
+      
+      print('Expulsando a jugador: $playerName (ID: $participantId) del $teamName');
+      
+      // Eliminar al jugador de la base de datos
+      await supabase
+          .from('match_participants')
+          .delete()
+          .eq('id', participantId);
+      
+      // Cerrar el diálogo de carga
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      
+      // Actualizar las listas locales
+      setState(() {
+        // Eliminar de la lista principal de participantes
+        _participants.removeWhere((p) => p['id'] == participantId);
+        
+        // Eliminar del equipo correspondiente
+        if (currentTeam == 'claro') {
+          _teamClaro.removeWhere((p) => p['id'] == participantId);
+          // Limpiar cualquier posición asignada
+          _teamClaroPositions.remove(participantId.toString());
+          _teamClaroPositionIndices.removeWhere((key, value) => value == participantId.toString());
+          print('Jugador eliminado del Equipo Claro y posiciones limpiadas');
+        } else if (currentTeam == 'oscuro') {
+          _teamOscuro.removeWhere((p) => p['id'] == participantId);
+          // Limpiar cualquier posición asignada
+          _teamOscuroPositions.remove(participantId.toString());
+          _teamOscuroPositionIndices.removeWhere((key, value) => value == participantId.toString());
+          print('Jugador eliminado del Equipo Oscuro y posiciones limpiadas');
+        } else {
+          _unassignedParticipants.removeWhere((p) => p['id'] == participantId);
+          print('Jugador eliminado del grupo sin asignar');
+        }
+      });
+      
+      // Forzar actualización visual para refrescar el campo de juego
+      _redrawPositionSlots();
+      
+      // Mostrar mensaje de éxito
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 10),
+              Expanded(child: Text('${player['nombre']} ha sido expulsado del partido')),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      // Cerrar el diálogo de carga si está abierto
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      
+      print('Error al expulsar al jugador: $e');
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error, color: Colors.white),
+              SizedBox(width: 10),
+              Expanded(child: Text('Error al expulsar al jugador: $e')),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 }
