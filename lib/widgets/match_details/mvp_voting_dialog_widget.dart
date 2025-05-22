@@ -103,15 +103,23 @@ class _MVPVotingDialogState extends State<MVPVotingDialog> {
         softWrap: true,
       ),
     );
-  }
-  /// Construye la sección de selección de MVPs
+  }  /// Construye la sección de selección de MVPs
   Widget _buildMVPSelection() {
     // Combinar los jugadores de ambos equipos
     List<Map<String, dynamic>> allPlayers = [...widget.teamClaro, ...widget.teamOscuro];
     
-    // Calcular altura máxima para el grid (para evitar overflow)
+    // Calcular tamaño y características del grid basado en el dispositivo
+    final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    final gridMaxHeight = screenHeight * 0.5; // Limitar a 50% de la altura de la pantalla
+    
+    // Detectar si estamos en navegador web (típicamente pantallas más anchas)
+    final bool isWebBrowser = screenWidth > 800;    // Ajustar parámetros según plataforma
+    final int crossAxisCount = isWebBrowser ? 5 : 3; // Más columnas en web
+    final double aspectRatio = isWebBrowser ? 0.85 : 0.7; // Ajustado para más espacio vertical (foto grande)
+    final double maxHeightFactor = isWebBrowser ? 0.7 : 0.5; // Más espacio en web
+    
+    // Altura máxima ajustada
+    final gridMaxHeight = screenHeight * maxHeightFactor;
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,9 +143,9 @@ class _MVPVotingDialogState extends State<MVPVotingDialog> {
           child: GridView.builder(
             shrinkWrap: true,
             physics: const BouncingScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              childAspectRatio: 0.7,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              childAspectRatio: aspectRatio,
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
             ),
@@ -148,92 +156,109 @@ class _MVPVotingDialogState extends State<MVPVotingDialog> {
               final isSelected = _selectedPlayerId == playerId;
               final isTeamClaro = widget.teamClaro.any((p) => p['id'].toString() == playerId);
               final teamColor = isTeamClaro ? Colors.blue.shade700 : Colors.red.shade700;
-              
-              return GestureDetector(
+                return GestureDetector(
                 onTap: () {
                   setState(() {
                     _selectedPlayerId = isSelected ? null : playerId;
                   });
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(6),
+                },                child: Container(
+                  padding: EdgeInsets.all(isWebBrowser ? 3 : 4.5),
                   decoration: BoxDecoration(
                     color: isSelected 
                         ? teamColor.withOpacity(0.3)
                         : Colors.black26,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(6),
                     border: Border.all(
                       color: isSelected 
                           ? Colors.amber
                           : Colors.white24,
-                      width: isSelected ? 2 : 1,
+                      width: isSelected ? 1.5 : 0.8,
                     ),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Indicador de equipo
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: teamColor,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      
-                      // Avatar del jugador
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundColor: teamColor,
-                        child: player['foto_perfil'] != null
-                            ? ClipOval(
-                                child: Image.network(
-                                  player['foto_perfil'],
-                                  width: 44,
-                                  height: 44,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Text(
+                      // Contenedor principal para el avatar con el indicador de equipo superpuesto
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Avatar del jugador (ahora más grande)
+                          CircleAvatar(
+                            radius: isWebBrowser ? 26 : 32,
+                            backgroundColor: teamColor,
+                            child: player['foto_perfil'] != null
+                                ? ClipOval(
+                                    child: Image.network(
+                                      player['foto_perfil'],
+                                      width: isWebBrowser ? 50 : 62,
+                                      height: isWebBrowser ? 50 : 62,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Text(
+                                        player['nombre']?.isNotEmpty == true 
+                                            ? player['nombre'][0].toUpperCase() 
+                                            : '?',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 22,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Text(
                                     player['nombre']?.isNotEmpty == true 
                                         ? player['nombre'][0].toUpperCase() 
                                         : '?',
-                                    style: const TextStyle(color: Colors.white),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 22,
+                                    ),
                                   ),
-                                ),
-                              )
-                            : Text(
-                                player['nombre']?.isNotEmpty == true 
-                                    ? player['nombre'][0].toUpperCase() 
-                                    : '?',
-                                style: const TextStyle(
+                          ),
+                          
+                          // Indicador de equipo (ahora en la esquina superior derecha)
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: Container(
+                              width: isWebBrowser ? 8 : 12,
+                              height: isWebBrowser ? 8 : 12,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: teamColor,
+                                border: Border.all(
                                   color: Colors.white,
+                                  width: 1,
                                 ),
                               ),
-                      ),
-                      const SizedBox(height: 6),
-                      
-                      // Nombre del jugador
-                      Expanded(
-                        child: Text(
-                          player['nombre'] ?? 'Jugador',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
+                            ),
                           ),
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                          
+                          // Estrella si está seleccionado (ahora en la parte inferior)
+                          if (isSelected)
+                            Positioned(
+                              bottom: 0,
+                              child: Icon(
+                                Icons.stars_rounded,
+                                color: Colors.amber,
+                                size: isWebBrowser ? 14 : 18,
+                              ),
+                            ),
+                        ],
                       ),
                       
-                      // Estrella si está seleccionado
-                      if (isSelected)
-                        const Icon(
-                          Icons.stars_rounded,
-                          color: Colors.amber,
-                          size: 18,
-                        ),
+                      SizedBox(height: isWebBrowser ? 4 : 6),
+                      
+                      // Nombre del jugador (ahora directamente debajo del avatar)
+                      Text(
+                        player['nombre'] ?? 'Jugador',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: isWebBrowser ? 10 : 12,
+                          fontWeight: FontWeight.w500,
+                        ),                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ),
                 ),
@@ -244,6 +269,7 @@ class _MVPVotingDialogState extends State<MVPVotingDialog> {
       ],
     );
   }
+  
   /// Construye los botones de acción (votar/cancelar)
   Widget _buildActionButtons() {
     bool hasSelection = _selectedPlayerId != null;
