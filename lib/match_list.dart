@@ -7,6 +7,7 @@ import 'create_match.dart';
 import 'match_join_screen.dart';
 import 'match_details_screen.dart';
 import 'team_management_screen.dart';
+import 'utils/match_operations.dart';
 
 class MatchListScreen extends StatefulWidget {
   @override
@@ -33,11 +34,18 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
   bool _isLoading = true;
   late TabController _tabController;
   String? _error;
-
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this); // 3 pestañas: Mis Partidos, Amigos, Públicos
+    
+    // Add listener to handle tab changes
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        print("Tab switched to: ${_tabController.index}");
+      }
+    });
+    
     _fetchMatches();
   }
 
@@ -470,15 +478,16 @@ Hora: $formattedTime
                 : Column(
                     children: [
                       // Filtro de tiempo (Próximos/Pasados/Todos)
-                      _buildTimeFilterRow(),
-                      
-                      // Lista de partidos
+                      _buildTimeFilterRow(),                      // Lista de partidos
                       Expanded(
                         child: TabBarView(
                           controller: _tabController,
                           children: [
-                            _buildMatchListView(_filteredMyMatches, isOrganizer: true, listType: "my"),
+                            // Tab 0: Mis Partidos (incluye organizados + unidos)
+                            _buildMatchListView(_filteredMyMatches, isOrganizer: false, listType: "my"),
+                            // Tab 1: Amigos
                             _buildMatchListView(_filteredFriendsMatches, isOrganizer: false, listType: "friends"),
+                            // Tab 2: Públicos
                             _buildMatchListView(_filteredPublicMatches, isOrganizer: false, listType: "public"),
                           ],
                         ),
@@ -1291,19 +1300,18 @@ Hora: $formattedTime
           backgroundColor: Colors.red,
           duration: Duration(seconds: 5),
         ),
-      );
-    }
+      );    }
   }
-
+  
   // Método para que un usuario abandone un partido
   Future<void> _leaveMatch(Map<String, dynamic> match) async {
     // Mostrar diálogo de confirmación
-    bool confirmLeave = await showDialog(
+    final bool confirmLeave = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Abandonar partido'),
-          content: Text('¿Estás seguro de que quieres abandonar este partido?'),
+          content: Text('¿Estás seguro de que quieres abandonar este partido? Podrás volver a unirte más tarde si lo deseas.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -1315,8 +1323,7 @@ Hora: $formattedTime
             ),
           ],
         );
-      },
-    ) ?? false;
+      },    ) ?? false;
 
     if (!confirmLeave) return;
 
@@ -1344,7 +1351,9 @@ Hora: $formattedTime
     try {
       final currentUser = supabase.auth.currentUser;
       if (currentUser == null) {
-        Navigator.of(context).pop(); // Cerrar diálogo
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context); // Cerrar diálogo
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Debes iniciar sesión para abandonar un partido'),
@@ -1352,21 +1361,33 @@ Hora: $formattedTime
           ),
         );
         return;
-      }      // Obtener el ID del partido
+      }
+        // Obtener el ID del partido
       final matchId = match['id'];
       print('Abandonando partido con ID: $matchId');
       print('Usuario actual: ${currentUser.id}');
-
+      
+      // Convertir el ID del partido a entero si es necesario
+      int matchIdInt;
+      try {
+        matchIdInt = matchId is int ? matchId : int.parse(matchId.toString());
+      } catch (e) {
+        print('Error al convertir match_id a entero: $e');
+        matchIdInt = -1; // Valor inválido que causará error controlado
+      }
+      
       // Verificar primero si el usuario está en el partido
       final participante = await supabase
           .from('match_participants')
           .select()
-          .eq('match_id', matchId)
+          .eq('match_id', matchIdInt)
           .eq('user_id', currentUser.id)
           .maybeSingle();
           
       if (participante == null) {
-        Navigator.of(context).pop(); // Cerrar diálogo
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context); // Cerrar diálogo
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('No estás registrado en este partido'),
@@ -1374,38 +1395,60 @@ Hora: $formattedTime
           ),
         );
         return;
-      }
+      }      print('Participante encontrado: ${participante['id']}');
       
-      print('Participante encontrado: ${participante['id']}');
-
-      // Eliminar al usuario de match_participants
-      final result = await supabase
+      // Eliminar al usuario de match_participants usando match_id y user_id (más compatible con RLS)
+      await supabase
           .from('match_participants')
           .delete()
-          .eq('match_id', matchId)
+          .eq('match_id', matchIdInt)
           .eq('user_id', currentUser.id);
           
-      print('Usuario eliminado del partido');
-
-      // Cerrar diálogo y mostrar mensaje de éxito
-      Navigator.of(context).pop();
+      print('Usuario eliminado del partido (usando match_id y user_id)');
+      
+      // Actualizar la caché de participantes para este partido
+      try {
+        matchIdInt = int.parse(matchId.toString());
+        if (_participantCountCache.containsKey(matchIdInt)) {
+          _participantCountCache[matchIdInt] = (_participantCountCache[matchIdInt]! - 1).clamp(0, double.infinity).toInt();
+          print('Caché de participantes actualizada. Ahora hay ${_participantCountCache[matchIdInt]} participantes en el partido $matchIdInt');
+        }
+      } catch (e) {
+        print('Error al actualizar caché: $e');
+      }
+      
+      // Cerrar diálogo
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+        // Mostrar mensaje de éxito
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Has abandonado el partido correctamente'),
           backgroundColor: Colors.green,
         ),
-      );      // Refrescar la lista de partidos
+      );
+
+      // En lugar de intentar modificar las listas localmente (que puede causar problemas),
+      // vamos a recargar completamente los datos desde Supabase
+      print('Recargando todos los partidos desde la base de datos...');
+      await _fetchMatches();
+      
+      // Seleccionar la pestaña "Mis Partidos" para que el usuario vea los cambios
+      _tabController.animateTo(0); // Asegura que mostramos la pestaña "Mis Partidos"
+      
+      // Forzar la actualización de la UI
       setState(() {
-        // Remover el partido de la lista local para una actualización inmediata
-        _myMatches.removeWhere((m) => m['id'] == matchId && m['isOrganizer'] == false);
-        _filteredMyMatches.removeWhere((m) => m['id'] == matchId && m['isOrganizer'] == false);
+        print('UI actualizada después de abandonar el partido');
       });
       
-      // Luego actualizar todo desde la base de datos
-      await _fetchMatches();
     } catch (e) {
-      // Cerrar diálogo de carga
-      Navigator.of(context).pop();
+      print('Error en _leaveMatch: $e');
+      
+      // Cerrar diálogo de carga de forma segura
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
 
       // Mostrar mensaje de error
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1491,7 +1534,8 @@ Hora: $formattedTime
 
       // Obtener el ID del partido
       final matchId = match['id'];
-
+      print('Eliminando partido con ID: $matchId');
+      print('Usuario actual: ${currentUser.id}');
       // Eliminar el partido y todos los registros relacionados
       // Primero eliminar los participantes
       await supabase
