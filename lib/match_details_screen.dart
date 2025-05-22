@@ -45,7 +45,24 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
   String? _mvpTeamClaro;
   String? _mvpTeamOscuro;
   Map<String, dynamic>? _activeVoting; // Para almacenar información de votación activa
-    @override
+  
+  // Método para obtener los datos del jugador MVP
+  Map<String, dynamic>? _getMVPPlayerData(String? mvpId, List<Map<String, dynamic>> teamPlayers) {
+    if (mvpId == null) return null;
+    
+    // Buscar al jugador en la lista del equipo
+    try {
+      return teamPlayers.firstWhere(
+        (player) => player['id'].toString() == mvpId,
+        orElse: () => <String, dynamic>{},
+      );
+    } catch (e) {
+      print('Error al buscar datos del MVP: $e');
+      return null;
+    }
+  }
+  
+  @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
@@ -653,8 +670,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
     try {
       int matchIdInt = _matchData['id'] as int;
       bool hasVoted = false;
-      
-      // Votar por el jugador seleccionado
+        // Votar por el jugador seleccionado
       if (selectedPlayerId != null && playerTeam != null) {
         final success = await _mvpVotingService.voteForMVP(
           matchId: matchIdInt,
@@ -927,15 +943,11 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
     final mvpClaroData = _getMVPPlayerData(_mvpTeamClaro, _teamClaro);
     final mvpOscuroData = _getMVPPlayerData(_mvpTeamOscuro, _teamOscuro);
     
-    if (mounted) {
-      Navigator.of(context).push(
+    if (mounted) {      Navigator.of(context).push(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) => MVPResultsRevealScreen(
-            matchId: _matchData['id'],
             matchName: _matchData['nombre'] ?? 'Partido',
             topPlayers: topPlayers,
-            mvpClaroData: mvpClaroData,
-            mvpOscuroData: mvpOscuroData,
           ),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             const begin = Offset(0.0, 1.0);
