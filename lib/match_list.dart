@@ -696,7 +696,7 @@ Hora: $formattedTime
     
     // Determine if the match is public or private
     final bool isPublic = match['publico'] == true;
-      // Verificar si el usuario actual es participante del partido
+    // Verificar si el usuario actual es participante del partido
     final currentUser = supabase.auth.currentUser;
     bool isParticipant = false;
     
@@ -771,38 +771,43 @@ Hora: $formattedTime
                 SizedBox(height: 12),
                 Row(
                   children: [
-                    _buildInfoBadge(Icons.calendar_today, formattedDate),
-                    SizedBox(width: 8),
-                    _buildInfoBadge(Icons.access_time, formattedTime),
-                    Spacer(),
-                    // Añadir indicador público/privado
-                    Container(
-                      margin: EdgeInsets.only(right: 8),
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isPublic ? Colors.green.shade600.withOpacity(0.8) : Colors.orange.shade600.withOpacity(0.8),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                    Expanded(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          Icon(
-                            isPublic ? Icons.public : Icons.lock,
-                            color: Colors.white,
-                            size: 12,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            isPublic ? 'Público' : 'Privado',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
+                          _buildInfoBadge(Icons.calendar_today, formattedDate),
+                          _buildInfoBadge(Icons.access_time, formattedTime),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isPublic ? Colors.green.shade600.withOpacity(0.8) : Colors.orange.shade600.withOpacity(0.8),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isPublic ? Icons.public : Icons.lock,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
+                                SizedBox(width: 2),
+                                Text(
+                                  isPublic ? 'Público' : 'Privado',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    ),                    // El formato ya se muestra en el contador de jugadores
+                    ),
                   ],
                 ),
               ],
