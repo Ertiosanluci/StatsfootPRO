@@ -264,29 +264,20 @@ ${_isPublic ? '🌐 Partido Público' : '🔒 Partido Privado'}
         ),
       );
     }
-  }
-
-  @override
+  }  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _matchCreated ? 'Partido Creado' : 'Crear Partido',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.blue.shade800,
-        elevation: 0,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blue.shade100, Colors.blue.shade200],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      body: SafeArea(
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue.shade100, Colors.blue.shade200],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
+          child: _matchCreated ? _buildMatchCreatedContent() : _buildCreateMatchContent(),
         ),
-        child: _matchCreated ? _buildMatchCreatedContent() : _buildCreateMatchContent(),
       ),
     );
   }
@@ -612,16 +603,17 @@ ${_isPublic ? '🌐 Partido Público' : '🔒 Partido Privado'}
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 8,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            color: Colors.blue.shade800,
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.all(20),
               child: Column(
                 children: [
                   Icon(
                     Icons.check_circle_outline,
                     size: 64,
-                    color: Colors.green,
+                    color: Colors.white,
                   ),
                   SizedBox(height: 16),
                   Text(
@@ -629,36 +621,82 @@ ${_isPublic ? '🌐 Partido Público' : '🔒 Partido Privado'}
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue.shade800,
+                      color: Colors.white,
                     ),
                   ),
-                  Divider(height: 32),
+                  Divider(height: 32, color: Colors.white.withOpacity(0.5)),
                   ListTile(
-                    leading: Icon(Icons.sports_soccer),
-                    title: Text('Nombre'),
-                    subtitle: Text(_matchNameController.text),
+                    leading: Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.sports_soccer, color: Colors.white),
+                    ),
+                    title: Text('Nombre',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                    subtitle: Text(_matchNameController.text,
+                      style: TextStyle(color: Colors.white.withOpacity(0.9))),
                   ),
                   ListTile(
-                    leading: Icon(Icons.people),
-                    title: Text('Formato'),
-                    subtitle: Text(_selectedFormat),
+                    leading: Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.people, color: Colors.white),
+                    ),
+                    title: Text('Formato',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                    subtitle: Text(_selectedFormat,
+                      style: TextStyle(color: Colors.white.withOpacity(0.9))),
                   ),
                   ListTile(
-                    leading: Icon(Icons.calendar_today),
-                    title: Text('Fecha'),
+                    leading: Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.calendar_today, color: Colors.white),
+                    ),
+                    title: Text('Fecha',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
                     subtitle: Text(
                       DateFormat('EEEE, d MMM yyyy', 'es_ES').format(_selectedDate),
+                      style: TextStyle(color: Colors.white.withOpacity(0.9)),
                     ),
                   ),
                   ListTile(
-                    leading: Icon(Icons.access_time),
-                    title: Text('Hora'),
-                    subtitle: Text(_selectedTime.format(context)),
+                    leading: Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.access_time, color: Colors.white),
+                    ),
+                    title: Text('Hora',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                    subtitle: Text(_selectedTime.format(context),
+                      style: TextStyle(color: Colors.white.withOpacity(0.9))),
                   ),
                   ListTile(
-                    leading: Icon(_isPublic ? Icons.public : Icons.lock),
-                    title: Text('Visibilidad'),
-                    subtitle: Text(_isPublic ? 'Público' : 'Privado'),
+                    leading: Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(_isPublic ? Icons.public : Icons.lock,
+                        color: Colors.white),
+                    ),
+                    title: Text('Visibilidad',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                    subtitle: Text(_isPublic ? 'Público' : 'Privado',
+                      style: TextStyle(color: Colors.white.withOpacity(0.9))),
                   ),
                 ],
               ),
@@ -666,27 +704,29 @@ ${_isPublic ? '🌐 Partido Público' : '🔒 Partido Privado'}
           ),
           SizedBox(height: 16),
           Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 8,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            color: Colors.blue.shade800,
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Compartir Partido',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue.shade800,
+                      color: Colors.white,
                     ),
                   ),
-                  Divider(),
+                  Divider(color: Colors.white.withOpacity(0.5)),
                   if (_matchLink != null) ...[
                     Container(
-                      padding: EdgeInsets.all(8),
+                      margin: EdgeInsets.symmetric(vertical: 12),
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
+                        color: Colors.white.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -694,49 +734,71 @@ ${_isPublic ? '🌐 Partido Público' : '🔒 Partido Privado'}
                           Expanded(
                             child: Text(
                               _matchLink!,
-                              style: TextStyle(fontWeight: FontWeight.w500),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500
+                              ),
                             ),
                           ),
                           IconButton(
-                            icon: Icon(Icons.copy),
+                            icon: Icon(Icons.copy, color: Colors.white),
                             onPressed: _copyMatchLink,
                             tooltip: 'Copiar enlace',
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(height: 16),
+                    SizedBox(height: 12),
                     ElevatedButton.icon(
                       onPressed: _shareMatchLink,
                       icon: Icon(Icons.share),
                       label: Text('Compartir Partido'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue.shade700,
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.blue.shade800,
                         padding: EdgeInsets.symmetric(vertical: 12),
+                        elevation: 0,
+                        minimumSize: Size(double.infinity, 48),
                       ),
                     ),
                   ],
                 ],
               ),
             ),
-          ),
-          SizedBox(height: 24),
-          OutlinedButton.icon(
-            onPressed: () {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => UserMenuScreen(initialTabIndex: 1),
+          ),          SizedBox(height: 16),
+          Card(
+            elevation: 8,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            color: Colors.blue.shade800,
+            child: InkWell(
+              onTap: () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UserMenuScreen(initialTabIndex: 1),
+                  ),
+                  (route) => false,
+                );
+              },
+              borderRadius: BorderRadius.circular(15),
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.list, color: Colors.white),
+                    SizedBox(width: 12),
+                    Text(
+                      'Ver Mis Partidos',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
-                (route) => false,
-              );
-            },
-            icon: Icon(Icons.list),
-            label: Text('Ver Mis Partidos'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.white,
-              side: BorderSide(color: Colors.white),
-              padding: EdgeInsets.symmetric(vertical: 12),
+              ),
             ),
           ),
         ],
