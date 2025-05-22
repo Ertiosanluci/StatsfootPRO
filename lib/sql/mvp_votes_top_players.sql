@@ -4,27 +4,37 @@ RETURNS TABLE (
   voted_player_id TEXT,
   player_name TEXT,
   vote_count BIGINT,
-  team TEXT
+  team TEXT,
+  foto_url TEXT
 ) 
 LANGUAGE plpgsql
 AS $$
 BEGIN
   RETURN QUERY
+  WITH vote_counts AS (
+    SELECT 
+      v.voted_player_id,
+      COUNT(v.voted_player_id) as vote_count,
+      v.team
+    FROM 
+      mvp_votes v
+    WHERE 
+      v.match_id = match_id_param
+    GROUP BY 
+      v.voted_player_id, v.team
+  )
   SELECT 
-    v.voted_player_id,
+    vc.voted_player_id,
     COALESCE(up.nombre, 'Jugador') as player_name,
-    COUNT(v.voted_player_id) as vote_count,
-    v.team
+    vc.vote_count,
+    vc.team,
+    up.foto_perfil as foto_url
   FROM 
-    mvp_votes v
+    vote_counts vc
   LEFT JOIN
-    users_profiles up ON v.voted_player_id = up.user_id
-  WHERE 
-    v.match_id = match_id_param
-  GROUP BY 
-    v.voted_player_id, up.nombre, v.team
+    users_profiles up ON vc.voted_player_id = up.user_id
   ORDER BY 
-    COUNT(v.voted_player_id) DESC
+    vc.vote_count DESC
   LIMIT limit_param;
 END;
 $$;

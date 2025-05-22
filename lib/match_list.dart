@@ -7,6 +7,7 @@ import 'create_match.dart';
 import 'match_join_screen.dart';
 import 'match_details_screen.dart';
 import 'team_management_screen.dart';
+import 'utils/match_operations.dart';
 
 class MatchListScreen extends StatefulWidget {
   @override
@@ -19,6 +20,9 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
   List<Map<String, dynamic>> _friendsMatches = []; // Partidos de amigos (privados)
   List<Map<String, dynamic>> _publicMatches = []; // Partidos públicos
   
+  // Cache para los contadores de participantes
+  final Map<int, int> _participantCountCache = {};
+  
   // Listas filtradas por tiempo (próximos/pasados)
   List<Map<String, dynamic>> _filteredMyMatches = [];
   List<Map<String, dynamic>> _filteredFriendsMatches = [];
@@ -30,11 +34,18 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
   bool _isLoading = true;
   late TabController _tabController;
   String? _error;
-
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this); // 3 pestañas: Mis Partidos, Amigos, Públicos
+    
+    // Add listener to handle tab changes
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        print("Tab switched to: ${_tabController.index}");
+      }
+    });
+    
     _fetchMatches();
   }
 
@@ -91,12 +102,13 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
       }
     });
   }
-
   Future<void> _fetchMatches() async {
     try {
       setState(() {
         _isLoading = true;
         _error = null;
+        // Limpiar caché de contadores de participantes
+        _participantCountCache.clear();
       });
 
       final currentUser = supabase.auth.currentUser;
@@ -466,15 +478,16 @@ Hora: $formattedTime
                 : Column(
                     children: [
                       // Filtro de tiempo (Próximos/Pasados/Todos)
-                      _buildTimeFilterRow(),
-                      
-                      // Lista de partidos
+                      _buildTimeFilterRow(),                      // Lista de partidos
                       Expanded(
                         child: TabBarView(
                           controller: _tabController,
                           children: [
-                            _buildMatchListView(_filteredMyMatches, isOrganizer: true, listType: "my"),
+                            // Tab 0: Mis Partidos (incluye organizados + unidos)
+                            _buildMatchListView(_filteredMyMatches, isOrganizer: false, listType: "my"),
+                            // Tab 1: Amigos
                             _buildMatchListView(_filteredFriendsMatches, isOrganizer: false, listType: "friends"),
+                            // Tab 2: Públicos
                             _buildMatchListView(_filteredPublicMatches, isOrganizer: false, listType: "public"),
                           ],
                         ),
@@ -684,18 +697,22 @@ Hora: $formattedTime
     
     // Determine if the match is public or private
     final bool isPublic = match['publico'] == true;
-    
-    // Verificar si el usuario actual es participante del partido
+      // Verificar si el usuario actual es participante del partido
     final currentUser = supabase.auth.currentUser;
     bool isParticipant = false;
     
     if (currentUser != null && !isOrganizer) {
-      // Verificar si el usuario está en la lista de participantes
+      // Verificar si el usuario está en la lista de partidos como participante
       try {
+        // Si el partido está en mis partidos pero no soy el organizador, entonces soy participante
         isParticipant = _myMatches.any((m) => 
           m['id'] == match['id'] && 
-          !m['isOrganizer'] == true
+          m['isOrganizer'] == false
         );
+        
+        if (isParticipant) {
+          print('El usuario ${currentUser.id} es participante del partido ${match['id']}');
+        }
       } catch (e) {
         print('Error al verificar participación: $e');
       }
@@ -786,22 +803,7 @@ Hora: $formattedTime
                           ),
                         ],
                       ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.shade600,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        match['formato'],
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                    ),                    // El formato ya se muestra en el contador de jugadores
                   ],
                 ),
               ],
@@ -876,10 +878,59 @@ Hora: $formattedTime
                             ),
                           ),
                       ],
-                    ),
-                  ),
+                    ),                  ),
                 
-                SizedBox(height: 16),
+                // Mostrar número de participantes
+                Container(
+                  margin: EdgeInsets.symmetric(vertical: 12),
+                  padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.group, color: Colors.blue.shade700, size: 20),
+                      SizedBox(width: 8),
+                      FutureBuilder<int>(
+                        future: _getMatchParticipantsCount(match['id']),
+                        builder: (context, snapshot) {
+                          final int count = snapshot.data ?? 0;
+                          final String formato = match['formato'] ?? '?v?';
+                          final int totalPlayers = int.parse(formato.split('v')[0]) * 2; // 5v5 = 10 jugadores en total
+                          
+                          return Text(
+                            '$count/$totalPlayers jugadores unidos',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue.shade800,
+                            ),
+                          );
+                        }
+                      ),
+                      Spacer(),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.orange.shade300),
+                        ),
+                        child: Text(
+                          match['formato'],
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange.shade800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                SizedBox(height: 8),
                   // Action buttons
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -972,8 +1023,44 @@ Hora: $formattedTime
         builder: (context) => MatchDetailsScreen(matchId: matchId),
       ),
     );
+  }  // Método para obtener el número de participantes de un partido
+  Future<int> _getMatchParticipantsCount(dynamic matchId) async {
+    // Convertir el ID a entero para usarlo como clave del mapa
+    int matchIdInt;
+    if (matchId is int) {
+      matchIdInt = matchId;
+    } else {
+      try {
+        matchIdInt = int.parse(matchId.toString());
+      } catch (e) {
+        print('Error convirtiendo ID a entero: $e');
+        return 0;
+      }
+    }
+    
+    // Verificar si tenemos la cuenta en caché
+    if (_participantCountCache.containsKey(matchIdInt)) {
+      return _participantCountCache[matchIdInt]!;
+    }
+    
+    try {
+      final response = await supabase
+          .from('match_participants')
+          .select('id')
+          .eq('match_id', matchIdInt);
+      
+      final count = response.length;
+      
+      // Guardar en caché
+      _participantCountCache[matchIdInt] = count;
+      
+      return count;
+    } catch (e) {
+      print('Error al obtener participantes: $e');
+      return 0;
+    }
   }
-
+  
   Widget _buildInfoBadge(IconData icon, String text) {
     return Container(
       decoration: BoxDecoration(
@@ -1166,9 +1253,7 @@ Hora: $formattedTime
         'equipo': null, // El equipo será asignado por el organizador
         'es_organizador': false,
         'joined_at': DateTime.now().toIso8601String(),
-      });
-
-      // Cerrar diálogo y mostrar mensaje de éxito
+      });      // Cerrar diálogo y mostrar mensaje de éxito
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1176,6 +1261,11 @@ Hora: $formattedTime
           backgroundColor: Colors.green,
         ),
       );
+
+      // Actualizar la caché de participantes para este partido
+      if (matchIdInt != null && _participantCountCache.containsKey(matchIdInt)) {
+        _participantCountCache[matchIdInt] = _participantCountCache[matchIdInt]! + 1;
+      }
 
       // Refrescar la lista de partidos
       _fetchMatches();
@@ -1210,19 +1300,18 @@ Hora: $formattedTime
           backgroundColor: Colors.red,
           duration: Duration(seconds: 5),
         ),
-      );
-    }
+      );    }
   }
-
+  
   // Método para que un usuario abandone un partido
   Future<void> _leaveMatch(Map<String, dynamic> match) async {
     // Mostrar diálogo de confirmación
-    bool confirmLeave = await showDialog(
+    final bool confirmLeave = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Abandonar partido'),
-          content: Text('¿Estás seguro de que quieres abandonar este partido?'),
+          content: Text('¿Estás seguro de que quieres abandonar este partido? Podrás volver a unirte más tarde si lo deseas.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -1234,8 +1323,7 @@ Hora: $formattedTime
             ),
           ],
         );
-      },
-    ) ?? false;
+      },    ) ?? false;
 
     if (!confirmLeave) return;
 
@@ -1263,7 +1351,9 @@ Hora: $formattedTime
     try {
       final currentUser = supabase.auth.currentUser;
       if (currentUser == null) {
-        Navigator.of(context).pop(); // Cerrar diálogo
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context); // Cerrar diálogo
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Debes iniciar sesión para abandonar un partido'),
@@ -1272,19 +1362,66 @@ Hora: $formattedTime
         );
         return;
       }
-
-      // Obtener el ID del partido
+        // Obtener el ID del partido
       final matchId = match['id'];
-
-      // Eliminar al usuario de match_participants
+      print('Abandonando partido con ID: $matchId');
+      print('Usuario actual: ${currentUser.id}');
+      
+      // Convertir el ID del partido a entero si es necesario
+      int matchIdInt;
+      try {
+        matchIdInt = matchId is int ? matchId : int.parse(matchId.toString());
+      } catch (e) {
+        print('Error al convertir match_id a entero: $e');
+        matchIdInt = -1; // Valor inválido que causará error controlado
+      }
+      
+      // Verificar primero si el usuario está en el partido
+      final participante = await supabase
+          .from('match_participants')
+          .select()
+          .eq('match_id', matchIdInt)
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+          
+      if (participante == null) {
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context); // Cerrar diálogo
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No estás registrado en este partido'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }      print('Participante encontrado: ${participante['id']}');
+      
+      // Eliminar al usuario de match_participants usando match_id y user_id (más compatible con RLS)
       await supabase
           .from('match_participants')
           .delete()
-          .eq('match_id', matchId)
+          .eq('match_id', matchIdInt)
           .eq('user_id', currentUser.id);
-
-      // Cerrar diálogo y mostrar mensaje de éxito
-      Navigator.of(context).pop();
+          
+      print('Usuario eliminado del partido (usando match_id y user_id)');
+      
+      // Actualizar la caché de participantes para este partido
+      try {
+        matchIdInt = int.parse(matchId.toString());
+        if (_participantCountCache.containsKey(matchIdInt)) {
+          _participantCountCache[matchIdInt] = (_participantCountCache[matchIdInt]! - 1).clamp(0, double.infinity).toInt();
+          print('Caché de participantes actualizada. Ahora hay ${_participantCountCache[matchIdInt]} participantes en el partido $matchIdInt');
+        }
+      } catch (e) {
+        print('Error al actualizar caché: $e');
+      }
+      
+      // Cerrar diálogo
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+        // Mostrar mensaje de éxito
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Has abandonado el partido correctamente'),
@@ -1292,11 +1429,26 @@ Hora: $formattedTime
         ),
       );
 
-      // Refrescar la lista de partidos
-      _fetchMatches();
+      // En lugar de intentar modificar las listas localmente (que puede causar problemas),
+      // vamos a recargar completamente los datos desde Supabase
+      print('Recargando todos los partidos desde la base de datos...');
+      await _fetchMatches();
+      
+      // Seleccionar la pestaña "Mis Partidos" para que el usuario vea los cambios
+      _tabController.animateTo(0); // Asegura que mostramos la pestaña "Mis Partidos"
+      
+      // Forzar la actualización de la UI
+      setState(() {
+        print('UI actualizada después de abandonar el partido');
+      });
+      
     } catch (e) {
-      // Cerrar diálogo de carga
-      Navigator.of(context).pop();
+      print('Error en _leaveMatch: $e');
+      
+      // Cerrar diálogo de carga de forma segura
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
 
       // Mostrar mensaje de error
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1382,7 +1534,8 @@ Hora: $formattedTime
 
       // Obtener el ID del partido
       final matchId = match['id'];
-
+      print('Eliminando partido con ID: $matchId');
+      print('Usuario actual: ${currentUser.id}');
       // Eliminar el partido y todos los registros relacionados
       // Primero eliminar los participantes
       await supabase

@@ -17,7 +17,7 @@ import 'widgets/match_details/top_mvp_players_widget.dart';
 import 'services/mvp_voting_service.dart';
 import 'services/notification_service.dart';
 import 'screens/mvp_voting_history_screen.dart';
-import 'screens/mvp_results_reveal_screen.dart';
+import 'package:statsfoota/screens/mvp_results_reveal_screen.dart';
 import 'tests/mvp_voting_test.dart' as mvp_tester;
 
 class MatchDetailsScreen extends StatefulWidget {
@@ -33,6 +33,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
   final MatchServices _matchServices = MatchServices();
   final MVPVotingService _mvpVotingService = MVPVotingService();
   final NotificationService _notificationService = NotificationService();
+  final SupabaseClient supabase = Supabase.instance.client;
   
   bool _isLoading = true;
   Map<String, dynamic> _matchData = {};
@@ -462,14 +463,12 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
             
             // Actualizar estado y MVPs
             await _matchServices.finishMatch(matchIdInt, mvpClaroId, mvpOscuroId);
-            
-            // Actualizar datos locales
+              // Actualizar datos locales
             setState(() {
               _matchData['estado'] = 'finalizado';
               _matchData['mvp_team_claro'] = mvpClaroId;
               _matchData['mvp_team_oscuro'] = mvpOscuroId;
-              _mvpTeamClaro = mvpClaroId;
-              _mvpTeamOscuro = mvpOscuroId;
+              _mvpTeamClaro = mvpClaroId;              _mvpTeamOscuro = mvpOscuroId;
             });
             
             // Cerrar el indicador de carga
@@ -697,8 +696,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
       );
     }
   }
-  
-  // Método para finalizar manualmente la votación de MVP
+    // Método para finalizar manualmente la votación de MVP
   Future<void> _finishMVPVotingManually() async {
     try {
       // Mostrar un diálogo de confirmación
@@ -742,6 +740,8 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
       
       int matchIdInt = _matchData['id'] as int;
       
+      print('Iniciando finalización manual de votación para partido $matchIdInt');
+      
       // Finalizar la votación
       final success = await _mvpVotingService.finishVotingManually(matchIdInt);
       
@@ -751,10 +751,23 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
       }
       
       if (success) {
-        // Actualizar UI
-        await _fetchMatchDetails();
+        print('Votación finalizada con éxito, actualizando UI');
         
-        // Mostrar mensaje de éxito
+        // Obtener los detalles actualizados del partido
+        final matchDetails = await _matchServices.getMatchDetails(widget.matchId);
+        
+        // Actualizar UI
+        setState(() {
+          _mvpTeamClaro = matchDetails['mvp_team_claro'];
+          _mvpTeamOscuro = matchDetails['mvp_team_oscuro'];
+          _activeVoting = null; // La votación ya no está activa
+          _matchData['mvp_team_claro'] = matchDetails['mvp_team_claro'];
+          _matchData['mvp_team_oscuro'] = matchDetails['mvp_team_oscuro'];
+          
+          print('MVPs actualizados: Claro=${_mvpTeamClaro}, Oscuro=${_mvpTeamOscuro}');
+        });
+        
+        // Mostrar mensaje de éxito con botón para ver resultados
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -762,6 +775,23 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
               style: TextStyle(color: Colors.white),
             ),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'VER RESULTADOS',
+              textColor: Colors.amber,
+              onPressed: _navigateToMVPResultsReveal,
+            ),
+          ),
+        );
+      } else {
+        // Mostrar mensaje de error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'No se pudo finalizar la votación. Inténtalo de nuevo.',
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.red,
             duration: Duration(seconds: 4),
           ),
         );
@@ -878,18 +908,6 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
     }
   }
 
-  // Método para obtener los datos de los jugadores MVP
-  Map<String, dynamic> _getMVPPlayerData(String? mvpId, List<Map<String, dynamic>> team) {
-    if (mvpId == null) return {};
-    
-    for (var player in team) {
-      if (player['id'].toString() == mvpId) {
-        return player;
-      }
-    }
-    
-    return {};
-  }
   
   // Método para navegar a la pantalla de historial de votaciones
   void _navigateToVotingHistory() {
@@ -901,19 +919,9 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
         ),
       ),
     );
-  }
-  
-  // Método para navegar a la pantalla de revelación de resultados MVP
+  }  // Método para navegar a la pantalla de revelación de resultados MVP
   void _navigateToMVPResultsReveal() async {
     final topPlayers = await _mvpVotingService.getTopVotedPlayers(_matchData['id'] as int);
-    
-    // Log para verificar los datos recibidos
-    print('==== RESULTADOS MVP RECIBIDOS ====');
-    print('Total de jugadores recibidos: ${topPlayers.length}');
-    for (var i = 0; i < topPlayers.length; i++) {
-      print('Jugador ${i+1}: ${topPlayers[i]['nombre']} - Votos: ${topPlayers[i]['votes']}');
-    }
-    print('================================');
     
     // Obtener los datos de los MVP para pasarlos a la pantalla de resultados
     final mvpClaroData = _getMVPPlayerData(_mvpTeamClaro, _teamClaro);
@@ -952,14 +960,32 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
   }  // Método para actualizar los MVPs después de que se completa una votación
   Future<void> _refreshMVPsAfterVoting() async {
     try {
-      if (_activeVoting == null) return;
+      if (_activeVoting == null) {
+        print('No hay votación activa para refrescar MVPs');
+        return;
+      }
       
       int matchIdInt = _matchData['id'] as int;
+      print('Revisando si la votación del partido $matchIdInt ha finalizado...');      // Verificar el estado actual de la votación directamente desde la base de datos
+      final currentVotingStatus = await supabase
+          .from('mvp_voting_status')
+          .select('status')
+          .eq('match_id', matchIdInt)
+          .maybeSingle();
       
-      // Verificar si la votación ha expirado
-      final votingEnded = await _mvpVotingService.checkAndFinishExpiredVoting(matchIdInt);
+      print('Estado actual de la votación: ${currentVotingStatus != null ? currentVotingStatus['status'] : "no encontrado"}');
+      
+      // La votación ya ha finalizado si el status es "completed" o si ya no existe un registro
+      bool votingEnded = false;
+      if (currentVotingStatus == null || currentVotingStatus['status'] == 'completed') {
+        votingEnded = true;
+      } else {
+        // Verificar si la votación ha expirado por tiempo
+        votingEnded = await _mvpVotingService.checkAndFinishExpiredVoting(matchIdInt);
+      }
       
       if (votingEnded) {
+        print('La votación del partido $matchIdInt ha finalizado. Actualizando datos...');
         // La votación ha terminado, obtener los detalles actualizados y los top jugadores
         final matchDetails = await _matchServices.getMatchDetails(widget.matchId);
         
@@ -969,10 +995,9 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           _activeVoting = null; // La votación ya no está activa
           _matchData['mvp_team_claro'] = matchDetails['mvp_team_claro'];
           _matchData['mvp_team_oscuro'] = matchDetails['mvp_team_oscuro'];
+          
+          print('MVPs actualizados: Claro=${_mvpTeamClaro}, Oscuro=${_mvpTeamOscuro}');
         });
-        
-        // Actualizar la UI para mostrar el widget de top 3
-        setState(() {});
         
         // Mostrar mensaje de que se ha completado la votación
         if (mounted) {
@@ -984,10 +1009,18 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
               ),
               backgroundColor: Colors.green,
               duration: Duration(seconds: 5),
+              action: SnackBarAction(
+                label: 'VER RESULTADOS',
+                textColor: Colors.amber,
+                onPressed: _navigateToMVPResultsReveal,
+              ),
             ),
           );
         }
-      }    } catch (e) {
+      } else {
+        print('La votación del partido $matchIdInt sigue activa.');
+      }
+    } catch (e) {
       print('Error al actualizar MVPs después de votación: $e');
     }
   }
@@ -1039,8 +1072,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
   @override
   Widget build(BuildContext context) {
     final int golesEquipoClaro = _matchData['resultado_claro'] ?? 0;
-    final int golesEquipoOscuro = _matchData['resultado_oscuro'] ?? 0;
-    final bool isPartidoFinalizado = _matchData['estado'] == 'finalizado';
+    final int golesEquipoOscuro = _matchData['resultado_oscuro'] ?? 0;    final bool isPartidoFinalizado = _matchData['estado'] == 'finalizado';
     
     // Determinar si el usuario actual es el creador del partido
     final currentUser = Supabase.instance.client.auth.currentUser;
@@ -1170,23 +1202,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
               ),
               
             // Botón de test eliminado
-          ],
-        ],      ),
-      floatingActionButton: isPartidoFinalizado 
-        ? FloatingActionButton.extended(
-            onPressed: _navigateToMVPResultsReveal,
-            backgroundColor: Colors.amber.shade700,
-            icon: Icon(Icons.emoji_events, color: Colors.white),
-            label: Text(
-              'Ver Resultados de Votación',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            elevation: 4,
-          ) 
-        : null,
+          ],        ],      ),
       body: _isLoading 
         ? Center(child: CircularProgressIndicator(color: Colors.blue))
         : Stack(
@@ -1199,11 +1215,8 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                     golesEquipoClaro: golesEquipoClaro,
                     golesEquipoOscuro: golesEquipoOscuro,
                     isPartidoFinalizado: isPartidoFinalizado,
+                    onViewResultsTap: isPartidoFinalizado ? _navigateToMVPResultsReveal : null,
                   ),
-                  
-                  // Ya no mostraremos resultados de MVP aquí, sino en la pantalla dedicada
-                    
-                  // Se ha eliminado el widget de visualización de Top 3 jugadores
               
               // Campo y jugadores
               Expanded(
