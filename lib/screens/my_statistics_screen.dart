@@ -31,6 +31,8 @@ class _MyStatisticsScreenState extends State<MyStatisticsScreen> {
   int _totalOwnGoals = 0;
   double _goalAverage = 0;
   double _assistAverage = 0;
+  double _ownGoalAverage = 0;
+  double _goalAssistRatio = 0;
   
   @override
   void initState() {
@@ -160,6 +162,8 @@ class _MyStatisticsScreenState extends State<MyStatisticsScreen> {
       _totalOwnGoals = totalOwnGoals;
       _goalAverage = totalMatches > 0 ? totalGoals / totalMatches : 0;
       _assistAverage = totalMatches > 0 ? totalAssists / totalMatches : 0;
+      _ownGoalAverage = totalMatches > 0 ? totalOwnGoals / totalMatches : 0;
+      _goalAssistRatio = totalMatches > 0 ? (totalGoals + totalAssists) / totalMatches : 0;
     });
   }
   
@@ -260,11 +264,13 @@ class _MyStatisticsScreenState extends State<MyStatisticsScreen> {
     // Crear puntos para el gráfico
     final List<FlSpot> goalSpots = [];
     final List<FlSpot> assistSpots = [];
+    final List<FlSpot> ownGoalSpots = [];
     
     for (int i = 0; i < sortedStats.length; i++) {
       final stat = sortedStats[i];
       goalSpots.add(FlSpot(i.toDouble(), (stat['goles'] ?? 0).toDouble()));
       assistSpots.add(FlSpot(i.toDouble(), (stat['asistencias'] ?? 0).toDouble()));
+      ownGoalSpots.add(FlSpot(i.toDouble(), (stat['goles_propios'] ?? 0).toDouble()));
     }
     
     return Container(
@@ -380,6 +386,19 @@ class _MyStatisticsScreenState extends State<MyStatisticsScreen> {
                       color: Colors.blue.withOpacity(0.2),
                     ),
                   ),
+                  // Línea de goles en propia
+                  LineChartBarData(
+                    spots: ownGoalSpots,
+                    isCurved: true,
+                    color: Colors.red,
+                    barWidth: 3,
+                    isStrokeCapRound: true,
+                    dotData: FlDotData(show: true),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: Colors.red.withOpacity(0.2),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -396,6 +415,8 @@ class _MyStatisticsScreenState extends State<MyStatisticsScreen> {
           _buildLegendItem(Colors.orange, 'Goles'),
           const SizedBox(width: 20),
           _buildLegendItem(Colors.blue, 'Asistencias'),
+          const SizedBox(width: 20),
+          _buildLegendItem(Colors.red, 'Goles en propia'),
         ],
       ),
     );
@@ -642,6 +663,26 @@ class _MyStatisticsScreenState extends State<MyStatisticsScreen> {
                         ),
                         const SizedBox(height: 20),
                         
+                        // Título del gráfico
+                        const Padding(
+                          padding: EdgeInsets.only(left: 16, bottom: 8),
+                          child: Text(
+                            'Evolución de estadísticas',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        
+                        // Gráfico de estadísticas
+                        _buildStatsChart(),
+                        
+                        // Leyenda del gráfico
+                        _buildChartLegend(),
+                        const SizedBox(height: 20),
+                        
                         // Tarjetas de promedios
                         GridView.count(
                           crossAxisCount: 2,
@@ -662,28 +703,20 @@ class _MyStatisticsScreenState extends State<MyStatisticsScreen> {
                               Icons.trending_up,
                               Colors.blue,
                             ),
+                            _buildStatCard(
+                              'Goles en propia por partido',
+                              _ownGoalAverage.toStringAsFixed(2),
+                              Icons.trending_up,
+                              Colors.red,
+                            ),
+                            _buildStatCard(
+                              'Goles+Asist. por partido',
+                              _goalAssistRatio.toStringAsFixed(2),
+                              Icons.trending_up,
+                              Colors.purple,
+                            ),
                           ],
                         ),
-                        const SizedBox(height: 20),
-                        
-                        // Título del gráfico
-                        const Padding(
-                          padding: EdgeInsets.only(left: 16, bottom: 8),
-                          child: Text(
-                            'Evolución de estadísticas',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                        
-                        // Gráfico de estadísticas
-                        _buildStatsChart(),
-                        
-                        // Leyenda del gráfico
-                        _buildChartLegend(),
                         const SizedBox(height: 20),
                       ],
                     ),

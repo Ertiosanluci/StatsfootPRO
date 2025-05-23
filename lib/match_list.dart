@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:flutter/services.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
+import 'package:statsfoota/widgets/invite_friends_dialog.dart';
 import 'create_match.dart';
 import 'match_join_screen.dart';
 import 'match_details_screen.dart';
@@ -372,6 +372,16 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
         _error = 'Error al cargar partidos: $e';
       });
     }
+  }
+
+  void _showInviteFriendsDialog(Map<String, dynamic> match) {
+    showDialog(
+      context: context,
+      builder: (context) => InviteFriendsDialog(
+        matchId: match['id'],
+        matchName: match['nombre'] ?? 'Partido',
+      ),
+    );
   }
 
   void _shareMatchLink(Map<String, dynamic> match) async {
@@ -1053,11 +1063,20 @@ Hora: $formattedTime
                               onPressed: () => _navigateToMatchJoinScreen(match['id'].toString()),
                               color: Colors.blue,
                             ),
-                            _buildActionButton(
-                              icon: Icons.share,
-                              label: 'Compartir',
-                              onPressed: () => _shareMatchLink(match),
-                              color: Colors.green,
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: Icon(Icons.person_add),
+                                  tooltip: 'Invitar amigos',
+                                  onPressed: () => _showInviteFriendsDialog(match),
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.share),
+                                  tooltip: 'Compartir enlace',
+                                  onPressed: () => _shareMatchLink(match),
+                                ),
+                              ],
                             ),
                             // Añadir botón de eliminar partido para el organizador
                             if (!isPast) // Solo si el partido no ha pasado

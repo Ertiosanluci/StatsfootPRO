@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statsfoota/features/friends/presentation/controllers/friend_controller.dart';
 import 'package:statsfoota/features/friends/presentation/screens/user_profile_screen.dart';
 import 'package:statsfoota/features/friends/presentation/state/friend_state.dart'; // Añadiendo importación necesaria
+import 'package:statsfoota/screens/friend_statistics_screen.dart';
 
 class PeopleScreen extends ConsumerStatefulWidget {
   const PeopleScreen({Key? key}) : super(key: key);
@@ -331,12 +332,70 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
             : null,
         trailing: _buildFriendshipButton(user.id, isFriend,
             hasPendingSentRequest, hasPendingReceivedRequest),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => UserProfileScreen(userId: user.id),
-          ),
-        ),
+        onTap: () {
+          showModalBottomSheet(
+            context: context,
+            backgroundColor: Colors.blueGrey.shade800,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
+            builder: (context) => Padding(
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    user.username ?? 'Usuario',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  ListTile(
+                    leading: Icon(Icons.person, color: Colors.blue),
+                    title: Text(
+                      'Ver perfil',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => UserProfileScreen(userId: user.id),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.bar_chart, color: Colors.orange),
+                    title: Text(
+                      'Ver estadísticas',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FriendStatisticsScreen(
+                            friendId: user.id,
+                            friendName: user.username ?? 'Usuario',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

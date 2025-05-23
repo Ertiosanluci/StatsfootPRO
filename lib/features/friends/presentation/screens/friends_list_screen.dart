@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statsfoota/features/friends/presentation/controllers/friend_controller.dart';
 import 'package:statsfoota/features/friends/presentation/screens/user_profile_screen.dart';
+import 'package:statsfoota/screens/friend_statistics_screen.dart';
 
 class FriendsListScreen extends ConsumerStatefulWidget {
   const FriendsListScreen({Key? key}) : super(key: key);
@@ -319,6 +320,25 @@ class _FriendsListScreenState extends ConsumerState<FriendsListScreen> {
                 onTap: () {
                   Navigator.pop(context);
                   // TODO: Navigate to friend's matches
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.bar_chart, color: Colors.orange),
+                title: Text(
+                  'Ver estadísticas',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FriendStatisticsScreen(
+                        friendId: friendId,
+                        friendName: friendName,
+                      ),
+                    ),
+                  );
                 },
               ),
               ListTile(
