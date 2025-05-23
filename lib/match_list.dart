@@ -1654,15 +1654,25 @@ Hora: $formattedTime
       // Obtener el ID del partido
       final matchId = match['id'];
       print('Eliminando partido con ID: $matchId');
-      print('Usuario actual: ${currentUser.id}');
-      // Eliminar el partido y todos los registros relacionados
-      // Primero eliminar los participantes
+      print('Usuario actual: ${currentUser.id}');      // Eliminar el partido y todos los registros relacionados
+      
+      // Primero eliminar las estadísticas de los jugadores
+      await supabase
+          .from('estadisticas')
+          .delete()
+          .eq('partido_id', matchId);
+      
+      print('Eliminadas estadísticas del partido: $matchId');
+      
+      // Luego eliminar los participantes
       await supabase
           .from('match_participants')
           .delete()
           .eq('match_id', matchId);
+      
+      print('Eliminados participantes del partido: $matchId');
 
-      // Luego eliminar el partido
+      // Finalmente eliminar el partido
       await supabase
           .from('matches')
           .delete()

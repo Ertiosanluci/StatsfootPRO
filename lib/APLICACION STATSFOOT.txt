@@ -17,11 +17,11 @@ APLICACION STATSFOOT:
 
 
 
-	- Permitir cambiar a los jugadores de equipo.
-	- Hay que hacer una vista de la base de datos que aparezcan las estadísticas!!!!!!!!!!!!!!!!!!!!
-	- Añadir una gráfica de estadísticas de los jugadores con los goles por partidos, asistencias, goles en pp, MVPs.
-	- Añadir una funcionalidad de "Entrenador" en la que alguien que no es el creador del partido puede editar la formación del partido.
-	- Queda que se guarden las estadísticas en la base de datos
+	- Permitir cambiar a los jugadores de equipo.(hecho)
+	- Hay que hacer una vista de la base de datos que aparezcan las estadísticas!!!!!!!!!!!!!!!!!!!!(hecho)
+	- Añadir una gráfica de estadísticas de los jugadores con los goles por partidos, asistencias, goles en pp, MVPs.(hecho)
+	- Añadir una funcionalidad de "Entrenador" en la que alguien que no es el creador del partido puede editar la formación del partido. (POR HACER)
+	- Queda que se guarden las estadísticas en la base de datos(hecho)
 
 
 ahora necesito guardar las estadísticas de los goles, asistencias, goles en propia puerta. Quiero actualizar estas estadísticas,
@@ -30,7 +30,16 @@ ahora necesito guardar las estadísticas de los goles, asistencias, goles en pro
 COSAS QUE ARREGLAR MAÑANA:
 En crear partido, ahora vamos a quitar la sección que pone "nueva sección" de partidos, además ahora se guardará la ubicación del partido en la base de datos, en la que el creador seleccionará la ubicación en Google maps, luego se guardará la ubicación en la base de datos.
 Seguir mejorando la apariencia de la app
-Quitar lag de pantalla de registro
-hacer que se puedan registrar mediante Gmail y evitar que se inventen gmails
-Hacer que se pueda cambiar la contraseña de los usuarios
-Hacer que la app se pueda ejecutar en netlify desde la web.
+
+*****Hacer que se pueda cambiar la contraseña de los usuarios******
+
+
+
+Hacer que salga una notificación cada vez que se abra una votación y cuando se cierren para que los usuarios vayan a ver los resultados de las votaciones.
+Cambiar la pantalla home de la aplicación 
+
+Si borras un partido en el que has metido estadísticas, las stats no se borran.
+
+
+
+tengo un problema en el que si borro un partido no se borran las estadísticas de los jugadores. Es necesario borrarlas 
