@@ -30,7 +30,7 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
   List<Map<String, dynamic>> _filteredPublicMatches = [];
   
   // Variable para el filtro de tiempo
-  String _timeFilter = 'Todos'; // 'Próximos', 'Pasados', 'Todos'
+  String _timeFilter = 'Próximos'; // 'Próximos', 'Pasados', 'Todos'
   
   bool _isLoading = true;
   late TabController _tabController;
@@ -40,10 +40,23 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
     super.initState();
     _tabController = TabController(length: 3, vsync: this); // 3 pestañas: Mis Partidos, Amigos, Públicos
     
+    // Establecer el filtro por defecto para Mis Partidos como "Próximos"
+    _timeFilter = 'Próximos';
+    
     // Add listener to handle tab changes
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         print("Tab switched to: ${_tabController.index}");
+        
+        // Si cambiamos a la pestaña de Amigos o Públicos, asegurarse de que solo se muestren partidos futuros
+        if (_tabController.index == 1 || _tabController.index == 2) {
+          if (_timeFilter != 'Próximos') {
+            setState(() {
+              _timeFilter = 'Próximos';
+              _applyTimeFilter();
+            });
+          }
+        }
       }
     });
     
@@ -65,7 +78,8 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
         // Filtrar solo partidos con fecha futura
         _filteredMyMatches = _myMatches.where((match) {
           final matchDate = DateTime.parse(match['fecha']);
-          return matchDate.isAfter(now);
+          // Para Mis Partidos, filtrar por estado "Próximo" además de la fecha
+          return matchDate.isAfter(now) && match['estado'] == 'próximo';
         }).toList();
         
         _filteredFriendsMatches = _friendsMatches.where((match) {
@@ -85,21 +99,42 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
           return matchDate.isBefore(now);
         }).toList();
         
-        _filteredFriendsMatches = _friendsMatches.where((match) {
-          final matchDate = DateTime.parse(match['fecha']);
-          return matchDate.isBefore(now);
-        }).toList();
-        
-        _filteredPublicMatches = _publicMatches.where((match) {
-          final matchDate = DateTime.parse(match['fecha']);
-          return matchDate.isBefore(now);
-        }).toList();
+        // Para las tabs de Amigos y Públicos, no mostramos partidos pasados
+        // independientemente del filtro seleccionado
+        if (_tabController.index == 1 || _tabController.index == 2) {
+          _filteredFriendsMatches = [];
+          _filteredPublicMatches = [];
+        } else {
+          _filteredFriendsMatches = _friendsMatches.where((match) {
+            final matchDate = DateTime.parse(match['fecha']);
+            return matchDate.isBefore(now);
+          }).toList();
+          
+          _filteredPublicMatches = _publicMatches.where((match) {
+            final matchDate = DateTime.parse(match['fecha']);
+            return matchDate.isBefore(now);
+          }).toList();
+        }
       } 
       else {
-        // Mostrar todos los partidos
+        // Mostrar todos los partidos para Mis Partidos
         _filteredMyMatches = List.from(_myMatches);
-        _filteredFriendsMatches = List.from(_friendsMatches);
-        _filteredPublicMatches = List.from(_publicMatches);
+        
+        // Para las tabs de Amigos y Públicos, solo mostramos partidos futuros
+        if (_tabController.index == 1 || _tabController.index == 2) {
+          _filteredFriendsMatches = _friendsMatches.where((match) {
+            final matchDate = DateTime.parse(match['fecha']);
+            return matchDate.isAfter(now);
+          }).toList();
+          
+          _filteredPublicMatches = _publicMatches.where((match) {
+            final matchDate = DateTime.parse(match['fecha']);
+            return matchDate.isAfter(now);
+          }).toList();
+        } else {
+          _filteredFriendsMatches = List.from(_friendsMatches);
+          _filteredPublicMatches = List.from(_publicMatches);
+        }
       }
     });
   }
@@ -687,59 +722,53 @@ Hora: $formattedTime
     );
   }
   Widget _buildMatchCard(Map<String, dynamic> match, {required bool isOrganizer}) {
+    final String matchId = match['id'].toString();
     final DateTime matchDate = DateTime.parse(match['fecha']);
-    final String formattedDate = DateFormat('EEEE, d MMM yyyy', 'es_ES').format(matchDate);
+    final bool isPast = matchDate.isBefore(DateTime.now());
+    final bool isPublic = match['publico'] == true;
+    
+    // Formatear la fecha
+    final String formattedDate = DateFormat('EEEE d MMMM, HH:mm', 'es').format(matchDate);
     final String formattedTime = '${matchDate.hour.toString().padLeft(2, '0')}:${matchDate.minute.toString().padLeft(2, '0')}';
     
-    // Determine if the match is upcoming or past
-    final bool isPast = matchDate.isBefore(DateTime.now());
-    
-    // Determine if the match is public or private
-    final bool isPublic = match['publico'] == true;
-    // Verificar si el usuario actual es participante del partido
-    final currentUser = supabase.auth.currentUser;
-    bool isParticipant = false;
-    
-    if (currentUser != null && !isOrganizer) {
-      // Verificar si el usuario está en la lista de partidos como participante
-      try {
-        // Si el partido está en mis partidos pero no soy el organizador, entonces soy participante
-        isParticipant = _myMatches.any((m) => 
-          m['id'] == match['id'] && 
-          m['isOrganizer'] == false
-        );
-        
-        if (isParticipant) {
-          print('El usuario ${currentUser.id} es participante del partido ${match['id']}');
-        }
-      } catch (e) {
-        print('Error al verificar participación: $e');
-      }
+    // Función para navegar a los detalles del partido
+    void navigateToMatchDetails() {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MatchDetailsScreen(matchId: matchId),
+        ),
+      ).then((_) {
+        // Recargar los partidos cuando regresemos de la pantalla de detalles
+        _fetchMatches();
+      });
     }
 
-    return Card(
-      margin: EdgeInsets.only(bottom: 16),
-      elevation: 6,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          // Header
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isPast
-                    ? [Colors.grey.shade700, Colors.grey.shade600]
-                    : [Colors.blue.shade800, Colors.blue.shade700],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+    return GestureDetector(
+      onTap: navigateToMatchDetails,
+      child: Card(
+        margin: EdgeInsets.only(bottom: 16),
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            // Header
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isPast
+                      ? [Colors.grey.shade700, Colors.grey.shade600]
+                      : [Colors.blue.shade800, Colors.blue.shade700],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
               ),
-            ),
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                   children: [
                     Container(
                       padding: EdgeInsets.all(8),
@@ -823,7 +852,7 @@ Hora: $formattedTime
                 // Organizer info
                 if (match['profiles'] != null)
                   Container(
-                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                     decoration: BoxDecoration(
                       color: Colors.blue.shade50,
                       borderRadius: BorderRadius.circular(10),
@@ -864,9 +893,9 @@ Hora: $formattedTime
                           ),
                         ),
                         // Mostrar insignia si el usuario participa pero no organiza
-                        if (!isOrganizer)
+                        if (!isOrganizer && match['is_participant'] == true)
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
                               color: Colors.green.shade100,
                               borderRadius: BorderRadius.circular(10),
@@ -1039,7 +1068,7 @@ Hora: $formattedTime
                                 color: Colors.red,
                               ),
                           ]
-                        : isParticipant // Si el usuario es participante pero no organizador
+                        : match['is_participant'] == true // Si el usuario es participante pero no organizador
                           ? [
                               _buildActionButton(
                                 icon: Icons.article,
@@ -1087,7 +1116,7 @@ Hora: $formattedTime
           ),
         ],
       ),
-    );
+    ));
   }
   
   void _navigateToMatchJoinScreen(String matchId) {
