@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:statsfoota/change_password_in_app_screen.dart';
 
 class ProfileEditScreen extends StatefulWidget {
   @override
@@ -827,37 +828,17 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             fontSize: 16,
           ),
         ),
-        SizedBox(height: 10),
-        Container(
+        SizedBox(height: 10),        Container(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: () async {
-              // Obtener el correo del usuario autenticado
-              final user = Supabase.instance.client.auth.currentUser;
-              if (user != null && user.email != null) {
-                try {
-                  // Enviar email de recuperación de contraseña
-                  await Supabase.instance.client.auth.resetPasswordForEmail(
-                    user.email!,
-                    redirectTo: 'io.supabase.flutterquickstart://login-callback/',
-                  );
-                  
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Se ha enviado un enlace para cambiar la contraseña a tu correo'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                } catch (e) {
-                  print('Error al enviar email de recuperación: $e');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error al enviar email de recuperación: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
+            onPressed: () {
+              // Navegar a la nueva pantalla de cambio de contraseña
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChangePasswordInAppScreen(),
+                ),
+              );
             },
             icon: Icon(Icons.lock),
             label: Text('Cambiar contraseña'),

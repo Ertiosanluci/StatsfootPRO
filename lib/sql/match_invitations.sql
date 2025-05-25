@@ -44,7 +44,7 @@ BEGIN
   FROM match_participants 
   WHERE match_id = p_match_id AND user_id = p_inviter_id;
   
-  IF NOT FOUND AND v_match.creator_id != p_inviter_id THEN
+  IF NOT FOUND AND v_match.creador_id != p_inviter_id THEN
     RETURN json_build_object('success', FALSE, 'message', 'No eres participante de este partido');
   END IF;
   

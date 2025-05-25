@@ -74,14 +74,8 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
     final now = DateTime.now();
     
     setState(() {
-      if (_timeFilter == 'Próximos') {
-        // Filtrar solo partidos con fecha futura
-        _filteredMyMatches = _myMatches.where((match) {
-          final matchDate = DateTime.parse(match['fecha']);
-          // Para Mis Partidos, filtrar por estado "Próximo" además de la fecha
-          return matchDate.isAfter(now) && match['estado'] == 'próximo';
-        }).toList();
-        
+      // Para Amigos y Públicos, siempre mostramos solo partidos futuros independientemente del filtro
+      if (_tabController.index == 1 || _tabController.index == 2) {
         _filteredFriendsMatches = _friendsMatches.where((match) {
           final matchDate = DateTime.parse(match['fecha']);
           return matchDate.isAfter(now);
@@ -91,47 +85,27 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
           final matchDate = DateTime.parse(match['fecha']);
           return matchDate.isAfter(now);
         }).toList();
-      } 
-      else if (_timeFilter == 'Pasados') {
+      }
+      
+      // Filtrado para Mis Partidos basado en el filtro seleccionado
+      if (_timeFilter == 'Próximos') {
+        // Filtrar solo partidos con fecha futura
+        _filteredMyMatches = _myMatches.where((match) {
+          final matchDate = DateTime.parse(match['fecha']);
+          return matchDate.isAfter(now);
+        }).toList();
+      } else if (_timeFilter == 'Pasados') {
         // Filtrar solo partidos con fecha pasada
         _filteredMyMatches = _myMatches.where((match) {
           final matchDate = DateTime.parse(match['fecha']);
           return matchDate.isBefore(now);
         }).toList();
-        
-        // Para las tabs de Amigos y Públicos, no mostramos partidos pasados
-        // independientemente del filtro seleccionado
-        if (_tabController.index == 1 || _tabController.index == 2) {
-          _filteredFriendsMatches = [];
-          _filteredPublicMatches = [];
-        } else {
-          _filteredFriendsMatches = _friendsMatches.where((match) {
-            final matchDate = DateTime.parse(match['fecha']);
-            return matchDate.isBefore(now);
-          }).toList();
-          
-          _filteredPublicMatches = _publicMatches.where((match) {
-            final matchDate = DateTime.parse(match['fecha']);
-            return matchDate.isBefore(now);
-          }).toList();
-        }
-      } 
-      else {
-        // Mostrar todos los partidos para Mis Partidos
+      } else {
+        // Si es 'Todos', no filtramos por fecha
         _filteredMyMatches = List.from(_myMatches);
         
-        // Para las tabs de Amigos y Públicos, solo mostramos partidos futuros
-        if (_tabController.index == 1 || _tabController.index == 2) {
-          _filteredFriendsMatches = _friendsMatches.where((match) {
-            final matchDate = DateTime.parse(match['fecha']);
-            return matchDate.isAfter(now);
-          }).toList();
-          
-          _filteredPublicMatches = _publicMatches.where((match) {
-            final matchDate = DateTime.parse(match['fecha']);
-            return matchDate.isAfter(now);
-          }).toList();
-        } else {
+        // Si no estamos en las pestañas de Amigos o Públicos, aplicamos el filtro normal
+        if (_tabController.index == 0) {
           _filteredFriendsMatches = List.from(_friendsMatches);
           _filteredPublicMatches = List.from(_publicMatches);
         }
@@ -1066,15 +1040,28 @@ Hora: $formattedTime
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                IconButton(
-                                  icon: Icon(Icons.person_add),
-                                  tooltip: 'Invitar amigos',
-                                  onPressed: () => _showInviteFriendsDialog(match),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withOpacity(0.2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: IconButton(
+                                    icon: Icon(Icons.person_add, color: Colors.green),
+                                    tooltip: 'Invitar amigos',
+                                    onPressed: () => _showInviteFriendsDialog(match),
+                                  ),
                                 ),
-                                IconButton(
-                                  icon: Icon(Icons.share),
-                                  tooltip: 'Compartir enlace',
-                                  onPressed: () => _shareMatchLink(match),
+                                SizedBox(width: 8),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.withOpacity(0.2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: IconButton(
+                                    icon: Icon(Icons.share, color: Colors.blue),
+                                    tooltip: 'Compartir enlace',
+                                    onPressed: () => _shareMatchLink(match),
+                                  ),
                                 ),
                               ],
                             ),

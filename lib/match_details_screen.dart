@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'dart:convert'; // Añadir para usar jsonDecode
+import 'package:statsfoota/widgets/invite_friends_dialog.dart';
 
 // Importar los widgets y servicios creados
 import 'widgets/match_details/scoreboard_widget.dart';
@@ -1090,6 +1091,11 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
     final currentUser = Supabase.instance.client.auth.currentUser;
     final bool isCreator = !_isLoading && currentUser != null && 
                           _matchData['creador_id'] == currentUser.id;
+    
+    // Comprobar si el usuario actual es un participante del partido
+    final bool isParticipant = !_isLoading && currentUser != null &&
+                          (_teamClaro.any((player) => player['id'] == currentUser.id) ||
+                          _teamOscuro.any((player) => player['id'] == currentUser.id));
                           
     // La vista solo debe ser de lectura si el usuario no es el creador
     final bool isReadOnly = !isCreator;
@@ -1161,6 +1167,30 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
               tooltip: 'Historial de votaciones',
               onPressed: _navigateToVotingHistory,
             ),
+          // Botón para invitar amigos (visible para todos los participantes)
+          if (!isPartidoFinalizado && (isParticipant || isCreator))
+              Container(
+                margin: EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: Icon(Icons.person_add, color: Colors.green),
+                  tooltip: 'Invitar amigos',
+                  onPressed: () {
+                    // Mostrar diálogo de invitar amigos
+                    showDialog(
+                      context: context,
+                      builder: (context) => InviteFriendsDialog(
+                        matchId: _matchData['id'],
+                        matchName: _matchData['nombre'] ?? 'Partido',
+                      ),
+                    );
+                  },
+                ),
+              ),
+
           // Mostrar opciones para el creador del partido
           if (!isReadOnly && !_isLoading) ...[
             if (!isPartidoFinalizado)
