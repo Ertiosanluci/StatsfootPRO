@@ -37,9 +37,12 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
-  }
-  Future<void> _validateSession() async {
+  }  Future<void> _validateSession() async {
     try {
+      print('🔍 Validando sesión de reset password...');
+      print('Access Token: ${widget.accessToken != null ? "Presente" : "Ausente"}');
+      print('Refresh Token: ${widget.refreshToken != null ? "Presente" : "Ausente"}');
+      
       // Verificar si tenemos tokens válidos
       if (widget.accessToken != null && widget.refreshToken != null) {
         // Configurar la sesión con los tokens recibidos usando el método correcto
@@ -48,6 +51,8 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
           'refresh_token': widget.refreshToken!,
         };
         
+        print('🔄 Intentando recuperar sesión...');
+        
         // Usar recoverSession que es el método correcto para este caso
         final response = await Supabase.instance.client.auth.recoverSession(
           jsonEncode(sessionData)
@@ -55,42 +60,89 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
         
         // Verificar que la sesión sea válida
         if (response.user != null) {
+          print('✅ Sesión válida para usuario: ${response.user!.email}');
           setState(() {
             _isValidSession = true;
           });
         } else {
-          _showErrorAndRedirect('Sesión no válida');
+          print('❌ Sesión no válida: usuario es null');
+          _showErrorAndRedirect('Sesión no válida o tokens expirados');
         }
       } else {
-        _showErrorAndRedirect('Enlace de recuperación no válido');
+        print('❌ Tokens faltantes');
+        _showErrorAndRedirect('Enlace de recuperación no válido - tokens faltantes');
       }
     } catch (e) {
-      print('Error validando sesión: $e');
-      _showErrorAndRedirect('Error al validar el enlace de recuperación');
+      print('❌ Error validando sesión: $e');
+      
+      String errorMessage = 'Error al validar el enlace de recuperación';
+      
+      // Detectar tipos específicos de errores
+      if (e.toString().contains('expired') || e.toString().contains('invalid_token')) {
+        errorMessage = 'El enlace de recuperación ha expirado. Solicita uno nuevo desde la aplicación.';
+      } else if (e.toString().contains('invalid_grant')) {
+        errorMessage = 'Los tokens de recuperación son inválidos. Solicita un nuevo enlace.';
+      } else if (e.toString().contains('session_not_found')) {
+        errorMessage = 'No se pudo establecer la sesión. El enlace puede haber expirado.';
+      }
+      
+      _showErrorAndRedirect(errorMessage);
     }
   }
-
   void _showErrorAndRedirect(String message) {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           title: Row(
             children: [
-              Icon(Icons.error, color: Colors.red),
+              Icon(Icons.error_outline, color: Colors.red.shade600),
               SizedBox(width: 8),
-              Text('Error'),
+              Text('Enlace Expirado',
+                style: TextStyle(color: Colors.red.shade800)),
             ],
           ),
-          content: Text(message),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(message),
+              SizedBox(height: 16),
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('💡 ¿Qué hacer ahora?',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade800)),
+                    SizedBox(height: 8),
+                    Text('• Solicita un nuevo enlace desde la pantalla de login\n• Los enlaces expiran en 60 minutos\n• Solo se pueden usar una vez\n• Asegúrate de usar el enlace más reciente',
+                      style: TextStyle(fontSize: 13, color: Colors.blue.shade700)),
+                  ],
+                ),
+              ),
+            ],
+          ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
               },
-              child: Text('Volver al inicio'),
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.blue.shade600,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: Text('Ir al Login', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         );

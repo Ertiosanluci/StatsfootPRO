@@ -24,17 +24,22 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     setState(() {
       _isLoading = true;
-    });
-
-    try {
+    });    try {
       // Configurar la URL de redirección para el correo de recuperación
       final redirectUrl = 'https://statsfootpro.netlify.app/reset-password';
       
-      // Envía un correo de recuperación con URL personalizada
+      // Debug logging
+      print('🔄 Enviando reset password para: ${_emailController.text.trim()}');
+      print('🔗 URL de redirección: $redirectUrl');
+      
+      // Envía un correo de recuperación con URL personalizada y configuraciones mejoradas
       await Supabase.instance.client.auth.resetPasswordForEmail(
         _emailController.text.trim(),
         redirectTo: redirectUrl,
+        captchaToken: null, // Opcional: si usas captcha
       );
+      
+      print('✅ Email de reset enviado exitosamente');
 
       setState(() {
         _isLoading = false;
@@ -42,21 +47,28 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
       // Mostrar diálogo de confirmación en lugar de SnackBar
       _showSuccessDialog();
-      
-    } catch (e) {
+        } catch (e) {
       setState(() {
         _isLoading = false;
       });
       
+      // Debug logging del error
+      print('❌ Error en reset password: $e');
+      
       // Manejo de errores más específico
       String errorMessage = 'Error inesperado. Inténtalo de nuevo.';
       
-      if (e.toString().contains('Invalid email')) {
+      if (e.toString().contains('Invalid email') || e.toString().contains('invalid_email')) {
         errorMessage = 'El correo electrónico no está registrado.';
-      } else if (e.toString().contains('Email rate limit exceeded')) {
+      } else if (e.toString().contains('Email rate limit exceeded') || e.toString().contains('rate_limit')) {
         errorMessage = 'Has solicitado demasiados correos. Espera unos minutos.';
-      } else if (e.toString().contains('network')) {
+      } else if (e.toString().contains('network') || e.toString().contains('connection')) {
         errorMessage = 'Error de conexión. Verifica tu internet.';
+      } else if (e.toString().contains('For security purposes')) {
+        errorMessage = 'Por seguridad, hemos enviado un correo si la cuenta existe.';
+        // En este caso, mostrar el diálogo de éxito de todas formas
+        _showSuccessDialog();
+        return;
       }
       
       ScaffoldMessenger.of(context).showSnackBar(
@@ -136,10 +148,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       color: Colors.green.shade800,
                     ),
                   ),
-                ),
-                SizedBox(height: 20),
+                ),                SizedBox(height: 20),
                 Text(
-                  'Revisa tu bandeja de entrada y carpeta de spam. El enlace estará disponible por 60 minutos.',
+                  'Revisa tu bandeja de entrada y carpeta de spam. El enlace estará disponible por 60 minutos y solo se puede usar una vez.',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey.shade600,
@@ -463,9 +474,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             ),
                           ],
                         ),
-                        SizedBox(height: 8),
-                        Text(
-                          "• El enlace de recuperación expirará en 60 minutos\n• Revisa también tu carpeta de spam\n• Solo se puede usar una vez\n• Si no recibes el correo, puedes solicitar otro",
+                        SizedBox(height: 8),                        Text(
+                          "• El enlace de recuperación expirará en 60 minutos\n• Solo se puede usar una vez\n• Revisa también tu carpeta de spam\n• Si el enlace expira, solicita uno nuevo\n• Si no recibes el correo, verifica que el email esté registrado",
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.9),
                             fontSize: 13,
