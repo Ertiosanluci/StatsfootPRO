@@ -34,13 +34,12 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
   
   bool _isLoading = true;
   late TabController _tabController;
-  String? _error;
-  @override
+  String? _error;  @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this); // 3 pestañas: Mis Partidos, Amigos, Públicos
     
-    // Establecer el filtro por defecto para Mis Partidos como "Próximos"
+    // Establecer el filtro por defecto como "Próximos"
     _timeFilter = 'Próximos';
     
     // Add listener to handle tab changes
@@ -48,15 +47,8 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
       if (!_tabController.indexIsChanging) {
         print("Tab switched to: ${_tabController.index}");
         
-        // Si cambiamos a la pestaña de Amigos o Públicos, asegurarse de que solo se muestren partidos futuros
-        if (_tabController.index == 1 || _tabController.index == 2) {
-          if (_timeFilter != 'Próximos') {
-            setState(() {
-              _timeFilter = 'Próximos';
-              _applyTimeFilter();
-            });
-          }
-        }
+        // Aplicamos el filtro actual al cambiar de pestaña pero sin forzar ningún valor
+        _applyTimeFilter();
       }
     });
     
@@ -68,14 +60,19 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
     _tabController.dispose();
     super.dispose();
   }
-  
-  // Método para aplicar el filtro de tiempo a las listas de partidos
+    // Método para aplicar el filtro de tiempo a las listas de partidos
   void _applyTimeFilter() {
     final now = DateTime.now();
     
     setState(() {
-      // Para Amigos y Públicos, siempre mostramos solo partidos futuros independientemente del filtro
-      if (_tabController.index == 1 || _tabController.index == 2) {
+      // Aplicar filtro de tiempo a cada tipo de lista
+      if (_timeFilter == 'Próximos') {
+        // Filtrar solo partidos con fecha futura para todas las listas
+        _filteredMyMatches = _myMatches.where((match) {
+          final matchDate = DateTime.parse(match['fecha']);
+          return matchDate.isAfter(now);
+        }).toList();
+        
         _filteredFriendsMatches = _friendsMatches.where((match) {
           final matchDate = DateTime.parse(match['fecha']);
           return matchDate.isAfter(now);
@@ -85,30 +82,27 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
           final matchDate = DateTime.parse(match['fecha']);
           return matchDate.isAfter(now);
         }).toList();
-      }
-      
-      // Filtrado para Mis Partidos basado en el filtro seleccionado
-      if (_timeFilter == 'Próximos') {
-        // Filtrar solo partidos con fecha futura
-        _filteredMyMatches = _myMatches.where((match) {
-          final matchDate = DateTime.parse(match['fecha']);
-          return matchDate.isAfter(now);
-        }).toList();
       } else if (_timeFilter == 'Pasados') {
         // Filtrar solo partidos con fecha pasada
         _filteredMyMatches = _myMatches.where((match) {
           final matchDate = DateTime.parse(match['fecha']);
           return matchDate.isBefore(now);
         }).toList();
-      } else {
-        // Si es 'Todos', no filtramos por fecha
-        _filteredMyMatches = List.from(_myMatches);
         
-        // Si no estamos en las pestañas de Amigos o Públicos, aplicamos el filtro normal
-        if (_tabController.index == 0) {
-          _filteredFriendsMatches = List.from(_friendsMatches);
-          _filteredPublicMatches = List.from(_publicMatches);
-        }
+        _filteredFriendsMatches = _friendsMatches.where((match) {
+          final matchDate = DateTime.parse(match['fecha']);
+          return matchDate.isBefore(now);
+        }).toList();
+        
+        _filteredPublicMatches = _publicMatches.where((match) {
+          final matchDate = DateTime.parse(match['fecha']);
+          return matchDate.isBefore(now);
+        }).toList();
+      } else {
+        // Si es 'Todos', no filtramos por fecha para ninguna lista
+        _filteredMyMatches = List.from(_myMatches);
+        _filteredFriendsMatches = List.from(_friendsMatches);
+        _filteredPublicMatches = List.from(_publicMatches);
       }
     });
   }
