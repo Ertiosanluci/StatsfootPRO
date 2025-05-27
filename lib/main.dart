@@ -9,6 +9,7 @@ import 'package:statsfoota/match_list.dart';
 import 'package:statsfoota/ver_Jugadores.dart';
 import 'package:statsfoota/match_join_screen.dart'; // Añadido para manejar los deep links
 import 'package:statsfoota/profile_edit_screen.dart'; // Importamos la pantalla de edición de perfil
+import 'package:statsfoota/new_password_screen.dart'; // Importamos la pantalla de nueva contraseña
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:app_links/app_links.dart'; // Cambiado de uni_links a app_links
@@ -147,7 +148,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       debugPrint('Error en el manejo de enlaces: $e');
     });
   }
-
   void _processIncomingUri(Uri? uri) {
     if (uri == null) return;
 
@@ -156,13 +156,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       if (uri.scheme == 'statsfoot' && uri.host == 'match') {
         // Es un Deep Link interno (statsfoot://match/ID)
         _handleMatchLink(uri.pathSegments.last);
+      } else if (uri.scheme == 'statsfoot' && uri.host == 'reset-password') {
+        // Es un Deep Link para reset de contraseña (statsfoot://reset-password)
+        _handlePasswordResetLink(uri);
       } else if ((uri.scheme == 'http' || uri.scheme == 'https') && 
                  uri.host == 'statsfootpro.netlify.app' &&
-                 uri.pathSegments.isNotEmpty &&
-                 uri.pathSegments.first == 'match') {
-        // Es un enlace web (https://statsfootpro.netlify.app/match/ID)
-        if (uri.pathSegments.length > 1) {
+                 uri.pathSegments.isNotEmpty) {
+        if (uri.pathSegments.first == 'match' && uri.pathSegments.length > 1) {
+          // Es un enlace web de partido (https://statsfootpro.netlify.app/match/ID)
           _handleMatchLink(uri.pathSegments[1]);
+        } else if (uri.pathSegments.first == 'reset-password') {
+          // Es un enlace web de reset de contraseña (https://statsfootpro.netlify.app/reset-password)
+          _handlePasswordResetLink(uri);
         }
       }
     } catch (e) {
@@ -202,6 +207,50 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
   }
 
+  // Navegar a la pantalla de restablecimiento de contraseña
+  void _handlePasswordResetLink(Uri uri) {
+    debugPrint('Manejando enlace de reset de contraseña: $uri');
+    
+    // Extraer tokens de los parámetros de la URL
+    final Map<String, String> params = uri.queryParameters;
+    final String? accessToken = params['access_token'];
+    final String? refreshToken = params['refresh_token'];
+    final String? type = params['type'];
+    
+    // Verificar que sea un enlace de recovery
+    if (type != 'recovery') {
+      debugPrint('Tipo de enlace no válido: $type');
+      return;
+    }
+    
+    // Obtener el contexto del navegador actual
+    final NavigatorState? navigator = _navigatorKey.currentState;
+    
+    if (navigator != null && accessToken != null) {
+      // Navegar a la pantalla de nueva contraseña
+      navigator.pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => NewPasswordScreen(
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+          ),
+        ),
+        (route) => false, // Eliminar todas las rutas del stack
+      );
+    } else {
+      debugPrint('Navigator o access_token no disponibles');
+      // En caso de error, redirigir al login
+      if (navigator != null) {
+        navigator.pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => LoginScreen(),
+          ),
+          (route) => false,
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -216,8 +265,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       ],
       supportedLocales: [
         const Locale('es', 'ES'), // Español
-      ],
-      routes: {
+      ],      routes: {
         '/': (context) => SplashScreen(),
         '/login': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
@@ -228,6 +276,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/match_list': (context) => MatchListScreen(),
         '/match_join': (context) => MatchJoinScreen(matchId: ''),
         '/profile_edit': (context) => ProfileEditScreen(), // Añadido para manejar la edición de perfil
+        '/new_password': (context) => NewPasswordScreen(), // Añadido para el restablecimiento de contraseña
         // Rutas del sistema de amigos
         '/friends': (context) => const FriendsMainScreen(),
         '/people': (context) => const PeopleScreen(),

@@ -1,23 +1,100 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class ResetPasswordScreen extends StatefulWidget {
+class NewPasswordScreen extends StatefulWidget {
+  final String? accessToken;
+  final String? refreshToken;
+  
+  const NewPasswordScreen({
+    Key? key,
+    this.accessToken,
+    this.refreshToken,
+  }) : super(key: key);
+
   @override
-  _ResetPasswordScreenState createState() => _ResetPasswordScreenState();
+  _NewPasswordScreenState createState() => _NewPasswordScreenState();
 }
 
-class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+class _NewPasswordScreenState extends State<NewPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
+  bool _isValidSession = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _validateSession();
+  }
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _resetPassword() async {
+  Future<void> _validateSession() async {
+    try {
+      // Verificar si tenemos tokens válidos
+      if (widget.accessToken != null && widget.refreshToken != null) {
+        // Configurar la sesión con los tokens recibidos
+        await Supabase.instance.client.auth.setSession(
+          widget.accessToken!,
+          widget.refreshToken!,
+        );
+        
+        // Verificar que la sesión sea válida
+        final user = Supabase.instance.client.auth.currentUser;
+        if (user != null) {
+          setState(() {
+            _isValidSession = true;
+          });
+        } else {
+          _showErrorAndRedirect('Sesión no válida');
+        }
+      } else {
+        _showErrorAndRedirect('Enlace de recuperación no válido');
+      }
+    } catch (e) {
+      print('Error validando sesión: $e');
+      _showErrorAndRedirect('Error al validar el enlace de recuperación');
+    }
+  }
+
+  void _showErrorAndRedirect(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.error, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Error'),
+            ],
+          ),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+              },
+              child: Text('Volver al inicio'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _updatePassword() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -27,38 +104,31 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     });
 
     try {
-      // Configurar la URL de redirección para el correo de recuperación
-      final redirectUrl = 'https://statsfootpro.netlify.app/reset-password';
-      
-      // Envía un correo de recuperación con URL personalizada
-      await Supabase.instance.client.auth.resetPasswordForEmail(
-        _emailController.text.trim(),
-        redirectTo: redirectUrl,
+      // Actualizar la contraseña del usuario
+      await Supabase.instance.client.auth.updateUser(
+        UserAttributes(password: _passwordController.text.trim()),
       );
 
       setState(() {
         _isLoading = false;
       });
 
-      // Mostrar diálogo de confirmación en lugar de SnackBar
+      // Mostrar diálogo de éxito
       _showSuccessDialog();
-      
+
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
+
+      String errorMessage = 'Error al actualizar la contraseña';
       
-      // Manejo de errores más específico
-      String errorMessage = 'Error inesperado. Inténtalo de nuevo.';
-      
-      if (e.toString().contains('Invalid email')) {
-        errorMessage = 'El correo electrónico no está registrado.';
-      } else if (e.toString().contains('Email rate limit exceeded')) {
-        errorMessage = 'Has solicitado demasiados correos. Espera unos minutos.';
-      } else if (e.toString().contains('network')) {
-        errorMessage = 'Error de conexión. Verifica tu internet.';
+      if (e.toString().contains('weak_password')) {
+        errorMessage = 'La contraseña es muy débil. Usa al menos 8 caracteres.';
+      } else if (e.toString().contains('same_password')) {
+        errorMessage = 'La nueva contraseña debe ser diferente a la actual.';
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMessage),
@@ -97,14 +167,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    Icons.mark_email_read,
+                    Icons.check_circle,
                     size: 48,
                     color: Colors.green.shade600,
                   ),
                 ),
                 SizedBox(height: 20),
                 Text(
-                  '¡Correo enviado!',
+                  '¡Contraseña actualizada!',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -113,82 +183,35 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 ),
                 SizedBox(height: 12),
                 Text(
-                  'Hemos enviado un enlace de recuperación a:',
+                  'Tu contraseña ha sido cambiada exitosamente. Ahora puedes iniciar sesión con tu nueva contraseña.',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey.shade700,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 8),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.green.shade200),
+                SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.shade600,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 3,
                   ),
                   child: Text(
-                    _emailController.text.trim(),
+                    'Ir a Iniciar Sesión',
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.green.shade800,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-                SizedBox(height: 20),
-                Text(
-                  'Revisa tu bandeja de entrada y carpeta de spam. El enlace estará disponible por 60 minutos.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          Navigator.pop(context); // Cerrar diálogo
-                          _resetPassword(); // Reenviar correo
-                        },
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.green.shade600,
-                          side: BorderSide(color: Colors.green.shade600),
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: Text('Reenviar'),
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context); // Cerrar diálogo
-                          Navigator.pop(context); // Volver al login
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green.shade600,
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          elevation: 3,
-                        ),
-                        child: Text(
-                          'Entendido',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -198,24 +221,71 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  String? _validateEmail(String? value) {
+  String? _validatePassword(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Por favor, introduce tu correo electrónico';
+      return 'La contraseña es obligatoria';
     }
-    
-    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-    if (!emailRegex.hasMatch(value.trim())) {
-      return 'Por favor, introduce un correo electrónico válido';
+    if (value.length < 8) {
+      return 'La contraseña debe tener al menos 8 caracteres';
     }
-    
+    if (!value.contains(RegExp(r'[A-Z]'))) {
+      return 'Debe contener al menos una letra mayúscula';
+    }
+    if (!value.contains(RegExp(r'[a-z]'))) {
+      return 'Debe contener al menos una letra minúscula';
+    }
+    if (!value.contains(RegExp(r'[0-9]'))) {
+      return 'Debe contener al menos un número';
+    }
     return null;
   }
+
+  String? _validateConfirmPassword(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Confirma tu contraseña';
+    }
+    if (value != _passwordController.text) {
+      return 'Las contraseñas no coinciden';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!_isValidSession) {
+      return Scaffold(
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue.shade300, Colors.blue.shade800],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: Colors.white),
+                SizedBox(height: 20),
+                Text(
+                  'Validando enlace de recuperación...',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Restablecer Contraseña",
+        title: Text(
+          "Nueva Contraseña",
           style: TextStyle(
             color: Colors.white,
             fontSize: 20,
@@ -225,7 +295,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        leading: BackButton(color: Colors.white),
+        automaticallyImplyLeading: false, // No mostrar botón de retroceso
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -247,7 +317,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            padding: EdgeInsets.all(24),
             child: Form(
               key: _formKey,
               child: Column(
@@ -255,7 +325,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 children: [
                   SizedBox(height: 40),
                   
-                  // Logo y título
+                  // Header
                   Container(
                     padding: EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -271,18 +341,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             color: Colors.white.withOpacity(0.2),
                             shape: BoxShape.circle,
                           ),
-                          child: Image.asset(
-                            'assets/habilidades.png',
-                            height: 80,
-                            width: 80,
+                          child: Icon(
+                            Icons.lock_reset,
+                            size: 50,
                             color: Colors.white,
                           ),
                         ),
                         SizedBox(height: 20),
                         Text(
-                          "¿Olvidaste tu contraseña?",
+                          "Establece tu nueva contraseña",
                           style: TextStyle(
-                            fontSize: 28,
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
@@ -290,7 +359,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         ),
                         SizedBox(height: 12),
                         Text(
-                          "No te preocupes, te ayudamos a recuperarla.\nIngresa tu correo electrónico y te enviaremos un enlace para crear una nueva contraseña.",
+                          "Crea una contraseña segura que sea fácil de recordar para ti.",
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.white.withOpacity(0.9),
@@ -304,7 +373,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   
                   SizedBox(height: 40),
                   
-                  // Campo de correo electrónico
+                  // Campo nueva contraseña
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.1),
@@ -312,18 +381,93 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       border: Border.all(color: Colors.white.withOpacity(0.3)),
                     ),
                     child: TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.done,
+                      controller: _passwordController,
+                      obscureText: !_isPasswordVisible,
                       style: TextStyle(color: Colors.white, fontSize: 16),
-                      validator: _validateEmail,
-                      onFieldSubmitted: (_) => _resetPassword(),
+                      validator: _validatePassword,
+                      onChanged: (value) {
+                        // Revalidar confirmación cuando cambie la contraseña
+                        if (_confirmPasswordController.text.isNotEmpty) {
+                          _formKey.currentState?.validate();
+                        }
+                      },
                       decoration: InputDecoration(
-                        labelText: 'Correo Electrónico',
+                        labelText: 'Nueva contraseña',
                         labelStyle: TextStyle(color: Colors.white.withOpacity(0.8)),
                         prefixIcon: Icon(
-                          Icons.email_outlined,
+                          Icons.lock_outline,
                           color: Colors.white.withOpacity(0.8),
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                            color: Colors.white.withOpacity(0.8),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isPasswordVisible = !_isPasswordVisible;
+                            });
+                          },
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide(color: Colors.white, width: 2),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide(color: Colors.red.shade300, width: 2),
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide(color: Colors.red.shade300, width: 2),
+                        ),
+                        filled: true,
+                        fillColor: Colors.transparent,
+                        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        errorStyle: TextStyle(
+                          color: Colors.red.shade100,
+                          fontSize: 12,
+                        ),
+                        errorMaxLines: 3,
+                      ),
+                    ),
+                  ),
+                  
+                  SizedBox(height: 20),
+                  
+                  // Campo confirmar contraseña
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(15),
+                      border: Border.all(color: Colors.white.withOpacity(0.3)),
+                    ),
+                    child: TextFormField(
+                      controller: _confirmPasswordController,
+                      obscureText: !_isConfirmPasswordVisible,
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                      validator: _validateConfirmPassword,
+                      decoration: InputDecoration(
+                        labelText: 'Confirmar contraseña',
+                        labelStyle: TextStyle(color: Colors.white.withOpacity(0.8)),
+                        prefixIcon: Icon(
+                          Icons.lock_clock,
+                          color: Colors.white.withOpacity(0.8),
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isConfirmPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                            color: Colors.white.withOpacity(0.8),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                            });
+                          },
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(15),
@@ -354,20 +498,20 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   
                   SizedBox(height: 30),
                   
-                  // Botón de enviar
+                  // Botón actualizar
                   Container(
                     height: 55,
                     child: ElevatedButton(
-                      onPressed: _isLoading ? null : _resetPassword,
+                      onPressed: _isLoading ? null : _updatePassword,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange.shade600,
+                        backgroundColor: Colors.green.shade600,
                         foregroundColor: Colors.white,
-                        disabledBackgroundColor: Colors.orange.shade300,
+                        disabledBackgroundColor: Colors.green.shade300,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
                         ),
                         elevation: 8,
-                        shadowColor: Colors.orange.withOpacity(0.4),
+                        shadowColor: Colors.green.withOpacity(0.4),
                       ),
                       child: _isLoading
                           ? Row(
@@ -383,7 +527,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                 ),
                                 SizedBox(width: 12),
                                 Text(
-                                  "Enviando...",
+                                  "Actualizando...",
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -394,10 +538,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           : Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.send, size: 20),
+                                Icon(Icons.security, size: 20),
                                 SizedBox(width: 8),
                                 Text(
-                                  "Enviar Enlace de Recuperación",
+                                  "Actualizar Contraseña",
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -408,34 +552,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     ),
                   ),
                   
-                  SizedBox(height: 24),
-                  
-                  // Botón para volver
-                  TextButton(
-                    onPressed: _isLoading ? null : () => Navigator.pop(context),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.arrow_back, size: 18),
-                        SizedBox(width: 8),
-                        Text(
-                          "Volver a Iniciar Sesión",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  
                   SizedBox(height: 40),
                   
-                  // Información adicional
+                  // Requisitos de contraseña
                   Container(
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -444,17 +563,18 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       border: Border.all(color: Colors.white.withOpacity(0.2)),
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
                             Icon(
-                              Icons.info_outline,
+                              Icons.security,
                               color: Colors.white.withOpacity(0.8),
                               size: 20,
                             ),
                             SizedBox(width: 8),
                             Text(
-                              "Información importante:",
+                              "Requisitos de contraseña:",
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -465,7 +585,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          "• El enlace de recuperación expirará en 60 minutos\n• Revisa también tu carpeta de spam\n• Solo se puede usar una vez\n• Si no recibes el correo, puedes solicitar otro",
+                          "• Mínimo 8 caracteres\n• Al menos una letra mayúscula\n• Al menos una letra minúscula\n• Al menos un número",
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.9),
                             fontSize: 13,
