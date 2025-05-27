@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert';
 
 class NewPasswordScreen extends StatefulWidget {
   final String? accessToken;
@@ -37,20 +38,23 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
     _confirmPasswordController.dispose();
     super.dispose();
   }
-
   Future<void> _validateSession() async {
     try {
       // Verificar si tenemos tokens válidos
       if (widget.accessToken != null && widget.refreshToken != null) {
-        // Configurar la sesión con los tokens recibidos
-        await Supabase.instance.client.auth.setSession(
-          widget.accessToken!,
-          widget.refreshToken!,
+        // Configurar la sesión con los tokens recibidos usando el método correcto
+        final sessionData = {
+          'access_token': widget.accessToken!,
+          'refresh_token': widget.refreshToken!,
+        };
+        
+        // Usar recoverSession que es el método correcto para este caso
+        final response = await Supabase.instance.client.auth.recoverSession(
+          jsonEncode(sessionData)
         );
         
         // Verificar que la sesión sea válida
-        final user = Supabase.instance.client.auth.currentUser;
-        if (user != null) {
+        if (response.user != null) {
           setState(() {
             _isValidSession = true;
           });
