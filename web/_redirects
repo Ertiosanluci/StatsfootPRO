@@ -1,0 +1,11 @@
+# Redirección específica para reset-password (debe ir antes que la regla catch-all)
+/reset-password /reset-password.html 200
+
+# Redirección para parámetros de reset password con query strings
+/reset-password/* /reset-password.html 200
+
+# Redirección para auth callbacks de Supabase
+/auth/callback /reset-password.html 200
+
+# Redirección para las rutas de la aplicación Flutter (debe ir al final)
+/* /index.html 200
