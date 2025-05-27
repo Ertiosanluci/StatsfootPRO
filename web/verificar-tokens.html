@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Verificador de Tokens - StatsFoot PRO</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        .status { 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 8px; 
+            border-left: 5px solid;
+        }
+        .success { 
+            background: rgba(40, 167, 69, 0.2); 
+            border-color: #28a745; 
+        }
+        .error { 
+            background: rgba(220, 53, 69, 0.2); 
+            border-color: #dc3545; 
+        }
+        .warning { 
+            background: rgba(255, 193, 7, 0.2); 
+            border-color: #ffc107; 
+            color: #212529;
+        }
+        .info { 
+            background: rgba(23, 162, 184, 0.2); 
+            border-color: #17a2b8; 
+        }
+        pre {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .token-check {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.1);
+        }
+        button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #218838;
+        }
+        .red-button {
+            background: #dc3545;
+        }
+        .red-button:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Verificador de Tokens de Password Reset</h1>
+        <p><strong>StatsFoot PRO</strong> - Diagnóstico de Autenticación</p>
+
+        <div id="urlInfo" class="info status">
+            <h3>📍 URL Actual:</h3>
+            <pre id="currentUrl"></pre>
+        </div>
+
+        <div id="tokenAnalysis"></div>
+
+        <div id="supabaseConfig" class="warning status">
+            <h3>⚙️ Configuración Requerida en Supabase</h3>
+            <p><strong>Si NO VES tokens abajo, debes configurar Supabase Dashboard:</strong></p>
+            <ol>
+                <li>Ve a <strong>Authentication → Settings → URL Configuration</strong></li>
+                <li>Site URL: <code>https://statsfootpro.netlify.app</code></li>
+                <li>Redirect URLs (agregar TODAS):</li>
+                <ul>
+                    <li><code>https://statsfootpro.netlify.app/reset-password</code></li>
+                    <li><code>https://statsfootpro.netlify.app/**</code></li>
+                    <li><code>statsfoot://reset-password</code></li>
+                    <li><code>statsfoot://**</code></li>
+                </ul>
+            </ol>
+        </div>
+
+        <div class="info status">
+            <h3>🧪 Acciones de Prueba</h3>
+            <button onclick="testMobileRedirect()">📱 Probar Redirección Mobile</button>
+            <button onclick="copyDebugInfo()" class="red-button">📋 Copiar Info Debug</button>
+            <button onclick="goToPasswordReset()">🔄 Ir a Reset Password</button>
+        </div>
+
+        <div id="debugInfo" class="info status" style="display: none;">
+            <h3>🐛 Información de Debug</h3>
+            <pre id="debugText"></pre>
+        </div>
+    </div>
+
+    <script>
+        // Mostrar URL actual
+        document.getElementById('currentUrl').textContent = window.location.href;
+
+        // Analizar parámetros URL
+        function analyzeTokens() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const hash = window.location.hash.substring(1);
+            const hashParams = new URLSearchParams(hash);
+            
+            const tokenAnalysis = document.getElementById('tokenAnalysis');
+            let html = '<h3>🔍 Análisis de Tokens</h3>';
+            
+            // Tokens esperados
+            const expectedTokens = ['access_token', 'refresh_token', 'type'];
+            let foundTokens = 0;
+            let allTokens = {};
+            
+            // Verificar en query params
+            expectedTokens.forEach(token => {
+                const value = urlParams.get(token) || hashParams.get(token);
+                allTokens[token] = value;
+                if (value) foundTokens++;
+            });
+            
+            // Obtener todos los parámetros disponibles
+            const allQueryParams = {};
+            const allHashParams = {};
+            
+            urlParams.forEach((value, key) => {
+                allQueryParams[key] = value;
+            });
+            
+            hashParams.forEach((value, key) => {
+                allHashParams[key] = value;
+            });
+            
+            if (foundTokens === 3) {
+                html += '<div class="success status">✅ ¡TODOS LOS TOKENS ENCONTRADOS!</div>';
+                html += '<div class="token-check"><strong>access_token:</strong> ' + (allTokens.access_token ? '✅ Presente' : '❌ Faltante') + '</div>';
+                html += '<div class="token-check"><strong>refresh_token:</strong> ' + (allTokens.refresh_token ? '✅ Presente' : '❌ Faltante') + '</div>';
+                html += '<div class="token-check"><strong>type:</strong> ' + (allTokens.type || 'N/A') + '</div>';
+            } else {
+                html += '<div class="error status">❌ TOKENS FALTANTES - CONFIGURAR SUPABASE</div>';
+                html += '<div class="token-check"><strong>access_token:</strong> ' + (allTokens.access_token ? '✅ Presente' : '❌ FALTANTE') + '</div>';
+                html += '<div class="token-check"><strong>refresh_token:</strong> ' + (allTokens.refresh_token ? '✅ Presente' : '❌ FALTANTE') + '</div>';
+                html += '<div class="token-check"><strong>type:</strong> ' + (allTokens.type ? '✅ ' + allTokens.type : '❌ FALTANTE') + '</div>';
+            }
+            
+            // Mostrar todos los parámetros disponibles
+            if (Object.keys(allQueryParams).length > 0) {
+                html += '<h4>📄 Query Parameters:</h4><pre>' + JSON.stringify(allQueryParams, null, 2) + '</pre>';
+            }
+            
+            if (Object.keys(allHashParams).length > 0) {
+                html += '<h4>🔗 Hash Parameters:</h4><pre>' + JSON.stringify(allHashParams, null, 2) + '</pre>';
+            }
+            
+            if (Object.keys(allQueryParams).length === 0 && Object.keys(allHashParams).length === 0) {
+                html += '<div class="error status">⚠️ NO SE ENCONTRARON PARÁMETROS<br>';
+                html += '<strong>Esto significa que el enlace del email NO contiene tokens.</strong><br>';
+                html += '<strong>DEBES CONFIGURAR SUPABASE DASHBOARD URGENTEMENTE.</strong></div>';
+            }
+            
+            tokenAnalysis.innerHTML = html;
+            
+            // Guardar para debug
+            window.debugTokens = {
+                foundTokens,
+                allTokens,
+                allQueryParams,
+                allHashParams,
+                url: window.location.href
+            };
+        }
+        
+        function testMobileRedirect() {
+            const customUrl = 'statsfoot://reset-password' + window.location.search + window.location.hash;
+            console.log('🔄 Intentando redirección mobile:', customUrl);
+            
+            // Intentar abrir en app mobile
+            window.location.href = customUrl;
+            
+            // Fallback después de 2 segundos
+            setTimeout(() => {
+                alert('Si la app no se abrió, verifica que esté instalada y configurada para manejar el esquema "statsfoot://"');
+            }, 2000);
+        }
+        
+        function copyDebugInfo() {
+            const debugInfo = {
+                timestamp: new Date().toISOString(),
+                url: window.location.href,
+                userAgent: navigator.userAgent,
+                tokens: window.debugTokens || 'No disponible',
+                problema: 'Enlaces de password reset sin tokens de autenticación',
+                solucion: 'Configurar Supabase Dashboard - Authentication Settings - URL Configuration'
+            };
+            
+            const debugText = JSON.stringify(debugInfo, null, 2);
+            document.getElementById('debugText').textContent = debugText;
+            document.getElementById('debugInfo').style.display = 'block';
+            
+            // Copiar al clipboard
+            navigator.clipboard.writeText(debugText).then(() => {
+                alert('✅ Información de debug copiada al portapapeles');
+            }).catch(() => {
+                alert('❌ No se pudo copiar. Selecciona y copia manualmente el texto de debug.');
+            });
+        }
+        
+        function goToPasswordReset() {
+            window.location.href = '/reset-password' + window.location.search + window.location.hash;
+        }
+        
+        // Ejecutar análisis al cargar
+        analyzeTokens();
+        
+        // Log para debugging
+        console.log('🔍 Verificador de tokens cargado');
+        console.log('📍 URL completa:', window.location.href);
+        console.log('🔗 Search params:', window.location.search);
+        console.log('🏷️ Hash:', window.location.hash);
+    </script>
+</body>
+</html>

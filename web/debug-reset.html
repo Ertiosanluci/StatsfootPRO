@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEBUG - Password Reset</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .debug { background: #f0f0f0; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        .info { background: #e3f2fd; color: #1565c0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 DEBUG - Password Reset</h1>
+    
+    <div class="debug info">
+        <h3>URL Completa:</h3>
+        <p id="full-url"></p>
+    </div>
+    
+    <div class="debug info">
+        <h3>Parámetros Encontrados:</h3>
+        <ul id="params-list"></ul>
+    </div>
+    
+    <div class="debug" id="result">
+        <h3>Resultado:</h3>
+        <p id="result-message"></p>
+    </div>
+    
+    <div style="margin: 20px 0;">
+        <a href="/reset-password.html">Ir a página normal de reset</a> |
+        <a href="/">Volver al inicio</a>
+    </div>
+
+    <script>
+        // Mostrar URL completa
+        document.getElementById('full-url').textContent = window.location.href;
+        
+        // Obtener todos los parámetros
+        const urlParams = new URLSearchParams(window.location.search);
+        const paramsList = document.getElementById('params-list');
+        
+        // Mostrar todos los parámetros
+        if (urlParams.toString() === '') {
+            paramsList.innerHTML = '<li style="color: red;"><strong>❌ NO SE ENCONTRARON PARÁMETROS</strong></li>';
+        } else {
+            for (const [key, value] of urlParams) {
+                const li = document.createElement('li');
+                if (key === 'access_token' || key === 'refresh_token') {
+                    li.innerHTML = `<strong>${key}:</strong> ${value.substring(0, 30)}... (${value.length} caracteres)`;
+                } else {
+                    li.innerHTML = `<strong>${key}:</strong> ${value}`;
+                }
+                paramsList.appendChild(li);
+            }
+        }
+        
+        // Verificar tokens específicos
+        const accessToken = urlParams.get('access_token');
+        const refreshToken = urlParams.get('refresh_token');
+        const type = urlParams.get('type');
+        
+        const resultDiv = document.getElementById('result');
+        const resultMessage = document.getElementById('result-message');
+        
+        if (!accessToken && !refreshToken) {
+            resultDiv.className = 'debug error';
+            resultMessage.innerHTML = `
+                <strong>❌ PROBLEMA: Sin tokens</strong><br>
+                La URL no contiene access_token ni refresh_token.<br>
+                <strong>Causa:</strong> Configuración incorrecta en Supabase Dashboard.<br>
+                <strong>Solución:</strong> Configurar Redirect URLs en Authentication → Settings.
+            `;
+        } else if (!accessToken) {
+            resultDiv.className = 'debug error';
+            resultMessage.innerHTML = `
+                <strong>❌ PROBLEMA: Falta access_token</strong><br>
+                Se encontró refresh_token pero no access_token.
+            `;
+        } else if (!refreshToken) {
+            resultDiv.className = 'debug error';
+            resultMessage.innerHTML = `
+                <strong>❌ PROBLEMA: Falta refresh_token</strong><br>
+                Se encontró access_token pero no refresh_token.
+            `;
+        } else if (type !== 'recovery') {
+            resultDiv.className = 'debug error';
+            resultMessage.innerHTML = `
+                <strong>❌ PROBLEMA: Tipo incorrecto</strong><br>
+                Se esperaba type=recovery, pero se encontró: ${type || 'undefined'}
+            `;
+        } else {
+            resultDiv.className = 'debug success';
+            resultMessage.innerHTML = `
+                <strong>✅ ÉXITO: Tokens válidos encontrados</strong><br>
+                access_token: Presente (${accessToken.length} caracteres)<br>
+                refresh_token: Presente (${refreshToken.length} caracteres)<br>
+                type: ${type}<br>
+                <strong>El enlace está funcionando correctamente.</strong>
+            `;
+        }
+        
+        // Log en consola para debugging adicional
+        console.log('🔍 DEBUG COMPLETO:', {
+            url: window.location.href,
+            access_token: accessToken ? `Presente (${accessToken.length} chars)` : 'AUSENTE',
+            refresh_token: refreshToken ? `Presente (${refreshToken.length} chars)` : 'AUSENTE',
+            type: type || 'AUSENTE',
+            all_params: Object.fromEntries(urlParams)
+        });
+    </script>
+</body>
+</html>

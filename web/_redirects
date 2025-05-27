@@ -1,6 +1,9 @@
 # Redirección específica para reset-password (debe ir antes que la regla catch-all)
 /reset-password /reset-password.html 200
 
+# Redirección para verificar tokens
+/verificar-tokens /verificar-tokens.html 200
+
 # Redirección para parámetros de reset password con query strings
 /reset-password/* /reset-password.html 200
 
