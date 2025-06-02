@@ -9,6 +9,8 @@ import 'package:statsfoota/match_list.dart';
 import 'package:statsfoota/ver_Jugadores.dart';
 import 'package:statsfoota/match_join_screen.dart'; // Añadido para manejar los deep links
 import 'package:statsfoota/profile_edit_screen.dart'; // Importamos la pantalla de edición de perfil
+import 'package:statsfoota/password_reset_request_screen.dart'; // Nueva pantalla para solicitar reset
+import 'package:statsfoota/password_reset_screen.dart'; // Nueva pantalla para establecer nueva contraseña
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:app_links/app_links.dart'; // Cambiado de uni_links a app_links
@@ -147,29 +149,36 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       debugPrint('Error en el manejo de enlaces: $e');
     });
   }
-
   void _processIncomingUri(Uri? uri) {
     if (uri == null) return;
 
     // Extraer datos del URI
     try {
-      if (uri.scheme == 'statsfoot' && uri.host == 'match') {
-        // Es un Deep Link interno (statsfoot://match/ID)
-        _handleMatchLink(uri.pathSegments.last);
+      if (uri.scheme == 'statsfoot') {
+        if (uri.host == 'match') {
+          // Es un Deep Link interno para partido (statsfoot://match/ID)
+          _handleMatchLink(uri.pathSegments.last);
+        } else if (uri.host == 'reset-password') {
+          // Es un Deep Link para reset de contraseña (statsfoot://reset-password)
+          _handlePasswordResetLink(uri);
+        }
       } else if ((uri.scheme == 'http' || uri.scheme == 'https') && 
                  uri.host == 'statsfootpro.netlify.app' &&
-                 uri.pathSegments.isNotEmpty &&
-                 uri.pathSegments.first == 'match') {
-        // Es un enlace web (https://statsfootpro.netlify.app/match/ID)
-        if (uri.pathSegments.length > 1) {
-          _handleMatchLink(uri.pathSegments[1]);
+                 uri.pathSegments.isNotEmpty) {
+        if (uri.pathSegments.first == 'match') {
+          // Es un enlace web para partido (https://statsfootpro.netlify.app/match/ID)
+          if (uri.pathSegments.length > 1) {
+            _handleMatchLink(uri.pathSegments[1]);
+          }
+        } else if (uri.fragment.contains('password_reset')) {
+          // Es un enlace web para reset de contraseña 
+          _handlePasswordResetWebLink(uri);
         }
       }
     } catch (e) {
       debugPrint('Error procesando el URI: $e');
     }
   }
-
   // Navegar a la pantalla adecuada según el enlace
   void _handleMatchLink(String matchId) {
     debugPrint('Navegando al partido ID: $matchId');
@@ -202,6 +211,119 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
   }
 
+  // Manejar enlaces de recuperación de contraseña desde deep link móvil
+  void _handlePasswordResetLink(Uri uri) {
+    debugPrint('Procesando enlace de recuperación de contraseña: $uri');
+    
+    final NavigatorState? navigator = _navigatorKey.currentState;
+    if (navigator == null) return;
+
+    // Extraer tokens de los parámetros de la URL
+    final accessToken = uri.queryParameters['access_token'];
+    final refreshToken = uri.queryParameters['refresh_token'];
+    final type = uri.queryParameters['type'];
+
+    if (type == 'recovery' && accessToken != null) {
+      // Navegar a la pantalla de recuperación de contraseña con los tokens
+      navigator.pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => PasswordResetScreen(
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+          ),
+        ),
+        (route) => false,
+      );
+    } else {
+      // Tokens inválidos, mostrar error
+      _showPasswordResetError(navigator);
+    }
+  }
+
+  // Manejar enlaces de recuperación de contraseña desde web
+  void _handlePasswordResetWebLink(Uri uri) {
+    debugPrint('Procesando enlace web de recuperación de contraseña: $uri');
+    
+    final NavigatorState? navigator = _navigatorKey.currentState;
+    if (navigator == null) return;
+
+    // Extraer tokens del fragment de la URL web
+    final fragment = uri.fragment;
+    final fragmentParams = Uri.splitQueryString(fragment.contains('?') ? fragment.split('?')[1] : '');
+    
+    final accessToken = fragmentParams['access_token'];
+    final refreshToken = fragmentParams['refresh_token'];
+    final type = fragmentParams['type'];
+
+    if (type == 'recovery' && accessToken != null) {
+      // Navegar a la pantalla de recuperación de contraseña con los tokens
+      navigator.pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => PasswordResetScreen(
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+          ),
+        ),
+        (route) => false,
+      );
+    } else {
+      // Tokens inválidos, mostrar error
+      _showPasswordResetError(navigator);
+    }
+  }
+
+  // Mostrar error cuando los tokens de recuperación son inválidos
+  void _showPasswordResetError(NavigatorState navigator) {
+    navigator.pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: Text('Error de Recuperación'),
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+          ),
+          body: Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 80, color: Colors.red),
+                SizedBox(height: 20),
+                Text(
+                  'Enlace de recuperación inválido',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'El enlace de recuperación de contraseña es inválido o ha expirado. Por favor, solicita un nuevo enlace desde la pantalla de login.',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 30),
+                ElevatedButton(
+                  onPressed: () {
+                    navigator.pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => LoginScreen()),
+                      (route) => false,
+                    );
+                  },
+                  child: Text('Ir a Login'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -228,6 +350,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/match_list': (context) => MatchListScreen(),
         '/match_join': (context) => MatchJoinScreen(matchId: ''),
         '/profile_edit': (context) => ProfileEditScreen(), // Añadido para manejar la edición de perfil
+        '/password_reset_request': (context) => PasswordResetRequestScreen(), // Ruta para solicitar reset
+        '/password_reset': (context) => PasswordResetScreen(), // Ruta para establecer nueva contraseña
         // Rutas del sistema de amigos
         '/friends': (context) => const FriendsMainScreen(),
         '/people': (context) => const PeopleScreen(),

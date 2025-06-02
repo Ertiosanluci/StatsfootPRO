@@ -24,14 +24,22 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            
-            <!-- Deep Link para manejar los enlaces statsfoot:// -->
+              <!-- Deep Link para manejar los enlaces statsfoot:// -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <!-- Esquema URI personalizado para los partidos -->
                 <data android:scheme="statsfoot" android:host="match" />
+            </intent-filter>
+            
+            <!-- Deep Link para recuperación de contraseña -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Esquema URI personalizado para reset de contraseña -->
+                <data android:scheme="statsfoot" android:host="reset-password" />
             </intent-filter>
             
             <!-- Deep Links para enlaces web desde statsfootpro.netlify.app -->

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:statsfoota/register.dart';
 import 'package:statsfoota/resetpasswordscreen.dart';
+import 'package:statsfoota/password_reset_request_screen.dart'; // Nueva pantalla de solicitud de reset
 import 'package:statsfoota/match_join_screen.dart'; // Añadido para la redirección
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
@@ -429,8 +430,34 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                 ],
                               ),
                         ),
+                          SizedBox(height: 24),
                         
-                        SizedBox(height: 24),
+                        // Enlace de ¿Olvidaste tu contraseña?
+                        Center(
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PasswordResetRequestScreen(),
+                                ),
+                              );
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.white70,
+                              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            ),
+                            child: Text(
+                              "¿Olvidaste tu contraseña?",
+                              style: TextStyle(
+                                fontSize: 14,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ),
+                        
+                        SizedBox(height: 16),
                         
                         // Registro
                         Row(
