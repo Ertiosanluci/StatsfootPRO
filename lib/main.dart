@@ -104,12 +104,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late AppLinks _appLinks;
   StreamSubscription<Uri>? _linkSubscription;
   final _navigatorKey = GlobalKey<NavigatorState>();
-  
-  @override
+    @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     initAppLinks();
+    // Verificar si la app se abrió con una URL de password reset
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkInitialRoute();
+    });
   }
 
   @override
@@ -176,8 +179,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           _handlePasswordResetLink(uri);
         } else {
           debugPrint('🔗 ⚠️ Host no reconocido: ${uri.host}');
-        }
-      } else if ((uri.scheme == 'http' || uri.scheme == 'https') && 
+        }      } else if ((uri.scheme == 'http' || uri.scheme == 'https') && 
                  uri.host == 'statsfootpro.netlify.app' &&
                  uri.pathSegments.isNotEmpty) {
         debugPrint('🔗 Es un enlace web de statsfootpro.netlify.app');
@@ -188,12 +190,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           if (uri.pathSegments.length > 1) {
             _handleMatchLink(uri.pathSegments[1]);
           }
+        } else if (uri.pathSegments.first == 'reset-password') {
+          debugPrint('🔗 Es un enlace web de reset de contraseña (path segment)');
+          // Es un enlace web directo para reset de contraseña (https://statsfootpro.netlify.app/reset-password)
+          _handlePasswordResetWebLink(uri);
         } else if (uri.fragment.contains('password_reset')) {
-          debugPrint('🔗 Es un enlace web de reset de contraseña');
-          // Es un enlace web para reset de contraseña 
+          debugPrint('🔗 Es un enlace web de reset de contraseña (fragment)');
+          // Es un enlace web para reset de contraseña en fragment
           _handlePasswordResetWebLink(uri);
         } else {
-          debugPrint('🔗 ⚠️ Tipo de enlace web no reconocido');
+          debugPrint('🔗 ⚠️ Tipo de enlace web no reconocido: ${uri.pathSegments}');
         }
       } else {
         debugPrint('🔗 ⚠️ URI no reconocido: scheme=${uri.scheme}, host=${uri.host}');
@@ -274,23 +280,38 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       );
     }
   }
-
   // Manejar enlaces de recuperación de contraseña desde web
   void _handlePasswordResetWebLink(Uri uri) {
-    debugPrint('Procesando enlace web de recuperación de contraseña: $uri');
+    debugPrint('🔐 Procesando enlace web de recuperación de contraseña: $uri');
+    debugPrint('🔐 Query parameters: ${uri.queryParameters}');
+    debugPrint('🔐 Fragment: ${uri.fragment}');
     
     final NavigatorState? navigator = _navigatorKey.currentState;
-    if (navigator == null) return;
+    if (navigator == null) {
+      debugPrint('🔐 ERROR: Navigator es null');
+      return;
+    }
 
-    // Extraer tokens del fragment de la URL web
-    final fragment = uri.fragment;
-    final fragmentParams = Uri.splitQueryString(fragment.contains('?') ? fragment.split('?')[1] : '');
-    
-    final accessToken = fragmentParams['access_token'];
-    final refreshToken = fragmentParams['refresh_token'];
-    final type = fragmentParams['type'];
+    // Buscar tokens en query parameters primero (cuando viene de Supabase)
+    String? accessToken = uri.queryParameters['access_token'];
+    String? refreshToken = uri.queryParameters['refresh_token'];
+    String? type = uri.queryParameters['type'];
+
+    // Si no están en query parameters, buscar en fragment (para URLs generadas por la app web)
+    if (accessToken == null && uri.fragment.isNotEmpty) {
+      debugPrint('🔐 No hay tokens en query params, verificando fragment...');
+      final fragment = uri.fragment;
+      final fragmentParams = Uri.splitQueryString(fragment.contains('?') ? fragment.split('?')[1] : fragment);
+      
+      accessToken = fragmentParams['access_token'];
+      refreshToken = fragmentParams['refresh_token'];
+      type = fragmentParams['type'];
+    }
+
+    debugPrint('🔐 Tokens encontrados - Access: ${accessToken != null ? "SÍ" : "NO"}, Refresh: ${refreshToken != null ? "SÍ" : "NO"}, Type: $type');
 
     if (type == 'recovery' && accessToken != null) {
+      debugPrint('🔐 ✅ Tokens válidos encontrados, navegando a PasswordResetScreen');
       // Navegar a la pantalla de recuperación de contraseña con los tokens
       navigator.pushAndRemoveUntil(
         MaterialPageRoute(
@@ -302,8 +323,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         (route) => false,
       );
     } else {
-      // Tokens inválidos, mostrar error
-      _showPasswordResetError(navigator);
+      debugPrint('🔐 ⚠️ No hay tokens válidos, pero es una URL de reset');
+      // Si es una URL de reset pero sin tokens, intentar navegar sin tokens
+      navigator.pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => PasswordResetScreen(),
+        ),
+        (route) => false,
+      );
     }
   }
 
@@ -357,6 +384,43 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       ),
       (route) => false,
     );
+  }
+
+  // Verificar si la aplicación se abrió con una URL específica (especialmente en web)
+  void _checkInitialRoute() {
+    // En Flutter web, verificar si hay parámetros en la URL actual
+    try {
+      final currentUri = Uri.base; // En web, esto da la URL actual del navegador
+      debugPrint('🌐 URL inicial del navegador: $currentUri');
+      debugPrint('🌐 Path: ${currentUri.path}');
+      debugPrint('🌐 Query: ${currentUri.query}');
+      debugPrint('🌐 Fragment: ${currentUri.fragment}');
+      
+      // Si estamos en web y la URL contiene información de password reset
+      if (currentUri.path.contains('reset-password') || 
+          currentUri.fragment.contains('password_reset') ||
+          currentUri.query.contains('access_token')) {
+        debugPrint('🌐 ✅ Detectada URL de password reset en la carga inicial');
+        
+        // Esperar un momento para que la app esté completamente inicializada
+        Future.delayed(Duration(seconds: 1), () {
+          _processIncomingUri(currentUri);
+        });
+      }
+      
+      // También verificar fragmentos que puedan contener rutas de reset
+      if (currentUri.fragment.isNotEmpty) {
+        final fragmentUri = Uri.tryParse('https://example.com/${currentUri.fragment}');
+        if (fragmentUri != null && fragmentUri.path.contains('password_reset')) {
+          debugPrint('🌐 ✅ Detectada ruta de password reset en fragment');
+          Future.delayed(Duration(seconds: 1), () {
+            _processIncomingUri(currentUri);
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('🌐 Error verificando ruta inicial: $e');
+    }
   }
 
   @override
