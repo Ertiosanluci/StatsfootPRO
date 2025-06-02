@@ -5,18 +5,18 @@
 # Redirección para recuperación de contraseña
 [[redirects]]
   from = "/reset-password"
-  to = "/netlify-redirect/reset-password.html"
+  to = "/reset-password.html"
   status = 200
 
 [[redirects]]
   from = "/reset-password-debug"
-  to = "/netlify-redirect/reset-password-debug.html"
+  to = "/reset-password-debug.html"
   status = 200
 
 # Redirección para compartir partidos
 [[redirects]]
   from = "/match/:id"
-  to = "/netlify-redirect/match.html"
+  to = "/match.html"
   status = 200
 
 # Redirección para las rutas de la aplicación Flutter

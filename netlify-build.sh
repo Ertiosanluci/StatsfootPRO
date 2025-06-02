@@ -19,6 +19,13 @@ flutter --version
 # Configurar Flutter para web
 flutter config --enable-web
 
+# Crear directorio para archivos de redirección si no existe
+mkdir -p build/web
+
+# Copiar archivos de redirección a la carpeta de publicación
+echo "Copying redirect files to build/web directory..."
+cp -r netlify-redirect/* build/web/
+
 # Construir el proyecto Flutter para web
 echo "Building Flutter web app..."
 flutter build web --release
