@@ -23,83 +23,69 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isSessionReady = false;
+  bool _tokenError = false;
+  String _errorMessage = '';
 
   @override
   void initState() {
     super.initState();
     _initializeSession();
-  }  Future<void> _initializeSession() async {
+  }  
+
+  Future<void> _initializeSession() async {
     debugPrint('🔐 Inicializando sesión para reset de contraseña...');
     debugPrint('🔐 Access Token recibido: ${widget.accessToken != null ? "SÍ" : "NO"}');
     debugPrint('🔐 Refresh Token recibido: ${widget.refreshToken != null ? "SÍ" : "NO"}');
+    
+    setState(() {
+      _isLoading = true;
+    });
     
     // Si se recibieron tokens, establecer la sesión
     if (widget.accessToken != null) {
       try {
         debugPrint('🔐 Estableciendo sesión con token recibido...');
         await Supabase.instance.client.auth.setSession(widget.accessToken!);
+        debugPrint('🔐 ✅ Sesión establecida exitosamente');
         setState(() {
           _isSessionReady = true;
+          _isLoading = false;
+          _tokenError = false;
         });
-        debugPrint('🔐 ✅ Sesión establecida exitosamente con token');
-        
-        // Mostrar mensaje de éxito
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.white),
-                  SizedBox(width: 10),
-                  Expanded(child: Text('Enlace de recuperación verificado. Establece tu nueva contraseña.')),
-                ],
-              ),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-        
       } catch (e) {
         debugPrint('🔐 ❌ Error estableciendo sesión con token: $e');
-        // Si falla con el token, verificar si ya hay una sesión activa
-        _checkExistingSession();
+        setState(() {
+          _tokenError = true;
+          _errorMessage = 'El enlace de recuperación ha expirado o es inválido. Por favor, solicita un nuevo enlace.';
+          _isLoading = false;
+        });
       }
     } else {
-      debugPrint('🔐 No hay tokens, verificando sesión existente...');
-      // No hay tokens, verificar si hay una sesión activa
-      _checkExistingSession();
-    }
-  }
-  void _checkExistingSession() {
-    debugPrint('🔐 Verificando sesión existente...');
-    final session = Supabase.instance.client.auth.currentSession;
-    if (session != null) {
-      debugPrint('🔐 ✅ Sesión existente encontrada');
-      setState(() {
-        _isSessionReady = true;
-      });
-      
-      // Mostrar mensaje informativo
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.info, color: Colors.white),
-                SizedBox(width: 10),
-                Expanded(child: Text('Usando sesión existente. Puedes establecer una nueva contraseña.')),
-              ],
-            ),
-            backgroundColor: Colors.blue,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    } else {
-      debugPrint('🔐 ❌ No hay sesión activa, mostrando error');
-      if (mounted) {
-        _showErrorAndRedirect('Se requiere una sesión válida para cambiar la contraseña. El enlace puede haber expirado.');
+      // Si no hay tokens, verificar si hay una sesión activa
+      try {
+        final session = Supabase.instance.client.auth.currentSession;
+        
+        if (session != null && session.accessToken.isNotEmpty) {
+          debugPrint('🔐 ✅ Usando sesión existente para reset');
+          setState(() {
+            _isSessionReady = true;
+            _isLoading = false;
+          });
+        } else {
+          debugPrint('🔐 ❌ No hay tokens ni sesión activa');
+          setState(() {
+            _tokenError = true;
+            _errorMessage = 'Se requiere una sesión válida para cambiar la contraseña. El enlace puede haber expirado.';
+            _isLoading = false;
+          });
+        }
+      } catch (e) {
+        debugPrint('🔐 ❌ Error verificando sesión: $e');
+        setState(() {
+          _tokenError = true;
+          _errorMessage = 'Ha ocurrido un error al verificar la sesión. Por favor, intenta nuevamente.';
+          _isLoading = false;
+        });
       }
     }
   }
@@ -193,30 +179,105 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text(
-          "Nueva Contraseña",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.blue.shade800,
-        centerTitle: true,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        automaticallyImplyLeading: false, // Quitar el botón de regreso
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: Container(
+        width: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.blue.shade300, Colors.blue.shade800],
+            colors: [
+              Color(0xFF0D47A1),
+              Color(0xFF1976D2),
+              Color(0xFF2196F3),
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
         child: SafeArea(
-          child: _isSessionReady ? _buildPasswordResetForm() : _buildLoadingIndicator(),
+          child: _isLoading 
+              ? _buildLoadingIndicator() 
+              : (_tokenError 
+                  ? _buildErrorView() 
+                  : (_isSessionReady 
+                      ? _buildPasswordResetForm() 
+                      : _buildLoadingIndicator())),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 70,
+              color: Colors.white,
+            ),
+            SizedBox(height: 24),
+            Text(
+              'Error de Recuperación',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 16),
+            Text(
+              _errorMessage,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.9),
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 40),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  '/password_reset_request',
+                  (route) => false,
+                );
+              },
+              child: Text('Solicitar Nuevo Enlace'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Color(0xFF1976D2),
+                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                textStyle: TextStyle(fontWeight: FontWeight.bold),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  '/login',
+                  (route) => false,
+                );
+              },
+              child: Text(
+                'Volver al Login',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
