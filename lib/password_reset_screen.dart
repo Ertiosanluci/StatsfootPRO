@@ -29,32 +29,41 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
     super.initState();
     _initializeSession();
   }
-
   Future<void> _initializeSession() async {
+    debugPrint('Inicializando sesión para reset de contraseña...');
+    
     // Si se recibieron tokens, establecer la sesión
     if (widget.accessToken != null) {
       try {
+        debugPrint('Estableciendo sesión con token recibido...');
         await Supabase.instance.client.auth.setSession(widget.accessToken!);
         setState(() {
           _isSessionReady = true;
         });
+        debugPrint('Sesión establecida exitosamente con token');
       } catch (e) {
-        debugPrint('Error estableciendo sesión: $e');
-        if (mounted) {
-          _showErrorAndRedirect('Error al procesar el enlace de recuperación');
-        }
+        debugPrint('Error estableciendo sesión con token: $e');
+        // Si falla con el token, verificar si ya hay una sesión activa
+        _checkExistingSession();
       }
     } else {
       // No hay tokens, verificar si hay una sesión activa
-      final session = Supabase.instance.client.auth.currentSession;
-      if (session != null) {
-        setState(() {
-          _isSessionReady = true;
-        });
-      } else {
-        if (mounted) {
-          _showErrorAndRedirect('Sesión requerida para cambiar contraseña');
-        }
+      _checkExistingSession();
+    }
+  }
+
+  void _checkExistingSession() {
+    debugPrint('Verificando sesión existente...');
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null) {
+      debugPrint('Sesión existente encontrada');
+      setState(() {
+        _isSessionReady = true;
+      });
+    } else {
+      debugPrint('No hay sesión activa, mostrando error');
+      if (mounted) {
+        _showErrorAndRedirect('Se requiere una sesión válida para cambiar la contraseña. El enlace puede haber expirado.');
       }
     }
   }

@@ -210,7 +210,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       }
     }
   }
-
   // Manejar enlaces de recuperación de contraseña desde deep link móvil
   void _handlePasswordResetLink(Uri uri) {
     debugPrint('Procesando enlace de recuperación de contraseña: $uri');
@@ -223,8 +222,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     final refreshToken = uri.queryParameters['refresh_token'];
     final type = uri.queryParameters['type'];
 
+    debugPrint('Tokens extraídos - Access: ${accessToken != null}, Refresh: ${refreshToken != null}, Type: $type');
+
+    // Si tenemos tokens de recovery, usar el flujo normal
     if (type == 'recovery' && accessToken != null) {
-      // Navegar a la pantalla de recuperación de contraseña con los tokens
       navigator.pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (context) => PasswordResetScreen(
@@ -235,8 +236,22 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         (route) => false,
       );
     } else {
-      // Tokens inválidos, mostrar error
-      _showPasswordResetError(navigator);
+      // Si no hay tokens pero el enlace es de recovery, intentar con la sesión existente
+      debugPrint('No hay tokens, verificando sesión existente...');
+      final session = Supabase.instance.client.auth.currentSession;
+      
+      if (session != null) {
+        debugPrint('Sesión existente encontrada, procediendo con reset');
+        navigator.pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => PasswordResetScreen(),
+          ),
+          (route) => false,
+        );
+      } else {
+        debugPrint('No hay sesión, mostrando error');
+        _showPasswordResetError(navigator);
+      }
     }
   }
 
