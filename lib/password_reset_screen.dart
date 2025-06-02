@@ -28,40 +28,76 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
   void initState() {
     super.initState();
     _initializeSession();
-  }
-  Future<void> _initializeSession() async {
-    debugPrint('Inicializando sesión para reset de contraseña...');
+  }  Future<void> _initializeSession() async {
+    debugPrint('🔐 Inicializando sesión para reset de contraseña...');
+    debugPrint('🔐 Access Token recibido: ${widget.accessToken != null ? "SÍ" : "NO"}');
+    debugPrint('🔐 Refresh Token recibido: ${widget.refreshToken != null ? "SÍ" : "NO"}');
     
     // Si se recibieron tokens, establecer la sesión
     if (widget.accessToken != null) {
       try {
-        debugPrint('Estableciendo sesión con token recibido...');
+        debugPrint('🔐 Estableciendo sesión con token recibido...');
         await Supabase.instance.client.auth.setSession(widget.accessToken!);
         setState(() {
           _isSessionReady = true;
         });
-        debugPrint('Sesión establecida exitosamente con token');
+        debugPrint('🔐 ✅ Sesión establecida exitosamente con token');
+        
+        // Mostrar mensaje de éxito
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white),
+                  SizedBox(width: 10),
+                  Expanded(child: Text('Enlace de recuperación verificado. Establece tu nueva contraseña.')),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        
       } catch (e) {
-        debugPrint('Error estableciendo sesión con token: $e');
+        debugPrint('🔐 ❌ Error estableciendo sesión con token: $e');
         // Si falla con el token, verificar si ya hay una sesión activa
         _checkExistingSession();
       }
     } else {
+      debugPrint('🔐 No hay tokens, verificando sesión existente...');
       // No hay tokens, verificar si hay una sesión activa
       _checkExistingSession();
     }
   }
-
   void _checkExistingSession() {
-    debugPrint('Verificando sesión existente...');
+    debugPrint('🔐 Verificando sesión existente...');
     final session = Supabase.instance.client.auth.currentSession;
     if (session != null) {
-      debugPrint('Sesión existente encontrada');
+      debugPrint('🔐 ✅ Sesión existente encontrada');
       setState(() {
         _isSessionReady = true;
       });
+      
+      // Mostrar mensaje informativo
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.info, color: Colors.white),
+                SizedBox(width: 10),
+                Expanded(child: Text('Usando sesión existente. Puedes establecer una nueva contraseña.')),
+              ],
+            ),
+            backgroundColor: Colors.blue,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
     } else {
-      debugPrint('No hay sesión activa, mostrando error');
+      debugPrint('🔐 ❌ No hay sesión activa, mostrando error');
       if (mounted) {
         _showErrorAndRedirect('Se requiere una sesión válida para cambiar la contraseña. El enlace puede haber expirado.');
       }

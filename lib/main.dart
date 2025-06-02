@@ -148,35 +148,58 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }, onError: (e) {
       debugPrint('Error en el manejo de enlaces: $e');
     });
-  }
-  void _processIncomingUri(Uri? uri) {
-    if (uri == null) return;
+  }  void _processIncomingUri(Uri? uri) {
+    if (uri == null) {
+      debugPrint('🔗 URI recibido es null');
+      return;
+    }
+
+    debugPrint('🔗 Procesando URI: $uri');
+    debugPrint('🔗 Scheme: ${uri.scheme}');
+    debugPrint('🔗 Host: ${uri.host}');
+    debugPrint('🔗 Path segments: ${uri.pathSegments}');
+    debugPrint('🔗 Query parameters: ${uri.queryParameters}');
+    debugPrint('🔗 Fragment: ${uri.fragment}');
 
     // Extraer datos del URI
     try {
       if (uri.scheme == 'statsfoot') {
+        debugPrint('🔗 Es un deep link de statsfoot');
+        
         if (uri.host == 'match') {
+          debugPrint('🔗 Es un enlace de partido');
           // Es un Deep Link interno para partido (statsfoot://match/ID)
           _handleMatchLink(uri.pathSegments.last);
         } else if (uri.host == 'reset-password') {
+          debugPrint('🔗 Es un enlace de reset de contraseña');
           // Es un Deep Link para reset de contraseña (statsfoot://reset-password)
           _handlePasswordResetLink(uri);
+        } else {
+          debugPrint('🔗 ⚠️ Host no reconocido: ${uri.host}');
         }
       } else if ((uri.scheme == 'http' || uri.scheme == 'https') && 
                  uri.host == 'statsfootpro.netlify.app' &&
                  uri.pathSegments.isNotEmpty) {
+        debugPrint('🔗 Es un enlace web de statsfootpro.netlify.app');
+        
         if (uri.pathSegments.first == 'match') {
+          debugPrint('🔗 Es un enlace web de partido');
           // Es un enlace web para partido (https://statsfootpro.netlify.app/match/ID)
           if (uri.pathSegments.length > 1) {
             _handleMatchLink(uri.pathSegments[1]);
           }
         } else if (uri.fragment.contains('password_reset')) {
+          debugPrint('🔗 Es un enlace web de reset de contraseña');
           // Es un enlace web para reset de contraseña 
           _handlePasswordResetWebLink(uri);
+        } else {
+          debugPrint('🔗 ⚠️ Tipo de enlace web no reconocido');
         }
+      } else {
+        debugPrint('🔗 ⚠️ URI no reconocido: scheme=${uri.scheme}, host=${uri.host}');
       }
     } catch (e) {
-      debugPrint('Error procesando el URI: $e');
+      debugPrint('🔗 ❌ Error procesando el URI: $e');
     }
   }
   // Navegar a la pantalla adecuada según el enlace
@@ -209,23 +232,28 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         );
       }
     }
-  }
-  // Manejar enlaces de recuperación de contraseña desde deep link móvil
+  }  // Manejar enlaces de recuperación de contraseña desde deep link móvil
   void _handlePasswordResetLink(Uri uri) {
-    debugPrint('Procesando enlace de recuperación de contraseña: $uri');
+    debugPrint('🔐 Procesando enlace de recuperación de contraseña: $uri');
+    debugPrint('🔐 Query parameters: ${uri.queryParameters}');
+    debugPrint('🔐 Fragment: ${uri.fragment}');
     
     final NavigatorState? navigator = _navigatorKey.currentState;
-    if (navigator == null) return;
+    if (navigator == null) {
+      debugPrint('🔐 ERROR: Navigator es null');
+      return;
+    }
 
     // Extraer tokens de los parámetros de la URL
     final accessToken = uri.queryParameters['access_token'];
     final refreshToken = uri.queryParameters['refresh_token'];
     final type = uri.queryParameters['type'];
 
-    debugPrint('Tokens extraídos - Access: ${accessToken != null}, Refresh: ${refreshToken != null}, Type: $type');
+    debugPrint('🔐 Tokens extraídos - Access: ${accessToken != null ? "SÍ" : "NO"}, Refresh: ${refreshToken != null ? "SÍ" : "NO"}, Type: $type');
 
     // Si tenemos tokens de recovery, usar el flujo normal
     if (type == 'recovery' && accessToken != null) {
+      debugPrint('🔐 ✅ Tokens válidos encontrados, navegando a PasswordResetScreen con tokens');
       navigator.pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (context) => PasswordResetScreen(
@@ -236,22 +264,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         (route) => false,
       );
     } else {
-      // Si no hay tokens pero el enlace es de recovery, intentar con la sesión existente
-      debugPrint('No hay tokens, verificando sesión existente...');
-      final session = Supabase.instance.client.auth.currentSession;
-      
-      if (session != null) {
-        debugPrint('Sesión existente encontrada, procediendo con reset');
-        navigator.pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (context) => PasswordResetScreen(),
-          ),
-          (route) => false,
-        );
-      } else {
-        debugPrint('No hay sesión, mostrando error');
-        _showPasswordResetError(navigator);
-      }
+      // Si no hay tokens, intentar navegar sin tokens (la pantalla manejará la sesión)
+      debugPrint('🔐 ⚠️ No hay tokens, navegando a PasswordResetScreen sin tokens');
+      navigator.pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => PasswordResetScreen(),
+        ),
+        (route) => false,
+      );
     }
   }
 

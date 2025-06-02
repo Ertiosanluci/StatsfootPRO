@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Test Deep Links - StatsFoot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1565C0, #1976D2, #1E88E5);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .test-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .test-button {
+            background: #FF6B35;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 8px;
+            display: inline-block;
+            margin: 5px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .test-button:hover {
+            background: #E55A2B;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .info-box {
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 14px;
+            border-left: 4px solid #4CAF50;
+        }
+        .warning-box {
+            background: rgba(255,193,7,0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #FF9800;
+        }
+        .code {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Pruebas de Deep Links - StatsFoot</h1>
+        
+        <div class="test-section">
+            <h3>🔗 Pruebas de Deep Links Básicos</h3>
+            <p>Estas pruebas verifican que los deep links funcionen correctamente:</p>
+            
+            <a href="statsfoot://reset-password" class="test-button">
+                📱 Test: statsfoot://reset-password
+            </a>
+            
+            <a href="statsfoot://match/123" class="test-button">
+                ⚽ Test: statsfoot://match/123
+            </a>
+            
+            <div class="info-box">
+                <strong>✅ Comportamiento esperado:</strong><br>
+                • Debería abrir la aplicación StatsFoot<br>
+                • Para reset-password: navegar a la pantalla de cambio de contraseña<br>
+                • Para match: navegar a la pantalla de unirse al partido
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔐 Pruebas de Password Reset con Tokens</h3>
+            <p>Simula el flujo completo con tokens de ejemplo:</p>
+            
+            <button onclick="testWithTokens()" class="test-button">
+                🔑 Test con Tokens de Ejemplo
+            </button>
+            
+            <button onclick="generateTestUrl()" class="test-button">
+                ⚙️ Generar URL de Prueba
+            </button>
+            
+            <div id="generated-url" class="code" style="display: none;"></div>
+            
+            <div class="warning-box">
+                <strong>⚠️ Nota:</strong> Los tokens de ejemplo no funcionarán para cambiar contraseñas reales, 
+                pero sirven para probar el flujo de navegación.
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Información del Navegador</h3>
+            <div id="browser-info" class="info-box">
+                <strong>User Agent:</strong> <span id="user-agent"></span><br>
+                <strong>Plataforma:</strong> <span id="platform"></span><br>
+                <strong>URL Actual:</strong> <span id="current-url"></span><br>
+                <strong>Timestamp:</strong> <span id="timestamp"></span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Verificar Configuración</h3>
+            <div class="info-box">
+                <strong>URLs que deben estar configuradas en Supabase:</strong><br>
+                • statsfoot://reset-password<br>
+                • https://statsfootpro.netlify.app/reset-password<br>
+                • https://statsfootpro.netlify.app/app/#/password_reset<br>
+            </div>
+            
+            <div class="info-box">
+                <strong>Deep Links esperados en Android:</strong><br>
+                • Scheme: statsfoot<br>
+                • Host: reset-password, match<br>
+                • Intent Filter configurado en AndroidManifest.xml
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📱 Enlaces de Fallback</h3>
+            <p>Si los deep links no funcionan, prueba estos:</p>
+            
+            <a href="https://statsfootpro.netlify.app/app/#/password_reset" class="test-button">
+                🌐 Versión Web - Password Reset
+            </a>
+            
+            <a href="https://statsfootpro.netlify.app/app/#/login" class="test-button">
+                🌐 Versión Web - Login
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Mostrar información del navegador
+        document.getElementById('user-agent').textContent = navigator.userAgent;
+        document.getElementById('platform').textContent = navigator.platform;
+        document.getElementById('current-url').textContent = window.location.href;
+        document.getElementById('timestamp').textContent = new Date().toISOString();
+
+        function testWithTokens() {
+            // Generar tokens de ejemplo para pruebas
+            const exampleAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+            const exampleRefreshToken = 'refresh_token_example_123456789';
+            
+            const testUrl = `statsfoot://reset-password?access_token=${encodeURIComponent(exampleAccessToken)}&refresh_token=${encodeURIComponent(exampleRefreshToken)}&type=recovery`;
+            
+            console.log('🔐 Probando con URL:', testUrl);
+            
+            // Mostrar la URL generada
+            document.getElementById('generated-url').innerHTML = `
+                <strong>URL Generada:</strong><br>
+                ${testUrl}<br><br>
+                <a href="${testUrl}" style="color: #4CAF50; text-decoration: underline;">Hacer clic para probar</a>
+            `;
+            document.getElementById('generated-url').style.display = 'block';
+            
+            // Intentar abrir automáticamente después de 2 segundos
+            setTimeout(() => {
+                window.location.href = testUrl;
+            }, 2000);
+        }
+
+        function generateTestUrl() {
+            const timestamp = Date.now();
+            const testUrl = `statsfoot://reset-password?test=true&timestamp=${timestamp}`;
+            
+            document.getElementById('generated-url').innerHTML = `
+                <strong>URL de Prueba Simple:</strong><br>
+                ${testUrl}<br><br>
+                <a href="${testUrl}" style="color: #4CAF50; text-decoration: underline;">Hacer clic para probar</a>
+            `;
+            document.getElementById('generated-url').style.display = 'block';
+        }
+
+        // Log para debugging
+        console.log('🔧 Página de pruebas cargada');
+        console.log('🔧 URL actual:', window.location.href);
+        console.log('🔧 User Agent:', navigator.userAgent);
+    </script>
+</body>
+</html>
