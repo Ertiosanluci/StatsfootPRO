@@ -1,0 +1,14 @@
+# Redirects for StatsFoot PRO
+
+# Password reset redirect
+/reset-password /reset-password.html 200
+/reset-password-debug /reset-password-debug.html 200
+
+# Match sharing redirects
+/match/:id /match.html 200
+
+# SPA fallback for the main app
+/app/* /app/index.html 200
+
+# Default fallback
+/* /index.html 200

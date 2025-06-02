@@ -26,12 +26,12 @@ class _PasswordResetRequestScreenState extends State<PasswordResetRequestScreen>
       _isLoading = true;
     });    try {
       // Llamada a Supabase con configuración más explícita
-      final response = await Supabase.instance.client.auth.resetPasswordForEmail(
+      await Supabase.instance.client.auth.resetPasswordForEmail(
         _emailController.text.trim(),
-        redirectTo: 'https://statsfootpro.netlify.app/reset-password-debug', // Usar página de debug temporalmente
+        redirectTo: 'https://statsfootpro.netlify.app/reset-password', // Página principal de reset
       );
 
-      print('Respuesta de resetPasswordForEmail: $response'); // Debug info
+      print('Email de resetPasswordForEmail enviado a: ${_emailController.text}'); // Debug info
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
