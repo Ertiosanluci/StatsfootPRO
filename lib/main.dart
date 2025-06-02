@@ -238,8 +238,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         );
       }
     }
-  }  // Manejar enlaces de recuperación de contraseña desde deep link móvil
-  void _handlePasswordResetLink(Uri uri) {
+  }  // Manejar enlaces de recuperación de contraseña desde deep link móvil  void _handlePasswordResetLink(Uri uri) {
     debugPrint('🔐 Procesando enlace de recuperación de contraseña: $uri');
     debugPrint('🔐 Query parameters: ${uri.queryParameters}');
     debugPrint('🔐 Fragment: ${uri.fragment}');
@@ -251,14 +250,20 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
 
     // Extraer tokens de los parámetros de la URL
-    final accessToken = uri.queryParameters['access_token'];
+    String? accessToken = uri.queryParameters['access_token'];
     final refreshToken = uri.queryParameters['refresh_token'];
     final type = uri.queryParameters['type'];
+    
+    // Verificar si hay un code (nuevo formato de Supabase)
+    final code = uri.queryParameters['code'];
+    if (code != null) {
+      debugPrint('🔐 Encontrado parámetro code: ${code.substring(0, 8)}...');
+      // Usar code como accessToken
+      accessToken = code;
+    }
 
-    debugPrint('🔐 Tokens extraídos - Access: ${accessToken != null ? "SÍ" : "NO"}, Refresh: ${refreshToken != null ? "SÍ" : "NO"}, Type: $type');
-
-    // Si tenemos tokens de recovery, usar el flujo normal
-    if (type == 'recovery' && accessToken != null) {
+    debugPrint('🔐 Tokens extraídos - Access/Code: ${accessToken != null ? "SÍ" : "NO"}, Refresh: ${refreshToken != null ? "SÍ" : "NO"}, Type: $type');    // Si tenemos tokens de recovery, o un code, usar el flujo normal
+    if ((type == 'recovery' && accessToken != null) || (accessToken != null && uri.queryParameters.containsKey('code'))) {
       debugPrint('🔐 ✅ Tokens válidos encontrados, navegando a PasswordResetScreen con tokens');
       navigator.pushAndRemoveUntil(
         MaterialPageRoute(

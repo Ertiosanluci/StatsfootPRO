@@ -45,13 +45,43 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
     if (widget.accessToken != null) {
       try {
         debugPrint('🔐 Estableciendo sesión con token recibido...');
-        await Supabase.instance.client.auth.setSession(widget.accessToken!);
-        debugPrint('🔐 ✅ Sesión establecida exitosamente');
-        setState(() {
-          _isSessionReady = true;
-          _isLoading = false;
-          _tokenError = false;
-        });
+        
+        // Si el token recibido tiene formato UUID (código de un solo uso), probablemente sea un code
+        if (widget.accessToken!.contains('-') && widget.accessToken!.length > 30) {
+          debugPrint('🔐 Detectado posible token de formato code, usando resetPasswordForEmail');
+          
+          // Debemos obtener una sesión usando el código
+          final response = await Supabase.instance.client.auth.verifyOTP({
+            'email': '', // No necesitamos el email
+            'type': 'recovery',
+            'token': widget.accessToken!, // Usando el code como token
+          });
+          
+          if (response.session != null) {
+            debugPrint('🔐 ✅ Sesión establecida exitosamente con código');
+            setState(() {
+              _isSessionReady = true;
+              _isLoading = false;
+              _tokenError = false;
+            });
+          } else {
+            debugPrint('🔐 ❌ Error: No se pudo establecer sesión con código');
+            setState(() {
+              _tokenError = true;
+              _errorMessage = 'El código de recuperación ha expirado o es inválido. Por favor, solicita un nuevo enlace.';
+              _isLoading = false;
+            });
+          }
+        } else {
+          // Formato tradicional con access_token
+          await Supabase.instance.client.auth.setSession(widget.accessToken!);
+          debugPrint('🔐 ✅ Sesión establecida exitosamente');
+          setState(() {
+            _isSessionReady = true;
+            _isLoading = false;
+            _tokenError = false;
+          });
+        }
       } catch (e) {
         debugPrint('🔐 ❌ Error estableciendo sesión con token: $e');
         setState(() {
