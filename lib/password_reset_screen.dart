@@ -47,15 +47,13 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
         debugPrint('🔐 Estableciendo sesión con token recibido...');
         
         // Si el token recibido tiene formato UUID (código de un solo uso), probablemente sea un code
-        if (widget.accessToken!.contains('-') && widget.accessToken!.length > 30) {
-          debugPrint('🔐 Detectado posible token de formato code, usando resetPasswordForEmail');
+        if (widget.accessToken!.contains('-') && widget.accessToken!.length > 30) {          debugPrint('🔐 Detectado posible token de formato code, usando verifyOTP');
           
           // Debemos obtener una sesión usando el código
-          final response = await Supabase.instance.client.auth.verifyOTP({
-            'email': '', // No necesitamos el email
-            'type': 'recovery',
-            'token': widget.accessToken!, // Usando el code como token
-          });
+          final response = await Supabase.instance.client.auth.verifyOTP(
+            type: OtpType.recovery,
+            token: widget.accessToken!,
+          );
           
           if (response.session != null) {
             debugPrint('🔐 ✅ Sesión establecida exitosamente con código');

@@ -237,8 +237,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           (route) => false, // Eliminar todas las rutas del stack
         );
       }
-    }
-  }  // Manejar enlaces de recuperación de contraseña desde deep link móvil  void _handlePasswordResetLink(Uri uri) {
+    }  }
+  
+  // Manejar enlaces de recuperación de contraseña desde deep link móvil
+  void _handlePasswordResetLink(Uri uri) {
     debugPrint('🔐 Procesando enlace de recuperación de contraseña: $uri');
     debugPrint('🔐 Query parameters: ${uri.queryParameters}');
     debugPrint('🔐 Fragment: ${uri.fragment}');
@@ -262,7 +264,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       accessToken = code;
     }
 
-    debugPrint('🔐 Tokens extraídos - Access/Code: ${accessToken != null ? "SÍ" : "NO"}, Refresh: ${refreshToken != null ? "SÍ" : "NO"}, Type: $type');    // Si tenemos tokens de recovery, o un code, usar el flujo normal
+    debugPrint('🔐 Tokens extraídos - Access/Code: ${accessToken != null ? "SÍ" : "NO"}, Refresh: ${refreshToken != null ? "SÍ" : "NO"}, Type: $type');
+    
+    // Si tenemos tokens de recovery, o un code, usar el flujo normal
     if ((type == 'recovery' && accessToken != null) || (accessToken != null && uri.queryParameters.containsKey('code'))) {
       debugPrint('🔐 ✅ Tokens válidos encontrados, navegando a PasswordResetScreen con tokens');
       navigator.pushAndRemoveUntil(
@@ -295,12 +299,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (navigator == null) {
       debugPrint('🔐 ERROR: Navigator es null');
       return;
-    }
-
-    // Buscar tokens en query parameters primero (cuando viene de Supabase)
+    }    // Buscar tokens en query parameters primero (cuando viene de Supabase)
     String? accessToken = uri.queryParameters['access_token'];
     String? refreshToken = uri.queryParameters['refresh_token'];
     String? type = uri.queryParameters['type'];
+    
+    // Verificar si hay un code (nuevo formato de Supabase)
+    final code = uri.queryParameters['code'];
+    if (code != null) {
+      debugPrint('🔐 Encontrado parámetro code: ${code.substring(0, 8)}...');
+      // Usar code como accessToken
+      accessToken = code;
+    }
 
     // Si no están en query parameters, buscar en fragment (para URLs generadas por la app web)
     if (accessToken == null && uri.fragment.isNotEmpty) {
@@ -313,9 +323,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       type = fragmentParams['type'];
     }
 
-    debugPrint('🔐 Tokens encontrados - Access: ${accessToken != null ? "SÍ" : "NO"}, Refresh: ${refreshToken != null ? "SÍ" : "NO"}, Type: $type');
+    debugPrint('🔐 Tokens encontrados - Access/Code: ${accessToken != null ? "SÍ" : "NO"}, Refresh: ${refreshToken != null ? "SÍ" : "NO"}, Type: $type');
 
-    if (type == 'recovery' && accessToken != null) {
+    if ((type == 'recovery' && accessToken != null) || (accessToken != null && uri.queryParameters.containsKey('code'))) {
       debugPrint('🔐 ✅ Tokens válidos encontrados, navegando a PasswordResetScreen');
       // Navegar a la pantalla de recuperación de contraseña con los tokens
       navigator.pushAndRemoveUntil(
