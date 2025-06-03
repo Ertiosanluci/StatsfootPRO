@@ -75,8 +75,8 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
         // Filtrar solo partidos con fecha futura
         _filteredMyMatches = _myMatches.where((match) {
           final matchDate = DateTime.parse(match['fecha']);
-          // Para Mis Partidos, filtrar por estado "Próximo" además de la fecha
-          return matchDate.isAfter(now) && match['estado'] == 'próximo';
+          // Para Mis Partidos, filtrar solo por fecha futura
+          return matchDate.isAfter(now);
         }).toList();
         
         _filteredFriendsMatches = _friendsMatches.where((match) {
