@@ -1,0 +1,637 @@
+-- Merging decision tree log ---
+application
+INJECTED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:2:5-60:19
+INJECTED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml
+MERGED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:8:5-32:19
+MERGED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:8:5-32:19
+MERGED from [:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:7:5-33:19
+MERGED from [:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:7:5-33:19
+MERGED from [:url_launcher_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\url_launcher_android\intermediates\merged_manifest\debug\AndroidManifest.xml:7:5-12:19
+MERGED from [:url_launcher_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\url_launcher_android\intermediates\merged_manifest\debug\AndroidManifest.xml:7:5-12:19
+MERGED from [com.google.firebase:firebase-analytics:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\867692132b6fa8941f74fda8042b1d68\transformed\jetified-firebase-analytics-19.0.0\AndroidManifest.xml:7:5-20
+MERGED from [com.google.firebase:firebase-analytics:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\867692132b6fa8941f74fda8042b1d68\transformed\jetified-firebase-analytics-19.0.0\AndroidManifest.xml:7:5-20
+MERGED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:28:5-44:19
+MERGED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:28:5-44:19
+MERGED from [com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5722daae33ab2939111f7815d0fdeb4d\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:26:5-34:19
+MERGED from [com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5722daae33ab2939111f7815d0fdeb4d\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:26:5-34:19
+MERGED from [com.google.android.gms:play-services-measurement-sdk:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2647959327c87d84d712be3cb997588e\transformed\jetified-play-services-measurement-sdk-19.0.0\AndroidManifest.xml:22:5-23:19
+MERGED from [com.google.android.gms:play-services-measurement-sdk:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2647959327c87d84d712be3cb997588e\transformed\jetified-play-services-measurement-sdk-19.0.0\AndroidManifest.xml:22:5-23:19
+MERGED from [com.google.android.gms:play-services-measurement-impl:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4604e5625c65d82582099374cd695f4a\transformed\jetified-play-services-measurement-impl-19.0.0\AndroidManifest.xml:28:5-29:19
+MERGED from [com.google.android.gms:play-services-measurement-impl:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4604e5625c65d82582099374cd695f4a\transformed\jetified-play-services-measurement-impl-19.0.0\AndroidManifest.xml:28:5-29:19
+MERGED from [com.google.android.gms:play-services-ads-identifier:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\197e96520af20586fafcb322ede7d3bc\transformed\jetified-play-services-ads-identifier-17.0.0\AndroidManifest.xml:22:5-20
+MERGED from [com.google.android.gms:play-services-ads-identifier:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\197e96520af20586fafcb322ede7d3bc\transformed\jetified-play-services-ads-identifier-17.0.0\AndroidManifest.xml:22:5-20
+MERGED from [com.google.android.gms:play-services-measurement-base:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\b4f8eaf8ddd335b36ffb9c89d1c9305e\transformed\jetified-play-services-measurement-base-19.0.0\AndroidManifest.xml:7:5-20
+MERGED from [com.google.android.gms:play-services-measurement-base:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\b4f8eaf8ddd335b36ffb9c89d1c9305e\transformed\jetified-play-services-measurement-base-19.0.0\AndroidManifest.xml:7:5-20
+MERGED from [com.google.android.gms:play-services-stats:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e49c505b879b338a56b562c1cb0814dd\transformed\jetified-play-services-stats-17.0.0\AndroidManifest.xml:7:5-20
+MERGED from [com.google.android.gms:play-services-stats:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e49c505b879b338a56b562c1cb0814dd\transformed\jetified-play-services-stats-17.0.0\AndroidManifest.xml:7:5-20
+MERGED from [com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\a0cf653314d568c53ff2827bbbf4a031\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:14:5-22:19
+MERGED from [com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\a0cf653314d568c53ff2827bbbf4a031\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:14:5-22:19
+MERGED from [com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\1803c6c4f16dcbb9014c9d0e8999dfbb\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:25:5-38:19
+MERGED from [com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\1803c6c4f16dcbb9014c9d0e8999dfbb\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:25:5-38:19
+MERGED from [com.google.android.gms:play-services-tasks:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\25ab5d828264d63f4789887050e993ef\transformed\jetified-play-services-tasks-17.0.0\AndroidManifest.xml:7:5-20
+MERGED from [com.google.android.gms:play-services-tasks:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\25ab5d828264d63f4789887050e993ef\transformed\jetified-play-services-tasks-17.0.0\AndroidManifest.xml:7:5-20
+MERGED from [com.google.firebase:firebase-measurement-connector:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4db4e3a90ea7b84b429abf9465ec8697\transformed\jetified-firebase-measurement-connector-19.0.0\AndroidManifest.xml:22:5-23:19
+MERGED from [com.google.firebase:firebase-measurement-connector:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4db4e3a90ea7b84b429abf9465ec8697\transformed\jetified-firebase-measurement-connector-19.0.0\AndroidManifest.xml:22:5-23:19
+MERGED from [com.google.android.gms:play-services-basement:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5491bd47d7e3a4a12e544d6b972f1ba5\transformed\jetified-play-services-basement-17.0.0\AndroidManifest.xml:22:5-26:19
+MERGED from [com.google.android.gms:play-services-basement:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5491bd47d7e3a4a12e544d6b972f1ba5\transformed\jetified-play-services-basement-17.0.0\AndroidManifest.xml:22:5-26:19
+MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\002dfaedf04a99d1764f51f1b1bd78bf\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\002dfaedf04a99d1764f51f1b1bd78bf\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\bbf3cfcf53ec802b720b1d4e1638fe3b\transformed\jetified-window-1.2.0\AndroidManifest.xml:22:5-29:19
+MERGED from [androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\bbf3cfcf53ec802b720b1d4e1638fe3b\transformed\jetified-window-1.2.0\AndroidManifest.xml:22:5-29:19
+MERGED from [androidx.core:core:1.13.1] C:\Users\edusa\.gradle\caches\transforms-3\b9dbbf122bd098f9ee2140c4f0eac8d5\transformed\core-1.13.1\AndroidManifest.xml:28:5-89
+MERGED from [androidx.core:core:1.13.1] C:\Users\edusa\.gradle\caches\transforms-3\b9dbbf122bd098f9ee2140c4f0eac8d5\transformed\core-1.13.1\AndroidManifest.xml:28:5-89
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:23:5-53:19
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:23:5-53:19
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\edusa\.gradle\caches\transforms-3\ed3a7a026ddbb37e9a274a047b095396\transformed\jetified-startup-runtime-1.1.1\AndroidManifest.xml:25:5-31:19
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\edusa\.gradle\caches\transforms-3\ed3a7a026ddbb37e9a274a047b095396\transformed\jetified-startup-runtime-1.1.1\AndroidManifest.xml:25:5-31:19
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\edusa\.gradle\caches\transforms-3\ee74924f7d30d2ad3c151b70bd181334\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:24:5-25:19
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\edusa\.gradle\caches\transforms-3\ee74924f7d30d2ad3c151b70bd181334\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:24:5-25:19
+	android:extractNativeLibs
+		INJECTED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml
+	android:appComponentFactory
+		ADDED from [androidx.core:core:1.13.1] C:\Users\edusa\.gradle\caches\transforms-3\b9dbbf122bd098f9ee2140c4f0eac8d5\transformed\core-1.13.1\AndroidManifest.xml:28:18-86
+	android:name
+		INJECTED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml
+manifest
+ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:1:1-72:12
+MERGED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:1:1-72:12
+INJECTED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:1:1-19:12
+INJECTED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:1:1-19:12
+INJECTED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:1:1-19:12
+MERGED from [:app_links] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\app_links\intermediates\merged_manifest\debug\AndroidManifest.xml:2:1-7:12
+MERGED from [:file_picker] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\file_picker\intermediates\merged_manifest\debug\AndroidManifest.xml:2:1-15:12
+MERGED from [:flutter_native_splash] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\flutter_native_splash\intermediates\merged_manifest\debug\AndroidManifest.xml:2:1-7:12
+MERGED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:2:1-34:12
+MERGED from [:flutter_plugin_android_lifecycle] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\flutter_plugin_android_lifecycle\intermediates\merged_manifest\debug\AndroidManifest.xml:2:1-7:12
+MERGED from [:fluttertoast] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\fluttertoast\intermediates\merged_manifest\debug\AndroidManifest.xml:2:1-7:12
+MERGED from [:path_provider_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\path_provider_android\intermediates\merged_manifest\debug\AndroidManifest.xml:2:1-7:12
+MERGED from [:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:2:1-35:12
+MERGED from [:shared_preferences_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\shared_preferences_android\intermediates\merged_manifest\debug\AndroidManifest.xml:2:1-7:12
+MERGED from [:url_launcher_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\url_launcher_android\intermediates\merged_manifest\debug\AndroidManifest.xml:2:1-14:12
+MERGED from [androidx.preference:preference:1.2.1] C:\Users\edusa\.gradle\caches\transforms-3\1e797bd4318bf61bc9b480ef676f2231\transformed\preference-1.2.1\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.appcompat:appcompat:1.1.0] C:\Users\edusa\.gradle\caches\transforms-3\99baee04788e37d96b578b4a3c2712ad\transformed\appcompat-1.1.0\AndroidManifest.xml:17:1-24:12
+MERGED from [com.google.firebase:firebase-analytics:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\867692132b6fa8941f74fda8042b1d68\transformed\jetified-firebase-analytics-19.0.0\AndroidManifest.xml:2:1-9:12
+MERGED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:17:1-46:12
+MERGED from [com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5722daae33ab2939111f7815d0fdeb4d\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:17:1-36:12
+MERGED from [com.google.android.gms:play-services-measurement-sdk:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2647959327c87d84d712be3cb997588e\transformed\jetified-play-services-measurement-sdk-19.0.0\AndroidManifest.xml:17:1-25:12
+MERGED from [com.google.android.gms:play-services-measurement-impl:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4604e5625c65d82582099374cd695f4a\transformed\jetified-play-services-measurement-impl-19.0.0\AndroidManifest.xml:17:1-31:12
+MERGED from [com.google.android.gms:play-services-ads-identifier:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\197e96520af20586fafcb322ede7d3bc\transformed\jetified-play-services-ads-identifier-17.0.0\AndroidManifest.xml:17:1-24:12
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e9730d2d60761654c57e2f817d73a835\transformed\jetified-play-services-measurement-sdk-api-19.0.0\AndroidManifest.xml:17:1-27:12
+MERGED from [com.google.android.gms:play-services-measurement-base:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\b4f8eaf8ddd335b36ffb9c89d1c9305e\transformed\jetified-play-services-measurement-base-19.0.0\AndroidManifest.xml:2:1-9:12
+MERGED from [com.google.android.gms:play-services-stats:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e49c505b879b338a56b562c1cb0814dd\transformed\jetified-play-services-stats-17.0.0\AndroidManifest.xml:2:1-9:12
+MERGED from [com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\a0cf653314d568c53ff2827bbbf4a031\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:2:1-24:12
+MERGED from [com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\1803c6c4f16dcbb9014c9d0e8999dfbb\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:15:1-40:12
+MERGED from [com.google.firebase:firebase-installations-interop:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\314647330024d2d928b39fbecb2846c5\transformed\jetified-firebase-installations-interop-17.0.0\AndroidManifest.xml:15:1-23:12
+MERGED from [com.google.android.gms:play-services-tasks:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\25ab5d828264d63f4789887050e993ef\transformed\jetified-play-services-tasks-17.0.0\AndroidManifest.xml:2:1-9:12
+MERGED from [com.google.firebase:firebase-measurement-connector:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4db4e3a90ea7b84b429abf9465ec8697\transformed\jetified-firebase-measurement-connector-19.0.0\AndroidManifest.xml:17:1-25:12
+MERGED from [com.google.android.gms:play-services-basement:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5491bd47d7e3a4a12e544d6b972f1ba5\transformed\jetified-play-services-basement-17.0.0\AndroidManifest.xml:17:1-28:12
+MERGED from [androidx.fragment:fragment-ktx:1.7.1] C:\Users\edusa\.gradle\caches\transforms-3\cb0e069b693d1d4253e15a064c43e13c\transformed\jetified-fragment-ktx-1.7.1\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.fragment:fragment:1.7.1] C:\Users\edusa\.gradle\caches\transforms-3\2f8a99f6ec7edccd94dccf71f74ad60b\transformed\fragment-1.7.1\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.activity:activity-ktx:1.9.3] C:\Users\edusa\.gradle\caches\transforms-3\04aafca76e737ec292494cc26c03b62c\transformed\jetified-activity-ktx-1.9.3\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.activity:activity:1.9.3] C:\Users\edusa\.gradle\caches\transforms-3\fba1a9c820e037081ed7504f3f3055ce\transformed\jetified-activity-1.9.3\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.recyclerview:recyclerview:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\c8413d4007940f802eacb39100abb075\transformed\recyclerview-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.legacy:legacy-support-core-ui:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\c0733fa71611d073e18e319eccdcff14\transformed\legacy-support-core-ui-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.legacy:legacy-support-core-utils:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\04fff392d858d0a4b3135c1a4e08888b\transformed\legacy-support-core-utils-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.loader:loader:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\a66ebaffd1aacd50cb9cf7ceb0f055fc\transformed\loader-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\5cda5fb45139304a8d5a227c9ea27eca\transformed\lifecycle-livedata-2.7.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-livedata-core-ktx:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\a7331d9fdd4e15ffb4ef8e71249f38f2\transformed\jetified-lifecycle-livedata-core-ktx-2.7.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\ce8d1358067f4800111419c42bc3307a\transformed\jetified-lifecycle-viewmodel-ktx-2.7.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\a685e75948c13aa0d79415a069eb5184\transformed\jetified-lifecycle-runtime-ktx-2.7.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\d4c0800c65be9b84b5b8ae50a6d0fe37\transformed\lifecycle-livedata-core-2.7.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\e60afc5241e6ab745b205e42032fc5e9\transformed\lifecycle-viewmodel-2.7.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\002dfaedf04a99d1764f51f1b1bd78bf\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:17:1-35:12
+MERGED from [androidx.savedstate:savedstate-ktx:1.2.1] C:\Users\edusa\.gradle\caches\transforms-3\0ec92b5629b743b7bf6ec869abf3d2d6\transformed\jetified-savedstate-ktx-1.2.1\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.savedstate:savedstate:1.2.1] C:\Users\edusa\.gradle\caches\transforms-3\97cd927a79801c11852d4be63cf7eb60\transformed\jetified-savedstate-1.2.1\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\ab8ff4700dc0a90ab0108389f050a92b\transformed\lifecycle-runtime-2.7.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\fe0b6859293fe838542a4e56a36073e4\transformed\jetified-lifecycle-viewmodel-savedstate-2.7.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.core:core-ktx:1.13.1] C:\Users\edusa\.gradle\caches\transforms-3\1aaa36d23e67aff05d2e65ed71f0b290\transformed\jetified-core-ktx-1.13.1\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.browser:browser:1.8.0] C:\Users\edusa\.gradle\caches\transforms-3\5076ba91573cb58fc1f48060a814728f\transformed\browser-1.8.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.slidingpanelayout:slidingpanelayout:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\787c19111d1527b92f9aed0654773f5f\transformed\slidingpanelayout-1.2.0\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\bbf3cfcf53ec802b720b1d4e1638fe3b\transformed\jetified-window-1.2.0\AndroidManifest.xml:17:1-31:12
+MERGED from [androidx.window:window-java:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\cc50d1b8197c8275cae8a5d28efb3fcd\transformed\jetified-window-java-1.2.0\AndroidManifest.xml:17:1-21:12
+MERGED from [androidx.viewpager:viewpager:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\865135df905a5cdad857c007e7ee7b68\transformed\viewpager-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.appcompat:appcompat-resources:1.1.0] C:\Users\edusa\.gradle\caches\transforms-3\3bd5ef757739ba39e230e5154eba48d6\transformed\jetified-appcompat-resources-1.1.0\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.drawerlayout:drawerlayout:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\71f04f12b3e67b81ad7ae336f6a999b7\transformed\drawerlayout-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.coordinatorlayout:coordinatorlayout:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\14fea4b6409bb298c664ae66aa54d05c\transformed\coordinatorlayout-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.customview:customview:1.1.0] C:\Users\edusa\.gradle\caches\transforms-3\3152838814a8116c278f051b630200c2\transformed\customview-1.1.0\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.transition:transition:1.4.1] C:\Users\edusa\.gradle\caches\transforms-3\333b8f583a034b0c3fe1b7c8c8b9c7f7\transformed\transition-1.4.1\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.vectordrawable:vectordrawable-animated:1.1.0] C:\Users\edusa\.gradle\caches\transforms-3\36dcead2a6ab73c7a20b2bc45bf1306f\transformed\vectordrawable-animated-1.1.0\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] C:\Users\edusa\.gradle\caches\transforms-3\824f71099657a13f9a8ee27849071b3e\transformed\vectordrawable-1.1.0\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.swiperefreshlayout:swiperefreshlayout:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\b2a9d33e88bef2977d8e274e8d80a6a6\transformed\swiperefreshlayout-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.asynclayoutinflater:asynclayoutinflater:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\916b2d1e9a4e325cd9a174f6d91de3ff\transformed\asynclayoutinflater-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.core:core:1.13.1] C:\Users\edusa\.gradle\caches\transforms-3\b9dbbf122bd098f9ee2140c4f0eac8d5\transformed\core-1.13.1\AndroidManifest.xml:17:1-30:12
+MERGED from [androidx.exifinterface:exifinterface:1.3.7] C:\Users\edusa\.gradle\caches\transforms-3\031586bac2d60910faad2f598b346c89\transformed\exifinterface-1.3.7\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:17:1-55:12
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\edusa\.gradle\caches\transforms-3\ed3a7a026ddbb37e9a274a047b095396\transformed\jetified-startup-runtime-1.1.1\AndroidManifest.xml:17:1-33:12
+MERGED from [androidx.tracing:tracing:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\d277ce2e6ba7ae4776b17bdb088b26f7\transformed\jetified-tracing-1.2.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.interpolator:interpolator:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\b5a7e9706c0d55f2065c6eb364e2b1dc\transformed\interpolator-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\edusa\.gradle\caches\transforms-3\ee74924f7d30d2ad3c151b70bd181334\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:17:1-27:12
+MERGED from [androidx.datastore:datastore-core-android:1.1.3] C:\Users\edusa\.gradle\caches\transforms-3\2b7765525fd248290873aa11179b8375\transformed\jetified-datastore-core-release\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.datastore:datastore-preferences-android:1.1.3] C:\Users\edusa\.gradle\caches\transforms-3\7465838e58cc8a255a901e7d866eb1af\transformed\jetified-datastore-preferences-release\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.datastore:datastore-android:1.1.3] C:\Users\edusa\.gradle\caches\transforms-3\a2bb25b3ac0fc41c03fe160c400570b7\transformed\jetified-datastore-release\AndroidManifest.xml:17:1-22:12
+MERGED from [com.google.firebase:firebase-components:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2e1bdd342af245fd366fc9da3b937aed\transformed\jetified-firebase-components-17.0.0\AndroidManifest.xml:15:1-23:12
+MERGED from [androidx.arch.core:core-runtime:2.2.0] C:\Users\edusa\.gradle\caches\transforms-3\2ad542b24aa2c9cad9487246680d5957\transformed\core-runtime-2.2.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.cursoradapter:cursoradapter:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\640aaafdf7b18f193d65110f144d6853\transformed\cursoradapter-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.documentfile:documentfile:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\7a1c1accf18566937e66da404fb04a7a\transformed\documentfile-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.localbroadcastmanager:localbroadcastmanager:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\648d5907eaddf8ea065e6ef6b37baab6\transformed\localbroadcastmanager-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.print:print:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2b3499d28a570317204561dedca56c83\transformed\print-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.window.extensions.core:core:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2a3ef047dc038414b0a183fbcc941e62\transformed\jetified-core-1.0.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.annotation:annotation-experimental:1.4.0] C:\Users\edusa\.gradle\caches\transforms-3\8919554566975bdca8a22f9353635bda\transformed\jetified-annotation-experimental-1.4.0\AndroidManifest.xml:2:1-7:12
+MERGED from [org.microg:safe-parcel:1.7.0] C:\Users\edusa\.gradle\caches\transforms-3\09e75a77d159b08d35caffc910474dd8\transformed\jetified-safe-parcel-1.7.0\AndroidManifest.xml:6:1-14:12
+MERGED from [com.getkeepsafe.relinker:relinker:1.4.5] C:\Users\edusa\.gradle\caches\transforms-3\50c847b89892978e994c02c580f0bcf7\transformed\jetified-relinker-1.4.5\AndroidManifest.xml:2:1-7:12
+	package
+		INJECTED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml
+	android:versionName
+		INJECTED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml
+	android:versionCode
+		INJECTED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml
+	xmlns:android
+		ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:1:11-69
+queries
+ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:66:5-71:15
+MERGED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:66:5-71:15
+MERGED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:66:5-71:15
+MERGED from [:file_picker] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\file_picker\intermediates\merged_manifest\debug\AndroidManifest.xml:7:5-13:15
+MERGED from [:file_picker] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\file_picker\intermediates\merged_manifest\debug\AndroidManifest.xml:7:5-13:15
+intent#action:name:android.intent.action.PROCESS_TEXT+data:mimeType:text/plain
+ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:67:9-70:18
+action#android.intent.action.PROCESS_TEXT
+ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:68:13-72
+	android:name
+		ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:68:21-70
+data
+ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:69:13-50
+	android:scheme
+		ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:12:19-41
+	android:mimeType
+		ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\main\AndroidManifest.xml:69:19-48
+uses-permission#android.permission.INTERNET
+ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:6:5-66
+MERGED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:23:5-67
+MERGED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:23:5-67
+MERGED from [com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5722daae33ab2939111f7815d0fdeb4d\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:22:5-67
+MERGED from [com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5722daae33ab2939111f7815d0fdeb4d\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:22:5-67
+MERGED from [com.google.android.gms:play-services-measurement-impl:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4604e5625c65d82582099374cd695f4a\transformed\jetified-play-services-measurement-impl-19.0.0\AndroidManifest.xml:23:5-67
+MERGED from [com.google.android.gms:play-services-measurement-impl:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4604e5625c65d82582099374cd695f4a\transformed\jetified-play-services-measurement-impl-19.0.0\AndroidManifest.xml:23:5-67
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e9730d2d60761654c57e2f817d73a835\transformed\jetified-play-services-measurement-sdk-api-19.0.0\AndroidManifest.xml:23:5-67
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e9730d2d60761654c57e2f817d73a835\transformed\jetified-play-services-measurement-sdk-api-19.0.0\AndroidManifest.xml:23:5-67
+MERGED from [com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\a0cf653314d568c53ff2827bbbf4a031\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:11:5-67
+MERGED from [com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\a0cf653314d568c53ff2827bbbf4a031\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:11:5-67
+	android:name
+		ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:6:22-64
+uses-permission#android.permission.READ_EXTERNAL_STORAGE
+ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:7:5-80
+	android:name
+		ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:7:22-77
+uses-permission#android.permission.WRITE_EXTERNAL_STORAGE
+ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:8:5-81
+	android:name
+		ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:8:22-78
+intent#action:name:android.intent.action.VIEW+data:scheme:https
+ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:10:9-13:18
+action#android.intent.action.VIEW
+ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:11:13-65
+	android:name
+		ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:11:21-62
+intent#action:name:android.intent.action.EDIT+data:scheme:https
+ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:14:9-17:18
+action#android.intent.action.EDIT
+ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:15:13-65
+	android:name
+		ADDED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml:15:21-62
+uses-sdk
+INJECTED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml
+INJECTED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml
+MERGED from [:app_links] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\app_links\intermediates\merged_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [:app_links] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\app_links\intermediates\merged_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [:file_picker] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\file_picker\intermediates\merged_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [:file_picker] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\file_picker\intermediates\merged_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [:flutter_native_splash] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\flutter_native_splash\intermediates\merged_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [:flutter_native_splash] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\flutter_native_splash\intermediates\merged_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:6:5-44
+MERGED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:6:5-44
+MERGED from [:flutter_plugin_android_lifecycle] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\flutter_plugin_android_lifecycle\intermediates\merged_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [:flutter_plugin_android_lifecycle] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\flutter_plugin_android_lifecycle\intermediates\merged_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [:fluttertoast] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\fluttertoast\intermediates\merged_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [:fluttertoast] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\fluttertoast\intermediates\merged_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [:path_provider_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\path_provider_android\intermediates\merged_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [:path_provider_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\path_provider_android\intermediates\merged_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [:shared_preferences_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\shared_preferences_android\intermediates\merged_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [:shared_preferences_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\shared_preferences_android\intermediates\merged_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [:url_launcher_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\url_launcher_android\intermediates\merged_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [:url_launcher_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\url_launcher_android\intermediates\merged_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [androidx.preference:preference:1.2.1] C:\Users\edusa\.gradle\caches\transforms-3\1e797bd4318bf61bc9b480ef676f2231\transformed\preference-1.2.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.preference:preference:1.2.1] C:\Users\edusa\.gradle\caches\transforms-3\1e797bd4318bf61bc9b480ef676f2231\transformed\preference-1.2.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.appcompat:appcompat:1.1.0] C:\Users\edusa\.gradle\caches\transforms-3\99baee04788e37d96b578b4a3c2712ad\transformed\appcompat-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.appcompat:appcompat:1.1.0] C:\Users\edusa\.gradle\caches\transforms-3\99baee04788e37d96b578b4a3c2712ad\transformed\appcompat-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [com.google.firebase:firebase-analytics:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\867692132b6fa8941f74fda8042b1d68\transformed\jetified-firebase-analytics-19.0.0\AndroidManifest.xml:5:5-44
+MERGED from [com.google.firebase:firebase-analytics:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\867692132b6fa8941f74fda8042b1d68\transformed\jetified-firebase-analytics-19.0.0\AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5722daae33ab2939111f7815d0fdeb4d\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5722daae33ab2939111f7815d0fdeb4d\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-measurement-sdk:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2647959327c87d84d712be3cb997588e\transformed\jetified-play-services-measurement-sdk-19.0.0\AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-measurement-sdk:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2647959327c87d84d712be3cb997588e\transformed\jetified-play-services-measurement-sdk-19.0.0\AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-measurement-impl:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4604e5625c65d82582099374cd695f4a\transformed\jetified-play-services-measurement-impl-19.0.0\AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-measurement-impl:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4604e5625c65d82582099374cd695f4a\transformed\jetified-play-services-measurement-impl-19.0.0\AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-ads-identifier:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\197e96520af20586fafcb322ede7d3bc\transformed\jetified-play-services-ads-identifier-17.0.0\AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-ads-identifier:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\197e96520af20586fafcb322ede7d3bc\transformed\jetified-play-services-ads-identifier-17.0.0\AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e9730d2d60761654c57e2f817d73a835\transformed\jetified-play-services-measurement-sdk-api-19.0.0\AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e9730d2d60761654c57e2f817d73a835\transformed\jetified-play-services-measurement-sdk-api-19.0.0\AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-measurement-base:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\b4f8eaf8ddd335b36ffb9c89d1c9305e\transformed\jetified-play-services-measurement-base-19.0.0\AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.gms:play-services-measurement-base:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\b4f8eaf8ddd335b36ffb9c89d1c9305e\transformed\jetified-play-services-measurement-base-19.0.0\AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.gms:play-services-stats:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e49c505b879b338a56b562c1cb0814dd\transformed\jetified-play-services-stats-17.0.0\AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.gms:play-services-stats:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e49c505b879b338a56b562c1cb0814dd\transformed\jetified-play-services-stats-17.0.0\AndroidManifest.xml:5:5-44
+MERGED from [com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\a0cf653314d568c53ff2827bbbf4a031\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:6:5-8:41
+MERGED from [com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\a0cf653314d568c53ff2827bbbf4a031\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:6:5-8:41
+MERGED from [com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\1803c6c4f16dcbb9014c9d0e8999dfbb\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:20:5-22:41
+MERGED from [com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\1803c6c4f16dcbb9014c9d0e8999dfbb\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:20:5-22:41
+MERGED from [com.google.firebase:firebase-installations-interop:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\314647330024d2d928b39fbecb2846c5\transformed\jetified-firebase-installations-interop-17.0.0\AndroidManifest.xml:19:5-21:41
+MERGED from [com.google.firebase:firebase-installations-interop:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\314647330024d2d928b39fbecb2846c5\transformed\jetified-firebase-installations-interop-17.0.0\AndroidManifest.xml:19:5-21:41
+MERGED from [com.google.android.gms:play-services-tasks:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\25ab5d828264d63f4789887050e993ef\transformed\jetified-play-services-tasks-17.0.0\AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.gms:play-services-tasks:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\25ab5d828264d63f4789887050e993ef\transformed\jetified-play-services-tasks-17.0.0\AndroidManifest.xml:5:5-44
+MERGED from [com.google.firebase:firebase-measurement-connector:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4db4e3a90ea7b84b429abf9465ec8697\transformed\jetified-firebase-measurement-connector-19.0.0\AndroidManifest.xml:20:5-44
+MERGED from [com.google.firebase:firebase-measurement-connector:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4db4e3a90ea7b84b429abf9465ec8697\transformed\jetified-firebase-measurement-connector-19.0.0\AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-basement:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5491bd47d7e3a4a12e544d6b972f1ba5\transformed\jetified-play-services-basement-17.0.0\AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-basement:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5491bd47d7e3a4a12e544d6b972f1ba5\transformed\jetified-play-services-basement-17.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.fragment:fragment-ktx:1.7.1] C:\Users\edusa\.gradle\caches\transforms-3\cb0e069b693d1d4253e15a064c43e13c\transformed\jetified-fragment-ktx-1.7.1\AndroidManifest.xml:5:5-44
+MERGED from [androidx.fragment:fragment-ktx:1.7.1] C:\Users\edusa\.gradle\caches\transforms-3\cb0e069b693d1d4253e15a064c43e13c\transformed\jetified-fragment-ktx-1.7.1\AndroidManifest.xml:5:5-44
+MERGED from [androidx.fragment:fragment:1.7.1] C:\Users\edusa\.gradle\caches\transforms-3\2f8a99f6ec7edccd94dccf71f74ad60b\transformed\fragment-1.7.1\AndroidManifest.xml:5:5-44
+MERGED from [androidx.fragment:fragment:1.7.1] C:\Users\edusa\.gradle\caches\transforms-3\2f8a99f6ec7edccd94dccf71f74ad60b\transformed\fragment-1.7.1\AndroidManifest.xml:5:5-44
+MERGED from [androidx.activity:activity-ktx:1.9.3] C:\Users\edusa\.gradle\caches\transforms-3\04aafca76e737ec292494cc26c03b62c\transformed\jetified-activity-ktx-1.9.3\AndroidManifest.xml:5:5-44
+MERGED from [androidx.activity:activity-ktx:1.9.3] C:\Users\edusa\.gradle\caches\transforms-3\04aafca76e737ec292494cc26c03b62c\transformed\jetified-activity-ktx-1.9.3\AndroidManifest.xml:5:5-44
+MERGED from [androidx.activity:activity:1.9.3] C:\Users\edusa\.gradle\caches\transforms-3\fba1a9c820e037081ed7504f3f3055ce\transformed\jetified-activity-1.9.3\AndroidManifest.xml:20:5-44
+MERGED from [androidx.activity:activity:1.9.3] C:\Users\edusa\.gradle\caches\transforms-3\fba1a9c820e037081ed7504f3f3055ce\transformed\jetified-activity-1.9.3\AndroidManifest.xml:20:5-44
+MERGED from [androidx.recyclerview:recyclerview:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\c8413d4007940f802eacb39100abb075\transformed\recyclerview-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.recyclerview:recyclerview:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\c8413d4007940f802eacb39100abb075\transformed\recyclerview-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.legacy:legacy-support-core-ui:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\c0733fa71611d073e18e319eccdcff14\transformed\legacy-support-core-ui-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.legacy:legacy-support-core-ui:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\c0733fa71611d073e18e319eccdcff14\transformed\legacy-support-core-ui-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.legacy:legacy-support-core-utils:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\04fff392d858d0a4b3135c1a4e08888b\transformed\legacy-support-core-utils-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.legacy:legacy-support-core-utils:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\04fff392d858d0a4b3135c1a4e08888b\transformed\legacy-support-core-utils-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.loader:loader:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\a66ebaffd1aacd50cb9cf7ceb0f055fc\transformed\loader-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.loader:loader:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\a66ebaffd1aacd50cb9cf7ceb0f055fc\transformed\loader-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\5cda5fb45139304a8d5a227c9ea27eca\transformed\lifecycle-livedata-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\5cda5fb45139304a8d5a227c9ea27eca\transformed\lifecycle-livedata-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core-ktx:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\a7331d9fdd4e15ffb4ef8e71249f38f2\transformed\jetified-lifecycle-livedata-core-ktx-2.7.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core-ktx:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\a7331d9fdd4e15ffb4ef8e71249f38f2\transformed\jetified-lifecycle-livedata-core-ktx-2.7.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\ce8d1358067f4800111419c42bc3307a\transformed\jetified-lifecycle-viewmodel-ktx-2.7.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\ce8d1358067f4800111419c42bc3307a\transformed\jetified-lifecycle-viewmodel-ktx-2.7.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\a685e75948c13aa0d79415a069eb5184\transformed\jetified-lifecycle-runtime-ktx-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\a685e75948c13aa0d79415a069eb5184\transformed\jetified-lifecycle-runtime-ktx-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\d4c0800c65be9b84b5b8ae50a6d0fe37\transformed\lifecycle-livedata-core-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\d4c0800c65be9b84b5b8ae50a6d0fe37\transformed\lifecycle-livedata-core-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\e60afc5241e6ab745b205e42032fc5e9\transformed\lifecycle-viewmodel-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\e60afc5241e6ab745b205e42032fc5e9\transformed\lifecycle-viewmodel-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\002dfaedf04a99d1764f51f1b1bd78bf\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:21:5-44
+MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\002dfaedf04a99d1764f51f1b1bd78bf\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:21:5-44
+MERGED from [androidx.savedstate:savedstate-ktx:1.2.1] C:\Users\edusa\.gradle\caches\transforms-3\0ec92b5629b743b7bf6ec869abf3d2d6\transformed\jetified-savedstate-ktx-1.2.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate-ktx:1.2.1] C:\Users\edusa\.gradle\caches\transforms-3\0ec92b5629b743b7bf6ec869abf3d2d6\transformed\jetified-savedstate-ktx-1.2.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate:1.2.1] C:\Users\edusa\.gradle\caches\transforms-3\97cd927a79801c11852d4be63cf7eb60\transformed\jetified-savedstate-1.2.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate:1.2.1] C:\Users\edusa\.gradle\caches\transforms-3\97cd927a79801c11852d4be63cf7eb60\transformed\jetified-savedstate-1.2.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\ab8ff4700dc0a90ab0108389f050a92b\transformed\lifecycle-runtime-2.7.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\ab8ff4700dc0a90ab0108389f050a92b\transformed\lifecycle-runtime-2.7.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\fe0b6859293fe838542a4e56a36073e4\transformed\jetified-lifecycle-viewmodel-savedstate-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\fe0b6859293fe838542a4e56a36073e4\transformed\jetified-lifecycle-viewmodel-savedstate-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.core:core-ktx:1.13.1] C:\Users\edusa\.gradle\caches\transforms-3\1aaa36d23e67aff05d2e65ed71f0b290\transformed\jetified-core-ktx-1.13.1\AndroidManifest.xml:5:5-44
+MERGED from [androidx.core:core-ktx:1.13.1] C:\Users\edusa\.gradle\caches\transforms-3\1aaa36d23e67aff05d2e65ed71f0b290\transformed\jetified-core-ktx-1.13.1\AndroidManifest.xml:5:5-44
+MERGED from [androidx.browser:browser:1.8.0] C:\Users\edusa\.gradle\caches\transforms-3\5076ba91573cb58fc1f48060a814728f\transformed\browser-1.8.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.browser:browser:1.8.0] C:\Users\edusa\.gradle\caches\transforms-3\5076ba91573cb58fc1f48060a814728f\transformed\browser-1.8.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.slidingpanelayout:slidingpanelayout:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\787c19111d1527b92f9aed0654773f5f\transformed\slidingpanelayout-1.2.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.slidingpanelayout:slidingpanelayout:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\787c19111d1527b92f9aed0654773f5f\transformed\slidingpanelayout-1.2.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\bbf3cfcf53ec802b720b1d4e1638fe3b\transformed\jetified-window-1.2.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\bbf3cfcf53ec802b720b1d4e1638fe3b\transformed\jetified-window-1.2.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.window:window-java:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\cc50d1b8197c8275cae8a5d28efb3fcd\transformed\jetified-window-java-1.2.0\AndroidManifest.xml:19:5-44
+MERGED from [androidx.window:window-java:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\cc50d1b8197c8275cae8a5d28efb3fcd\transformed\jetified-window-java-1.2.0\AndroidManifest.xml:19:5-44
+MERGED from [androidx.viewpager:viewpager:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\865135df905a5cdad857c007e7ee7b68\transformed\viewpager-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.viewpager:viewpager:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\865135df905a5cdad857c007e7ee7b68\transformed\viewpager-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.appcompat:appcompat-resources:1.1.0] C:\Users\edusa\.gradle\caches\transforms-3\3bd5ef757739ba39e230e5154eba48d6\transformed\jetified-appcompat-resources-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.appcompat:appcompat-resources:1.1.0] C:\Users\edusa\.gradle\caches\transforms-3\3bd5ef757739ba39e230e5154eba48d6\transformed\jetified-appcompat-resources-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.drawerlayout:drawerlayout:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\71f04f12b3e67b81ad7ae336f6a999b7\transformed\drawerlayout-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.drawerlayout:drawerlayout:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\71f04f12b3e67b81ad7ae336f6a999b7\transformed\drawerlayout-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.coordinatorlayout:coordinatorlayout:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\14fea4b6409bb298c664ae66aa54d05c\transformed\coordinatorlayout-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.coordinatorlayout:coordinatorlayout:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\14fea4b6409bb298c664ae66aa54d05c\transformed\coordinatorlayout-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.customview:customview:1.1.0] C:\Users\edusa\.gradle\caches\transforms-3\3152838814a8116c278f051b630200c2\transformed\customview-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.customview:customview:1.1.0] C:\Users\edusa\.gradle\caches\transforms-3\3152838814a8116c278f051b630200c2\transformed\customview-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.transition:transition:1.4.1] C:\Users\edusa\.gradle\caches\transforms-3\333b8f583a034b0c3fe1b7c8c8b9c7f7\transformed\transition-1.4.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.transition:transition:1.4.1] C:\Users\edusa\.gradle\caches\transforms-3\333b8f583a034b0c3fe1b7c8c8b9c7f7\transformed\transition-1.4.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable-animated:1.1.0] C:\Users\edusa\.gradle\caches\transforms-3\36dcead2a6ab73c7a20b2bc45bf1306f\transformed\vectordrawable-animated-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable-animated:1.1.0] C:\Users\edusa\.gradle\caches\transforms-3\36dcead2a6ab73c7a20b2bc45bf1306f\transformed\vectordrawable-animated-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] C:\Users\edusa\.gradle\caches\transforms-3\824f71099657a13f9a8ee27849071b3e\transformed\vectordrawable-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] C:\Users\edusa\.gradle\caches\transforms-3\824f71099657a13f9a8ee27849071b3e\transformed\vectordrawable-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.swiperefreshlayout:swiperefreshlayout:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\b2a9d33e88bef2977d8e274e8d80a6a6\transformed\swiperefreshlayout-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.swiperefreshlayout:swiperefreshlayout:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\b2a9d33e88bef2977d8e274e8d80a6a6\transformed\swiperefreshlayout-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.asynclayoutinflater:asynclayoutinflater:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\916b2d1e9a4e325cd9a174f6d91de3ff\transformed\asynclayoutinflater-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.asynclayoutinflater:asynclayoutinflater:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\916b2d1e9a4e325cd9a174f6d91de3ff\transformed\asynclayoutinflater-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.core:core:1.13.1] C:\Users\edusa\.gradle\caches\transforms-3\b9dbbf122bd098f9ee2140c4f0eac8d5\transformed\core-1.13.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.core:core:1.13.1] C:\Users\edusa\.gradle\caches\transforms-3\b9dbbf122bd098f9ee2140c4f0eac8d5\transformed\core-1.13.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.exifinterface:exifinterface:1.3.7] C:\Users\edusa\.gradle\caches\transforms-3\031586bac2d60910faad2f598b346c89\transformed\exifinterface-1.3.7\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.exifinterface:exifinterface:1.3.7] C:\Users\edusa\.gradle\caches\transforms-3\031586bac2d60910faad2f598b346c89\transformed\exifinterface-1.3.7\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:21:5-44
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:21:5-44
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\edusa\.gradle\caches\transforms-3\ed3a7a026ddbb37e9a274a047b095396\transformed\jetified-startup-runtime-1.1.1\AndroidManifest.xml:21:5-23:41
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\edusa\.gradle\caches\transforms-3\ed3a7a026ddbb37e9a274a047b095396\transformed\jetified-startup-runtime-1.1.1\AndroidManifest.xml:21:5-23:41
+MERGED from [androidx.tracing:tracing:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\d277ce2e6ba7ae4776b17bdb088b26f7\transformed\jetified-tracing-1.2.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.tracing:tracing:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\d277ce2e6ba7ae4776b17bdb088b26f7\transformed\jetified-tracing-1.2.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.interpolator:interpolator:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\b5a7e9706c0d55f2065c6eb364e2b1dc\transformed\interpolator-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.interpolator:interpolator:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\b5a7e9706c0d55f2065c6eb364e2b1dc\transformed\interpolator-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\edusa\.gradle\caches\transforms-3\ee74924f7d30d2ad3c151b70bd181334\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\edusa\.gradle\caches\transforms-3\ee74924f7d30d2ad3c151b70bd181334\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.datastore:datastore-core-android:1.1.3] C:\Users\edusa\.gradle\caches\transforms-3\2b7765525fd248290873aa11179b8375\transformed\jetified-datastore-core-release\AndroidManifest.xml:5:5-44
+MERGED from [androidx.datastore:datastore-core-android:1.1.3] C:\Users\edusa\.gradle\caches\transforms-3\2b7765525fd248290873aa11179b8375\transformed\jetified-datastore-core-release\AndroidManifest.xml:5:5-44
+MERGED from [androidx.datastore:datastore-preferences-android:1.1.3] C:\Users\edusa\.gradle\caches\transforms-3\7465838e58cc8a255a901e7d866eb1af\transformed\jetified-datastore-preferences-release\AndroidManifest.xml:20:5-44
+MERGED from [androidx.datastore:datastore-preferences-android:1.1.3] C:\Users\edusa\.gradle\caches\transforms-3\7465838e58cc8a255a901e7d866eb1af\transformed\jetified-datastore-preferences-release\AndroidManifest.xml:20:5-44
+MERGED from [androidx.datastore:datastore-android:1.1.3] C:\Users\edusa\.gradle\caches\transforms-3\a2bb25b3ac0fc41c03fe160c400570b7\transformed\jetified-datastore-release\AndroidManifest.xml:20:5-44
+MERGED from [androidx.datastore:datastore-android:1.1.3] C:\Users\edusa\.gradle\caches\transforms-3\a2bb25b3ac0fc41c03fe160c400570b7\transformed\jetified-datastore-release\AndroidManifest.xml:20:5-44
+MERGED from [com.google.firebase:firebase-components:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2e1bdd342af245fd366fc9da3b937aed\transformed\jetified-firebase-components-17.0.0\AndroidManifest.xml:19:5-21:41
+MERGED from [com.google.firebase:firebase-components:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2e1bdd342af245fd366fc9da3b937aed\transformed\jetified-firebase-components-17.0.0\AndroidManifest.xml:19:5-21:41
+MERGED from [androidx.arch.core:core-runtime:2.2.0] C:\Users\edusa\.gradle\caches\transforms-3\2ad542b24aa2c9cad9487246680d5957\transformed\core-runtime-2.2.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.arch.core:core-runtime:2.2.0] C:\Users\edusa\.gradle\caches\transforms-3\2ad542b24aa2c9cad9487246680d5957\transformed\core-runtime-2.2.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.cursoradapter:cursoradapter:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\640aaafdf7b18f193d65110f144d6853\transformed\cursoradapter-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.cursoradapter:cursoradapter:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\640aaafdf7b18f193d65110f144d6853\transformed\cursoradapter-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.documentfile:documentfile:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\7a1c1accf18566937e66da404fb04a7a\transformed\documentfile-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.documentfile:documentfile:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\7a1c1accf18566937e66da404fb04a7a\transformed\documentfile-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.localbroadcastmanager:localbroadcastmanager:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\648d5907eaddf8ea065e6ef6b37baab6\transformed\localbroadcastmanager-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.localbroadcastmanager:localbroadcastmanager:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\648d5907eaddf8ea065e6ef6b37baab6\transformed\localbroadcastmanager-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.print:print:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2b3499d28a570317204561dedca56c83\transformed\print-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.print:print:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2b3499d28a570317204561dedca56c83\transformed\print-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.window.extensions.core:core:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2a3ef047dc038414b0a183fbcc941e62\transformed\jetified-core-1.0.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.window.extensions.core:core:1.0.0] C:\Users\edusa\.gradle\caches\transforms-3\2a3ef047dc038414b0a183fbcc941e62\transformed\jetified-core-1.0.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.annotation:annotation-experimental:1.4.0] C:\Users\edusa\.gradle\caches\transforms-3\8919554566975bdca8a22f9353635bda\transformed\jetified-annotation-experimental-1.4.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.annotation:annotation-experimental:1.4.0] C:\Users\edusa\.gradle\caches\transforms-3\8919554566975bdca8a22f9353635bda\transformed\jetified-annotation-experimental-1.4.0\AndroidManifest.xml:5:5-44
+MERGED from [org.microg:safe-parcel:1.7.0] C:\Users\edusa\.gradle\caches\transforms-3\09e75a77d159b08d35caffc910474dd8\transformed\jetified-safe-parcel-1.7.0\AndroidManifest.xml:10:5-12:41
+MERGED from [org.microg:safe-parcel:1.7.0] C:\Users\edusa\.gradle\caches\transforms-3\09e75a77d159b08d35caffc910474dd8\transformed\jetified-safe-parcel-1.7.0\AndroidManifest.xml:10:5-12:41
+MERGED from [com.getkeepsafe.relinker:relinker:1.4.5] C:\Users\edusa\.gradle\caches\transforms-3\50c847b89892978e994c02c580f0bcf7\transformed\jetified-relinker-1.4.5\AndroidManifest.xml:5:5-43
+MERGED from [com.getkeepsafe.relinker:relinker:1.4.5] C:\Users\edusa\.gradle\caches\transforms-3\50c847b89892978e994c02c580f0bcf7\transformed\jetified-relinker-1.4.5\AndroidManifest.xml:5:5-43
+	android:targetSdkVersion
+		INJECTED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from C:\Users\edusa\Documents\GitHub\StatsfootPRO\android\app\src\debug\AndroidManifest.xml
+intent#action:name:android.intent.action.GET_CONTENT+data:mimeType:*/*
+ADDED from [:file_picker] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\file_picker\intermediates\merged_manifest\debug\AndroidManifest.xml:8:9-12:18
+action#android.intent.action.GET_CONTENT
+ADDED from [:file_picker] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\file_picker\intermediates\merged_manifest\debug\AndroidManifest.xml:9:13-72
+	android:name
+		ADDED from [:file_picker] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\file_picker\intermediates\merged_manifest\debug\AndroidManifest.xml:9:21-69
+provider#io.flutter.plugins.imagepicker.ImagePickerFileProvider
+ADDED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:9:9-17:20
+	android:grantUriPermissions
+		ADDED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:13:13-47
+	android:authorities
+		ADDED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:11:13-74
+	android:exported
+		ADDED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:12:13-37
+	android:name
+		ADDED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:10:13-82
+meta-data#android.support.FILE_PROVIDER_PATHS
+ADDED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:14:13-16:75
+	android:resource
+		ADDED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:16:17-72
+	android:name
+		ADDED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:15:17-67
+service#com.google.android.gms.metadata.ModuleDependencies
+ADDED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:19:9-31:19
+	android:enabled
+		ADDED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:21:13-36
+	android:exported
+		ADDED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:22:13-37
+	tools:ignore
+		ADDED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:23:13-40
+	android:name
+		ADDED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:20:13-78
+intent-filter#action:name:com.google.android.gms.metadata.MODULE_DEPENDENCIES
+ADDED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:24:13-26:29
+action#com.google.android.gms.metadata.MODULE_DEPENDENCIES
+ADDED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:25:17-94
+	android:name
+		ADDED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:25:25-91
+meta-data#photopicker_activity:0:required
+ADDED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:28:13-30:36
+	android:value
+		ADDED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:30:17-33
+	android:name
+		ADDED from [:image_picker_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\image_picker_android\intermediates\merged_manifest\debug\AndroidManifest.xml:29:17-63
+provider#dev.fluttercommunity.plus.share.ShareFileProvider
+ADDED from [:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:13:9-21:20
+	android:grantUriPermissions
+		ADDED from [:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:17:13-47
+	android:authorities
+		ADDED from [:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:15:13-74
+	android:exported
+		ADDED from [:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:16:13-37
+	android:name
+		ADDED from [:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:14:13-77
+receiver#dev.fluttercommunity.plus.share.SharePlusPendingIntent
+ADDED from [:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:26:9-32:20
+	android:exported
+		ADDED from [:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:28:13-37
+	android:name
+		ADDED from [:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:27:13-82
+intent-filter#action:name:EXTRA_CHOSEN_COMPONENT
+ADDED from [:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:29:13-31:29
+action#EXTRA_CHOSEN_COMPONENT
+ADDED from [:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:30:17-65
+	android:name
+		ADDED from [:share_plus] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\share_plus\intermediates\merged_manifest\debug\AndroidManifest.xml:30:25-62
+activity#io.flutter.plugins.urllauncher.WebViewActivity
+ADDED from [:url_launcher_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\url_launcher_android\intermediates\merged_manifest\debug\AndroidManifest.xml:8:9-11:74
+	android:exported
+		ADDED from [:url_launcher_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\url_launcher_android\intermediates\merged_manifest\debug\AndroidManifest.xml:10:13-37
+	android:theme
+		ADDED from [:url_launcher_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\url_launcher_android\intermediates\merged_manifest\debug\AndroidManifest.xml:11:13-71
+	android:name
+		ADDED from [:url_launcher_android] C:\Users\edusa\Documents\GitHub\StatsfootPRO\build\url_launcher_android\intermediates\merged_manifest\debug\AndroidManifest.xml:9:13-74
+uses-permission#android.permission.ACCESS_NETWORK_STATE
+ADDED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:24:5-79
+MERGED from [com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5722daae33ab2939111f7815d0fdeb4d\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:23:5-79
+MERGED from [com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5722daae33ab2939111f7815d0fdeb4d\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:23:5-79
+MERGED from [com.google.android.gms:play-services-measurement-impl:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4604e5625c65d82582099374cd695f4a\transformed\jetified-play-services-measurement-impl-19.0.0\AndroidManifest.xml:24:5-79
+MERGED from [com.google.android.gms:play-services-measurement-impl:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4604e5625c65d82582099374cd695f4a\transformed\jetified-play-services-measurement-impl-19.0.0\AndroidManifest.xml:24:5-79
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e9730d2d60761654c57e2f817d73a835\transformed\jetified-play-services-measurement-sdk-api-19.0.0\AndroidManifest.xml:24:5-79
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e9730d2d60761654c57e2f817d73a835\transformed\jetified-play-services-measurement-sdk-api-19.0.0\AndroidManifest.xml:24:5-79
+MERGED from [com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\a0cf653314d568c53ff2827bbbf4a031\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:10:5-79
+MERGED from [com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\a0cf653314d568c53ff2827bbbf4a031\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:10:5-79
+	android:name
+		ADDED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:24:22-76
+uses-permission#android.permission.WAKE_LOCK
+ADDED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:25:5-68
+MERGED from [com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5722daae33ab2939111f7815d0fdeb4d\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:24:5-68
+MERGED from [com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5722daae33ab2939111f7815d0fdeb4d\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:24:5-68
+MERGED from [com.google.android.gms:play-services-measurement-impl:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4604e5625c65d82582099374cd695f4a\transformed\jetified-play-services-measurement-impl-19.0.0\AndroidManifest.xml:25:5-68
+MERGED from [com.google.android.gms:play-services-measurement-impl:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4604e5625c65d82582099374cd695f4a\transformed\jetified-play-services-measurement-impl-19.0.0\AndroidManifest.xml:25:5-68
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e9730d2d60761654c57e2f817d73a835\transformed\jetified-play-services-measurement-sdk-api-19.0.0\AndroidManifest.xml:25:5-68
+MERGED from [com.google.android.gms:play-services-measurement-sdk-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\e9730d2d60761654c57e2f817d73a835\transformed\jetified-play-services-measurement-sdk-api-19.0.0\AndroidManifest.xml:25:5-68
+	android:name
+		ADDED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:25:22-65
+uses-permission#com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE
+ADDED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:26:5-110
+MERGED from [com.google.android.gms:play-services-measurement-impl:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4604e5625c65d82582099374cd695f4a\transformed\jetified-play-services-measurement-impl-19.0.0\AndroidManifest.xml:26:5-110
+MERGED from [com.google.android.gms:play-services-measurement-impl:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4604e5625c65d82582099374cd695f4a\transformed\jetified-play-services-measurement-impl-19.0.0\AndroidManifest.xml:26:5-110
+	android:name
+		ADDED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:26:22-107
+receiver#com.google.android.gms.measurement.AppMeasurementReceiver
+ADDED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:29:9-33:20
+	android:enabled
+		ADDED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:31:13-35
+	android:exported
+		ADDED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:32:13-37
+	android:name
+		ADDED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:30:13-85
+service#com.google.android.gms.measurement.AppMeasurementService
+ADDED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:35:9-38:40
+	android:enabled
+		ADDED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:37:13-35
+	android:exported
+		ADDED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:38:13-37
+	android:name
+		ADDED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:36:13-84
+service#com.google.android.gms.measurement.AppMeasurementJobService
+ADDED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:39:9-43:72
+	android:enabled
+		ADDED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:41:13-35
+	android:exported
+		ADDED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:42:13-37
+	android:permission
+		ADDED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:43:13-69
+	android:name
+		ADDED from [com.google.android.gms:play-services-measurement:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\4fb119d8b93341e59e6cae29135fb4d6\transformed\jetified-play-services-measurement-19.0.0\AndroidManifest.xml:40:13-87
+service#com.google.firebase.components.ComponentDiscoveryService
+ADDED from [com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5722daae33ab2939111f7815d0fdeb4d\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:27:9-33:19
+MERGED from [com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\a0cf653314d568c53ff2827bbbf4a031\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:15:9-21:19
+MERGED from [com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\a0cf653314d568c53ff2827bbbf4a031\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:15:9-21:19
+MERGED from [com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\1803c6c4f16dcbb9014c9d0e8999dfbb\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:33:9-37:35
+MERGED from [com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\1803c6c4f16dcbb9014c9d0e8999dfbb\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:33:9-37:35
+	android:exported
+		ADDED from [com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5722daae33ab2939111f7815d0fdeb4d\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:29:13-37
+	tools:targetApi
+		ADDED from [com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\1803c6c4f16dcbb9014c9d0e8999dfbb\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:37:13-32
+	android:directBootAware
+		ADDED from [com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\1803c6c4f16dcbb9014c9d0e8999dfbb\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:35:13-43
+	android:name
+		ADDED from [com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5722daae33ab2939111f7815d0fdeb4d\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:28:13-84
+meta-data#com.google.firebase.components:com.google.firebase.analytics.connector.internal.AnalyticsConnectorRegistrar
+ADDED from [com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5722daae33ab2939111f7815d0fdeb4d\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:30:13-32:85
+	android:value
+		ADDED from [com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5722daae33ab2939111f7815d0fdeb4d\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:32:17-82
+	android:name
+		ADDED from [com.google.android.gms:play-services-measurement-api:19.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5722daae33ab2939111f7815d0fdeb4d\transformed\jetified-play-services-measurement-api-19.0.0\AndroidManifest.xml:31:17-139
+meta-data#com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsRegistrar
+ADDED from [com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\a0cf653314d568c53ff2827bbbf4a031\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:18:13-20:85
+	android:value
+		ADDED from [com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\a0cf653314d568c53ff2827bbbf4a031\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:20:17-82
+	android:name
+		ADDED from [com.google.firebase:firebase-installations:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\a0cf653314d568c53ff2827bbbf4a031\transformed\jetified-firebase-installations-17.0.0\AndroidManifest.xml:19:17-127
+provider#com.google.firebase.provider.FirebaseInitProvider
+ADDED from [com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\1803c6c4f16dcbb9014c9d0e8999dfbb\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:26:9-31:39
+	android:authorities
+		ADDED from [com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\1803c6c4f16dcbb9014c9d0e8999dfbb\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:28:13-72
+	android:exported
+		ADDED from [com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\1803c6c4f16dcbb9014c9d0e8999dfbb\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:30:13-37
+	android:directBootAware
+		ADDED from [com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\1803c6c4f16dcbb9014c9d0e8999dfbb\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:29:13-43
+	android:initOrder
+		ADDED from [com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\1803c6c4f16dcbb9014c9d0e8999dfbb\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:31:13-36
+	android:name
+		ADDED from [com.google.firebase:firebase-common:20.0.0] C:\Users\edusa\.gradle\caches\transforms-3\1803c6c4f16dcbb9014c9d0e8999dfbb\transformed\jetified-firebase-common-20.0.0\AndroidManifest.xml:27:13-77
+meta-data#com.google.android.gms.version
+ADDED from [com.google.android.gms:play-services-basement:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5491bd47d7e3a4a12e544d6b972f1ba5\transformed\jetified-play-services-basement-17.0.0\AndroidManifest.xml:23:9-25:69
+	android:value
+		ADDED from [com.google.android.gms:play-services-basement:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5491bd47d7e3a4a12e544d6b972f1ba5\transformed\jetified-play-services-basement-17.0.0\AndroidManifest.xml:25:13-66
+	android:name
+		ADDED from [com.google.android.gms:play-services-basement:17.0.0] C:\Users\edusa\.gradle\caches\transforms-3\5491bd47d7e3a4a12e544d6b972f1ba5\transformed\jetified-play-services-basement-17.0.0\AndroidManifest.xml:24:13-58
+provider#androidx.startup.InitializationProvider
+ADDED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\002dfaedf04a99d1764f51f1b1bd78bf\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\edusa\.gradle\caches\transforms-3\ed3a7a026ddbb37e9a274a047b095396\transformed\jetified-startup-runtime-1.1.1\AndroidManifest.xml:26:9-30:34
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\edusa\.gradle\caches\transforms-3\ed3a7a026ddbb37e9a274a047b095396\transformed\jetified-startup-runtime-1.1.1\AndroidManifest.xml:26:9-30:34
+	tools:node
+		ADDED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\002dfaedf04a99d1764f51f1b1bd78bf\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:28:13-31
+	android:authorities
+		ADDED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\002dfaedf04a99d1764f51f1b1bd78bf\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:26:13-68
+	android:exported
+		ADDED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\002dfaedf04a99d1764f51f1b1bd78bf\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:27:13-37
+	android:name
+		ADDED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\002dfaedf04a99d1764f51f1b1bd78bf\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:25:13-67
+meta-data#androidx.lifecycle.ProcessLifecycleInitializer
+ADDED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\002dfaedf04a99d1764f51f1b1bd78bf\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:29:13-31:52
+	android:value
+		ADDED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\002dfaedf04a99d1764f51f1b1bd78bf\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:31:17-49
+	android:name
+		ADDED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\edusa\.gradle\caches\transforms-3\002dfaedf04a99d1764f51f1b1bd78bf\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:30:17-78
+uses-library#androidx.window.extensions
+ADDED from [androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\bbf3cfcf53ec802b720b1d4e1638fe3b\transformed\jetified-window-1.2.0\AndroidManifest.xml:23:9-25:40
+	android:required
+		ADDED from [androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\bbf3cfcf53ec802b720b1d4e1638fe3b\transformed\jetified-window-1.2.0\AndroidManifest.xml:25:13-37
+	android:name
+		ADDED from [androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\bbf3cfcf53ec802b720b1d4e1638fe3b\transformed\jetified-window-1.2.0\AndroidManifest.xml:24:13-54
+uses-library#androidx.window.sidecar
+ADDED from [androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\bbf3cfcf53ec802b720b1d4e1638fe3b\transformed\jetified-window-1.2.0\AndroidManifest.xml:26:9-28:40
+	android:required
+		ADDED from [androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\bbf3cfcf53ec802b720b1d4e1638fe3b\transformed\jetified-window-1.2.0\AndroidManifest.xml:28:13-37
+	android:name
+		ADDED from [androidx.window:window:1.2.0] C:\Users\edusa\.gradle\caches\transforms-3\bbf3cfcf53ec802b720b1d4e1638fe3b\transformed\jetified-window-1.2.0\AndroidManifest.xml:27:13-51
+permission#${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.13.1] C:\Users\edusa\.gradle\caches\transforms-3\b9dbbf122bd098f9ee2140c4f0eac8d5\transformed\core-1.13.1\AndroidManifest.xml:22:5-24:47
+	android:protectionLevel
+		ADDED from [androidx.core:core:1.13.1] C:\Users\edusa\.gradle\caches\transforms-3\b9dbbf122bd098f9ee2140c4f0eac8d5\transformed\core-1.13.1\AndroidManifest.xml:24:9-44
+	android:name
+		ADDED from [androidx.core:core:1.13.1] C:\Users\edusa\.gradle\caches\transforms-3\b9dbbf122bd098f9ee2140c4f0eac8d5\transformed\core-1.13.1\AndroidManifest.xml:23:9-81
+permission#com.example.statsfoota.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.13.1] C:\Users\edusa\.gradle\caches\transforms-3\b9dbbf122bd098f9ee2140c4f0eac8d5\transformed\core-1.13.1\AndroidManifest.xml:22:5-24:47
+	android:protectionLevel
+		ADDED from [androidx.core:core:1.13.1] C:\Users\edusa\.gradle\caches\transforms-3\b9dbbf122bd098f9ee2140c4f0eac8d5\transformed\core-1.13.1\AndroidManifest.xml:24:9-44
+	android:name
+		ADDED from [androidx.core:core:1.13.1] C:\Users\edusa\.gradle\caches\transforms-3\b9dbbf122bd098f9ee2140c4f0eac8d5\transformed\core-1.13.1\AndroidManifest.xml:23:9-81
+uses-permission#${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.13.1] C:\Users\edusa\.gradle\caches\transforms-3\b9dbbf122bd098f9ee2140c4f0eac8d5\transformed\core-1.13.1\AndroidManifest.xml:26:5-97
+	android:name
+		ADDED from [androidx.core:core:1.13.1] C:\Users\edusa\.gradle\caches\transforms-3\b9dbbf122bd098f9ee2140c4f0eac8d5\transformed\core-1.13.1\AndroidManifest.xml:26:22-94
+uses-permission#com.example.statsfoota.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.13.1] C:\Users\edusa\.gradle\caches\transforms-3\b9dbbf122bd098f9ee2140c4f0eac8d5\transformed\core-1.13.1\AndroidManifest.xml:26:5-97
+	android:name
+		ADDED from [androidx.core:core:1.13.1] C:\Users\edusa\.gradle\caches\transforms-3\b9dbbf122bd098f9ee2140c4f0eac8d5\transformed\core-1.13.1\AndroidManifest.xml:26:22-94
+meta-data#androidx.profileinstaller.ProfileInstallerInitializer
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:29:13-31:52
+	android:value
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:31:17-49
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:30:17-85
+receiver#androidx.profileinstaller.ProfileInstallReceiver
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:34:9-52:20
+	android:enabled
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:37:13-35
+	android:exported
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:38:13-36
+	android:permission
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:39:13-57
+	android:directBootAware
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:36:13-44
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:35:13-76
+intent-filter#action:name:androidx.profileinstaller.action.INSTALL_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:40:13-42:29
+action#androidx.profileinstaller.action.INSTALL_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:41:17-91
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:41:25-88
+intent-filter#action:name:androidx.profileinstaller.action.SKIP_FILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:43:13-45:29
+action#androidx.profileinstaller.action.SKIP_FILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:44:17-85
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:44:25-82
+intent-filter#action:name:androidx.profileinstaller.action.SAVE_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:46:13-48:29
+action#androidx.profileinstaller.action.SAVE_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:47:17-88
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:47:25-85
+intent-filter#action:name:androidx.profileinstaller.action.BENCHMARK_OPERATION
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:49:13-51:29
+action#androidx.profileinstaller.action.BENCHMARK_OPERATION
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:50:17-95
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\edusa\.gradle\caches\transforms-3\117db96e4ccc0fcd5603ad4b70e24337\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:50:25-92

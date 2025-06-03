@@ -163,9 +163,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     debugPrint('🔗 Host: ${uri.host}');
     debugPrint('🔗 Path segments: ${uri.pathSegments}');
     debugPrint('🔗 Query parameters: ${uri.queryParameters}');
-    debugPrint('🔗 Fragment: ${uri.fragment}');
-
-    // Extraer datos del URI
+    debugPrint('🔗 Fragment: ${uri.fragment}');    // Extraer datos del URI
     try {
       if (uri.scheme == 'statsfoot') {
         debugPrint('🔗 Es un deep link de statsfoot');
@@ -180,7 +178,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           _handlePasswordResetLink(uri);
         } else {
           debugPrint('🔗 ⚠️ Host no reconocido: ${uri.host}');
-        }      } else if ((uri.scheme == 'http' || uri.scheme == 'https') && 
+        }
+      } else if ((uri.scheme == 'http' || uri.scheme == 'https') && 
                  uri.host == 'statsfootpro.netlify.app' &&
                  uri.pathSegments.isNotEmpty) {
         debugPrint('🔗 Es un enlace web de statsfootpro.netlify.app');
@@ -194,21 +193,24 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         } else if (uri.pathSegments.first == 'reset-password') {
           debugPrint('🔗 Es un enlace web de reset de contraseña (path segment)');
           // Es un enlace web directo para reset de contraseña (https://statsfootpro.netlify.app/reset-password)
-          _handlePasswordResetWebLink(uri);        } else if (uri.fragment.contains('password_reset') || uri.fragment.contains('code=')) {
-          debugPrint('🔗 Es un enlace web de reset de contraseña (fragment)');
-          // Es un enlace web para reset de contraseña en fragment
           _handlePasswordResetWebLink(uri);
         } else {
           debugPrint('🔗 ⚠️ Tipo de enlace web no reconocido: ${uri.pathSegments}');
         }
+      } else if ((uri.scheme == 'http' || uri.scheme == 'https') && 
+                 uri.host == 'statsfootpro.netlify.app' &&
+                 (uri.fragment.contains('password_reset') || 
+                  (uri.fragment.contains('type=recovery') && uri.fragment.contains('code=')))) {
+        debugPrint('🔗 Es un enlace web de reset de contraseña (fragment con validación)');
+        // Solo procesar si realmente es un enlace de recovery con type=recovery
+        _handlePasswordResetWebLink(uri);
       } else {
         debugPrint('🔗 ⚠️ URI no reconocido: scheme=${uri.scheme}, host=${uri.host}');
       }
     } catch (e) {
       debugPrint('🔗 ❌ Error procesando el URI: $e');
     }
-  }
-  // Navegar a la pantalla adecuada según el enlace
+  }  // Navegar a la pantalla adecuada según el enlace
   void _handleMatchLink(String matchId) {
     debugPrint('Navegando al partido ID: $matchId');
     
@@ -237,8 +239,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           (route) => false, // Eliminar todas las rutas del stack
         );
       }
-    }  }
-    // Manejar enlaces de recuperación de contraseña desde deep link móvil
+    }
+  }
+
+  // Manejar enlaces de recuperación de contraseña desde deep link móvil
   void _handlePasswordResetLink(Uri uri) {
     print('🔐 Procesando enlace de recuperación de contraseña: $uri');
     print('🔐 Query parameters: ${uri.queryParameters}');
@@ -281,12 +285,24 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           print('🔐 Encontrado access_token en fragment: $accessToken');
         }
       }
-    }
-
-    print('🔐 Tokens extraídos - Access/Code: ${accessToken != null ? "SÍ" : "NO"}, Refresh: ${refreshToken != null ? "SÍ" : "NO"}, Type: $type');
+    }    print('🔐 Tokens extraídos - Access/Code: ${accessToken != null ? "SÍ" : "NO"}, Refresh: ${refreshToken != null ? "SÍ" : "NO"}, Type: $type');
     
-    // Si tenemos tokens de recovery, o un code, usar el flujo normal
-    if ((type == 'recovery' && accessToken != null) || (code != null)) {
+    // VALIDACIÓN MÁS ESTRICTA: Solo procesar si realmente es un enlace de recovery válido
+    bool isValidRecoveryLink = false;
+    
+    // Caso 1: type=recovery con access_token
+    if (type == 'recovery' && accessToken != null) {
+      isValidRecoveryLink = true;
+      print('🔐 ✅ Enlace válido: type=recovery con access_token');
+    }
+    
+    // Caso 2: code presente (nuevo formato de Supabase) 
+    if (code != null && accessToken != null) {
+      isValidRecoveryLink = true;
+      print('🔐 ✅ Enlace válido: code presente');
+    }
+    
+    if (isValidRecoveryLink) {
       print('🔐 ✅ Tokens válidos encontrados, navegando a PasswordResetScreen con tokens');
       print('🔐 Token a utilizar: $accessToken');
       navigator.pushAndRemoveUntil(
@@ -299,16 +315,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         (route) => false,
       );
     } else {
-      // Si no hay tokens, intentar navegar sin tokens (la pantalla manejará la sesión)
-      debugPrint('🔐 ⚠️ No hay tokens, navegando a PasswordResetScreen sin tokens');
+      print('🔐 ❌ Enlace de password reset inválido - falta type=recovery o tokens');
+      // No navegar a PasswordResetScreen si no hay tokens válidos
+      // En su lugar, redirigir al login normal
       navigator.pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (context) => PasswordResetScreen(),
-        ),
+        MaterialPageRoute(builder: (context) => LoginScreen()),
         (route) => false,
-      );
-    }
-  }  // Manejar enlaces de recuperación de contraseña desde web
+      );    }
+  }
+
+  // Manejar enlaces de recuperación de contraseña desde web
   void _handlePasswordResetWebLink(Uri uri) {
     print('🔐 Procesando enlace web de recuperación de contraseña: $uri');
     print('🔐 Query parameters: ${uri.queryParameters}');
@@ -409,11 +425,25 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           print('🔐 Encontrado type con regex: $type');
         }
       }
+    }    print('🔐 Tokens encontrados - Access/Code: ${accessToken != null ? "SÍ" : "NO"}, Refresh: ${refreshToken != null ? "SÍ" : "NO"}, Type: $type');
+
+    // VALIDACIÓN MÁS ESTRICTA: Solo procesar si realmente es un enlace de recovery válido
+    bool isValidRecoveryLink = false;
+    
+    // Caso 1: type=recovery con access_token
+    if (type == 'recovery' && accessToken != null) {
+      isValidRecoveryLink = true;
+      print('🔐 ✅ Enlace web válido: type=recovery con access_token');
+    }
+    
+    // Caso 2: Si encontramos un code en los parámetros, asumimos que es válido
+    if (accessToken != null && 
+        (uri.queryParameters.containsKey('code') || uri.fragment.contains('code='))) {
+      isValidRecoveryLink = true;
+      print('🔐 ✅ Enlace web válido: code presente');
     }
 
-    print('🔐 Tokens encontrados - Access/Code: ${accessToken != null ? "SÍ" : "NO"}, Refresh: ${refreshToken != null ? "SÍ" : "NO"}, Type: $type');
-
-    if ((type == 'recovery' && accessToken != null) || (accessToken != null)) {
+    if (isValidRecoveryLink) {
       print('🔐 ✅ Tokens válidos encontrados, navegando a PasswordResetScreen');
       print('🔐 Token a utilizar: $accessToken');
       // Navegar a la pantalla de recuperación de contraseña con los tokens
@@ -427,12 +457,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         (route) => false,
       );
     } else {
-      print('🔐 ⚠️ No hay tokens válidos, pero es una URL de reset');
-      // Si es una URL de reset pero sin tokens, intentar navegar sin tokens
+      print('🔐 ❌ Enlace web de password reset inválido - falta type=recovery o tokens válidos');
+      // No navegar a PasswordResetScreen si no hay tokens válidos
+      // En su lugar, redirigir al login normal
       navigator.pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (context) => PasswordResetScreen(),
-        ),
+        MaterialPageRoute(builder: (context) => LoginScreen()),
         (route) => false,
       );
     }
@@ -488,8 +517,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       ),
       (route) => false,
     );
-  }
-  // Verificar si la aplicación se abrió con una URL específica (especialmente en web)
+  }  // Verificar si la aplicación se abrió con una URL específica (especialmente en web)
   void _checkInitialRoute() {
     // En Flutter web, verificar si hay parámetros en la URL actual
     try {
@@ -499,29 +527,48 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       print('🌐 Query: ${currentUri.query}');
       print('🌐 Fragment: ${currentUri.fragment}');
       
-      // Si estamos en web y la URL contiene información de password reset
+      // VALIDACIÓN MÁS ESTRICTA: Solo procesar si es realmente un enlace de password reset
+      bool isPasswordResetLink = false;
+      
+      // 1. Verificar si el path contiene específicamente reset-password
       if (currentUri.path.contains('reset-password') || 
-          currentUri.fragment.contains('password_reset') ||
-          currentUri.query.contains('access_token') ||
-          currentUri.query.contains('code') ||
-          currentUri.fragment.contains('code=')) {
-        print('🌐 ✅ Detectada URL de password reset en la carga inicial');
-        
-        // Esperar un momento para que la app esté completamente inicializada
-        Future.delayed(Duration(seconds: 1), () {
-          _processIncomingUri(currentUri);
-        });
+          currentUri.fragment.contains('password_reset')) {
+        isPasswordResetLink = true;
+        print('🌐 ✅ Detectado path de password reset');
       }
       
-      // También verificar fragmentos que puedan contener rutas de reset
-      if (currentUri.fragment.isNotEmpty) {
-        final fragmentUri = Uri.tryParse('https://example.com/${currentUri.fragment}');
-        if (fragmentUri != null && (fragmentUri.path.contains('password_reset') || fragmentUri.query.contains('code'))) {
-          print('🌐 ✅ Detectada ruta de password reset en fragment');
+      // 2. Verificar si hay tokens de recovery específicos (type=recovery)
+      String? type = currentUri.queryParameters['type'];
+      if (type == 'recovery') {
+        isPasswordResetLink = true;
+        print('🌐 ✅ Detectado type=recovery en query');
+      }
+      
+      // 3. Verificar en fragment si contiene type=recovery
+      if (currentUri.fragment.isNotEmpty && currentUri.fragment.contains('type=recovery')) {
+        isPasswordResetLink = true;
+        print('🌐 ✅ Detectado type=recovery en fragment');
+      }
+      
+      // 4. Validar que junto con tokens de recovery hay access_token o code
+      if (isPasswordResetLink) {
+        final hasAccessToken = currentUri.queryParameters.containsKey('access_token') ||
+                              currentUri.fragment.contains('access_token=');
+        final hasCode = currentUri.queryParameters.containsKey('code') ||
+                       currentUri.fragment.contains('code=');
+        
+        if (hasAccessToken || hasCode) {
+          print('🌐 ✅ URL de password reset válida encontrada en la carga inicial');
+          
+          // Esperar un momento para que la app esté completamente inicializada
           Future.delayed(Duration(seconds: 1), () {
             _processIncomingUri(currentUri);
           });
+        } else {
+          print('🌐 ⚠️ URL de password reset detectada pero sin tokens válidos');
         }
+      } else {
+        print('🌐 ℹ️ Carga inicial normal (no es enlace de password reset)');
       }
     } catch (e) {
       print('🌐 Error verificando ruta inicial: $e');
