@@ -194,8 +194,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         } else if (uri.pathSegments.first == 'reset-password') {
           debugPrint('🔗 Es un enlace web de reset de contraseña (path segment)');
           // Es un enlace web directo para reset de contraseña (https://statsfootpro.netlify.app/reset-password)
-          _handlePasswordResetWebLink(uri);
-        } else if (uri.fragment.contains('password_reset')) {
+          _handlePasswordResetWebLink(uri);        } else if (uri.fragment.contains('password_reset') || uri.fragment.contains('code=')) {
           debugPrint('🔗 Es un enlace web de reset de contraseña (fragment)');
           // Es un enlace web para reset de contraseña en fragment
           _handlePasswordResetWebLink(uri);
@@ -249,9 +248,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (navigator == null) {
       print('🔐 ERROR: Navigator es null');
       return;
-    }
-
-    // Extraer tokens de los parámetros de la URL
+    }    // Extraer tokens de los parámetros de la URL
     String? accessToken = uri.queryParameters['access_token'];
     final refreshToken = uri.queryParameters['refresh_token'];
     final type = uri.queryParameters['type'];
@@ -262,6 +259,28 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       print('🔐 Encontrado parámetro code: $code');
       // Usar code como accessToken
       accessToken = code;
+    }
+    
+    // Si no hay parámetros en query, intentar buscar en fragment
+    if (accessToken == null && uri.fragment.isNotEmpty) {
+      print('🔐 No hay tokens en query, verificando fragment...');
+      final fragment = uri.fragment;
+      
+      // Búsqueda manual con expresiones regulares para fragment
+      final codeMatch = RegExp(r'code=([^&]+)').firstMatch(fragment);
+      if (codeMatch != null) {
+        final extractedCode = Uri.decodeComponent(codeMatch.group(1)!);
+        print('🔐 Encontrado code en fragment: $extractedCode');
+        accessToken = extractedCode;
+      }
+      
+      if (accessToken == null) {
+        final accessTokenMatch = RegExp(r'access_token=([^&]+)').firstMatch(fragment);
+        if (accessTokenMatch != null) {
+          accessToken = Uri.decodeComponent(accessTokenMatch.group(1)!);
+          print('🔐 Encontrado access_token en fragment: $accessToken');
+        }
+      }
     }
 
     print('🔐 Tokens extraídos - Access/Code: ${accessToken != null ? "SÍ" : "NO"}, Refresh: ${refreshToken != null ? "SÍ" : "NO"}, Type: $type');
@@ -289,18 +308,19 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         (route) => false,
       );
     }
-  }
-  // Manejar enlaces de recuperación de contraseña desde web
+  }  // Manejar enlaces de recuperación de contraseña desde web
   void _handlePasswordResetWebLink(Uri uri) {
-    debugPrint('🔐 Procesando enlace web de recuperación de contraseña: $uri');
-    debugPrint('🔐 Query parameters: ${uri.queryParameters}');
-    debugPrint('🔐 Fragment: ${uri.fragment}');
+    print('🔐 Procesando enlace web de recuperación de contraseña: $uri');
+    print('🔐 Query parameters: ${uri.queryParameters}');
+    print('🔐 Fragment: ${uri.fragment}');
     
     final NavigatorState? navigator = _navigatorKey.currentState;
     if (navigator == null) {
-      debugPrint('🔐 ERROR: Navigator es null');
+      print('🔐 ERROR: Navigator es null');
       return;
-    }    // Buscar tokens en query parameters primero (cuando viene de Supabase)
+    }
+
+    // Buscar tokens en query parameters primero (cuando viene de Supabase)
     String? accessToken = uri.queryParameters['access_token'];
     String? refreshToken = uri.queryParameters['refresh_token'];
     String? type = uri.queryParameters['type'];
@@ -308,26 +328,94 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // Verificar si hay un code (nuevo formato de Supabase)
     final code = uri.queryParameters['code'];
     if (code != null) {
-      debugPrint('🔐 Encontrado parámetro code: ${code.substring(0, 8)}...');
+      print('🔐 Encontrado parámetro code en query: $code');
       // Usar code como accessToken
       accessToken = code;
-    }
-
-    // Si no están en query parameters, buscar en fragment (para URLs generadas por la app web)
+    }    // Si no están en query parameters, buscar en fragment (para URLs generadas por la app web)
     if (accessToken == null && uri.fragment.isNotEmpty) {
-      debugPrint('🔐 No hay tokens en query params, verificando fragment...');
+      print('🔐 No hay tokens en query params, verificando fragment...');
       final fragment = uri.fragment;
-      final fragmentParams = Uri.splitQueryString(fragment.contains('?') ? fragment.split('?')[1] : fragment);
       
-      accessToken = fragmentParams['access_token'];
-      refreshToken = fragmentParams['refresh_token'];
-      type = fragmentParams['type'];
+      // Método 1: Buscar parámetros después de ? en el fragment
+      if (fragment.contains('?')) {
+        final fragmentQuery = fragment.split('?')[1];
+        final fragmentParams = Uri.splitQueryString(fragmentQuery);
+        
+        accessToken = fragmentParams['access_token'];
+        refreshToken = fragmentParams['refresh_token'];
+        type = fragmentParams['type'];
+        
+        // También buscar code en el fragment
+        final fragmentCode = fragmentParams['code'];
+        if (fragmentCode != null) {
+          print('🔐 Encontrado parámetro code en fragment query: $fragmentCode');
+          accessToken = fragmentCode;
+          type = 'recovery';
+        }
+      }
+      
+      // Método 2: Intentar parsear todo el fragment como query string
+      if (accessToken == null) {
+        try {
+          final fragmentParams = Uri.splitQueryString(fragment);
+          accessToken = fragmentParams['access_token'];
+          refreshToken = fragmentParams['refresh_token'];
+          type = fragmentParams['type'];
+          
+          final fragmentCode = fragmentParams['code'];
+          if (fragmentCode != null) {
+            print('🔐 Encontrado parámetro code en fragment directo: $fragmentCode');
+            accessToken = fragmentCode;
+            type = 'recovery';
+          }
+        } catch (e) {
+          print('🔐 Error parseando fragment como query string: $e');
+        }
+      }
+      
+      // Método 3: Búsqueda manual con expresiones regulares (fallback)
+      if (accessToken == null) {
+        print('🔐 Intentando extracción manual con regex...');
+        
+        // Buscar code= en el fragment
+        final codeMatch = RegExp(r'code=([^&]+)').firstMatch(fragment);
+        if (codeMatch != null) {
+          final extractedCode = Uri.decodeComponent(codeMatch.group(1)!);
+          print('🔐 Encontrado code con regex: $extractedCode');
+          accessToken = extractedCode;
+          type = 'recovery';
+        }
+        
+        // Si no hay code, buscar access_token= 
+        if (accessToken == null) {
+          final accessTokenMatch = RegExp(r'access_token=([^&]+)').firstMatch(fragment);
+          if (accessTokenMatch != null) {
+            accessToken = Uri.decodeComponent(accessTokenMatch.group(1)!);
+            print('🔐 Encontrado access_token con regex: $accessToken');
+          }
+        }
+        
+        // Buscar refresh_token=
+        final refreshTokenMatch = RegExp(r'refresh_token=([^&]+)').firstMatch(fragment);
+        if (refreshTokenMatch != null) {
+          refreshToken = Uri.decodeComponent(refreshTokenMatch.group(1)!);
+          print('🔐 Encontrado refresh_token con regex: $refreshToken');
+        }
+        
+        // Buscar type=
+        final typeMatch = RegExp(r'type=([^&]+)').firstMatch(fragment);
+        if (typeMatch != null) {
+          type = Uri.decodeComponent(typeMatch.group(1)!);
+          print('🔐 Encontrado type con regex: $type');
+        }
+      }
     }
 
-    debugPrint('🔐 Tokens encontrados - Access/Code: ${accessToken != null ? "SÍ" : "NO"}, Refresh: ${refreshToken != null ? "SÍ" : "NO"}, Type: $type');
+    print('🔐 Tokens encontrados - Access/Code: ${accessToken != null ? "SÍ" : "NO"}, Refresh: ${refreshToken != null ? "SÍ" : "NO"}, Type: $type');
 
-    if ((type == 'recovery' && accessToken != null) || (accessToken != null && uri.queryParameters.containsKey('code'))) {
-      debugPrint('🔐 ✅ Tokens válidos encontrados, navegando a PasswordResetScreen');
+    if ((type == 'recovery' && accessToken != null) || (accessToken != null)) {
+      print('🔐 ✅ Tokens válidos encontrados, navegando a PasswordResetScreen');
+      print('🔐 Token a utilizar: $accessToken');
       // Navegar a la pantalla de recuperación de contraseña con los tokens
       navigator.pushAndRemoveUntil(
         MaterialPageRoute(
@@ -339,7 +427,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         (route) => false,
       );
     } else {
-      debugPrint('🔐 ⚠️ No hay tokens válidos, pero es una URL de reset');
+      print('🔐 ⚠️ No hay tokens válidos, pero es una URL de reset');
       // Si es una URL de reset pero sin tokens, intentar navegar sin tokens
       navigator.pushAndRemoveUntil(
         MaterialPageRoute(
@@ -401,22 +489,23 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       (route) => false,
     );
   }
-
   // Verificar si la aplicación se abrió con una URL específica (especialmente en web)
   void _checkInitialRoute() {
     // En Flutter web, verificar si hay parámetros en la URL actual
     try {
       final currentUri = Uri.base; // En web, esto da la URL actual del navegador
-      debugPrint('🌐 URL inicial del navegador: $currentUri');
-      debugPrint('🌐 Path: ${currentUri.path}');
-      debugPrint('🌐 Query: ${currentUri.query}');
-      debugPrint('🌐 Fragment: ${currentUri.fragment}');
+      print('🌐 URL inicial del navegador: $currentUri');
+      print('🌐 Path: ${currentUri.path}');
+      print('🌐 Query: ${currentUri.query}');
+      print('🌐 Fragment: ${currentUri.fragment}');
       
       // Si estamos en web y la URL contiene información de password reset
       if (currentUri.path.contains('reset-password') || 
           currentUri.fragment.contains('password_reset') ||
-          currentUri.query.contains('access_token')) {
-        debugPrint('🌐 ✅ Detectada URL de password reset en la carga inicial');
+          currentUri.query.contains('access_token') ||
+          currentUri.query.contains('code') ||
+          currentUri.fragment.contains('code=')) {
+        print('🌐 ✅ Detectada URL de password reset en la carga inicial');
         
         // Esperar un momento para que la app esté completamente inicializada
         Future.delayed(Duration(seconds: 1), () {
@@ -427,15 +516,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       // También verificar fragmentos que puedan contener rutas de reset
       if (currentUri.fragment.isNotEmpty) {
         final fragmentUri = Uri.tryParse('https://example.com/${currentUri.fragment}');
-        if (fragmentUri != null && fragmentUri.path.contains('password_reset')) {
-          debugPrint('🌐 ✅ Detectada ruta de password reset en fragment');
+        if (fragmentUri != null && (fragmentUri.path.contains('password_reset') || fragmentUri.query.contains('code'))) {
+          print('🌐 ✅ Detectada ruta de password reset en fragment');
           Future.delayed(Duration(seconds: 1), () {
             _processIncomingUri(currentUri);
           });
         }
       }
     } catch (e) {
-      debugPrint('🌐 Error verificando ruta inicial: $e');
+      print('🌐 Error verificando ruta inicial: $e');
     }
   }
 
