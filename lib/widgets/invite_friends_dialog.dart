@@ -251,10 +251,15 @@ class _InviteFriendsDialogState extends ConsumerState<InviteFriendsDialog> {
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundColor: Colors.orange.shade600,
-                        child: Text(
-                          friend.username.substring(0, 1).toUpperCase(),
-                          style: TextStyle(color: Colors.white),
-                        ),
+                        backgroundImage: friend.avatarUrl != null
+                            ? NetworkImage(friend.avatarUrl!)
+                            : null,
+                        child: friend.avatarUrl == null
+                            ? Text(
+                                friend.username.substring(0, 1).toUpperCase(),
+                                style: TextStyle(color: Colors.white),
+                              )
+                            : null,
                       ),
                       title: Text(
                         friend.username,
