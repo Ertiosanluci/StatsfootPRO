@@ -2,7 +2,7 @@
   command = "bash ./netlify-build.sh"
   publish = "build/web"
 
-# Redirección para recuperación de contraseña
+# Redirecciones para recuperación de contraseña
 [[redirects]]
   from = "/reset-password"
   to = "/reset-password.html"
@@ -11,6 +11,11 @@
 [[redirects]]
   from = "/reset-password-debug"
   to = "/reset-password-debug.html"
+  status = 200
+
+[[redirects]]
+  from = "/password-debug"
+  to = "/password-debug.html"
   status = 200
 
 # Redirección para compartir partidos

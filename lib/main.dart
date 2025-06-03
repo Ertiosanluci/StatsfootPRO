@@ -15,6 +15,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:app_links/app_links.dart'; // Cambiado de uni_links a app_links
 import 'dart:async';
+import 'dart:math' as Math; // Para Math.min
 
 // Importaciones del sistema de amigos
 import 'package:statsfoota/features/friends/friends_module.dart';
@@ -238,16 +239,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         );
       }
     }  }
-  
-  // Manejar enlaces de recuperación de contraseña desde deep link móvil
+    // Manejar enlaces de recuperación de contraseña desde deep link móvil
   void _handlePasswordResetLink(Uri uri) {
-    debugPrint('🔐 Procesando enlace de recuperación de contraseña: $uri');
-    debugPrint('🔐 Query parameters: ${uri.queryParameters}');
-    debugPrint('🔐 Fragment: ${uri.fragment}');
+    print('🔐 Procesando enlace de recuperación de contraseña: $uri');
+    print('🔐 Query parameters: ${uri.queryParameters}');
+    print('🔐 Fragment: ${uri.fragment}');
     
     final NavigatorState? navigator = _navigatorKey.currentState;
     if (navigator == null) {
-      debugPrint('🔐 ERROR: Navigator es null');
+      print('🔐 ERROR: Navigator es null');
       return;
     }
 
@@ -259,16 +259,17 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // Verificar si hay un code (nuevo formato de Supabase)
     final code = uri.queryParameters['code'];
     if (code != null) {
-      debugPrint('🔐 Encontrado parámetro code: ${code.substring(0, 8)}...');
+      print('🔐 Encontrado parámetro code: $code');
       // Usar code como accessToken
       accessToken = code;
     }
 
-    debugPrint('🔐 Tokens extraídos - Access/Code: ${accessToken != null ? "SÍ" : "NO"}, Refresh: ${refreshToken != null ? "SÍ" : "NO"}, Type: $type');
+    print('🔐 Tokens extraídos - Access/Code: ${accessToken != null ? "SÍ" : "NO"}, Refresh: ${refreshToken != null ? "SÍ" : "NO"}, Type: $type');
     
     // Si tenemos tokens de recovery, o un code, usar el flujo normal
-    if ((type == 'recovery' && accessToken != null) || (accessToken != null && uri.queryParameters.containsKey('code'))) {
-      debugPrint('🔐 ✅ Tokens válidos encontrados, navegando a PasswordResetScreen con tokens');
+    if ((type == 'recovery' && accessToken != null) || (code != null)) {
+      print('🔐 ✅ Tokens válidos encontrados, navegando a PasswordResetScreen con tokens');
+      print('🔐 Token a utilizar: $accessToken');
       navigator.pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (context) => PasswordResetScreen(

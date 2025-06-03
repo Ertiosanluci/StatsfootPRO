@@ -45,28 +45,61 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
     if (widget.accessToken != null) {
       try {
         debugPrint('🔐 Estableciendo sesión con token recibido...');
-        
-        // Si el token recibido tiene formato UUID (código de un solo uso), probablemente sea un code
-        if (widget.accessToken!.contains('-') && widget.accessToken!.length > 30) {          debugPrint('🔐 Detectado posible token de formato code, usando verifyOTP');
+          // Si el token recibido tiene formato UUID (código de un solo uso), probablemente sea un code
+        if (widget.accessToken!.contains('-') || widget.accessToken!.length > 30) {
+          print('🔐 Detectado posible token de formato code, usando exchangeCodeForSession');
+          print('🔐 Token completo recibido: ${widget.accessToken}');
           
-          // Debemos obtener una sesión usando el código
-          final response = await Supabase.instance.client.auth.verifyOTP(
-            type: OtpType.recovery,
-            token: widget.accessToken!,
-          );
-          
-          if (response.session != null) {
-            debugPrint('🔐 ✅ Sesión establecida exitosamente con código');
-            setState(() {
-              _isSessionReady = true;
-              _isLoading = false;
-              _tokenError = false;
-            });
-          } else {
-            debugPrint('🔐 ❌ Error: No se pudo establecer sesión con código');
+          try {
+            // Usar el nuevo método para intercambiar code por sesión
+            print('🔐 Intentando exchangeCodeForSession con: ${widget.accessToken}');
+            final response = await Supabase.instance.client.auth.exchangeCodeForSession(widget.accessToken!);
+            
+            if (response.session != null) {
+              print('🔐 ✅ Sesión establecida exitosamente con código');
+              print('🔐 Usuario ID: ${response.session?.user.id}');
+              print('🔐 Email: ${response.session?.user.email}');
+              
+              setState(() {
+                _isSessionReady = true;
+                _isLoading = false;
+                _tokenError = false;
+              });
+            } else {
+              print('🔐 ❌ Error: No se pudo establecer sesión con código');
+              setState(() {
+                _tokenError = true;
+                _errorMessage = 'El código de recuperación ha expirado o es inválido. Por favor, solicita un nuevo enlace.';
+                _isLoading = false;
+              });
+            }
+          } catch (e) {
+            print('🔐 ❌ Error usando exchangeCodeForSession: $e');
+            
+            // Intentar una segunda vez con código limpio (sin espacios)
+            if (widget.accessToken!.contains(' ')) {
+              try {
+                print('🔐 Reintentando con código limpio (sin espacios)');
+                final cleanCode = widget.accessToken!.trim();
+                final response = await Supabase.instance.client.auth.exchangeCodeForSession(cleanCode);
+                
+                if (response.session != null) {
+                  print('🔐 ✅ Sesión establecida exitosamente con código limpio');
+                  setState(() {
+                    _isSessionReady = true;
+                    _isLoading = false;
+                    _tokenError = false;
+                  });
+                  return; // Salir si tuvimos éxito
+                }
+              } catch (e2) {
+                print('🔐 ❌ Error en segundo intento: $e2');
+              }
+            }
+            
             setState(() {
               _tokenError = true;
-              _errorMessage = 'El código de recuperación ha expirado o es inválido. Por favor, solicita un nuevo enlace.';
+              _errorMessage = 'El enlace de recuperación ha expirado o es inválido. Por favor, solicita un nuevo enlace.';
               _isLoading = false;
             });
           }
