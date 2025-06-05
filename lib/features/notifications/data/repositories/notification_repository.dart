@@ -45,7 +45,7 @@ class NotificationRepository {
     try {
       await _supabaseClient
           .from('notifications')
-          .update({'is_read': true})
+          .update({'read': true})
           .eq('id', notificationId);
     } catch (e) {
       print('Error marking notification as read: $e');
@@ -62,9 +62,9 @@ class NotificationRepository {
 
       await _supabaseClient
           .from('notifications')
-          .update({'is_read': true})
+          .update({'read': true})
           .eq('user_id', currentUserId)
-          .eq('is_read', false);
+          .eq('read', false);
     } catch (e) {
       print('Error marking all notifications as read: $e');
       throw Exception('Failed to mark all notifications as read: $e');

@@ -24,7 +24,7 @@ class NotificationController extends StateNotifier<NotificationState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final notifications = await _notificationRepository.getNotifications();
-      final unreadCount = notifications.where((n) => !n.isRead).length;
+      final unreadCount = notifications.where((n) => !n.read).length;
       
       state = state.copyWith(
         notifications: notifications,
@@ -41,7 +41,7 @@ class NotificationController extends StateNotifier<NotificationState> {
       final createdNotification = await _notificationRepository.createNotification(notification);
       
       final updatedNotifications = [...state.notifications, createdNotification];
-      final unreadCount = updatedNotifications.where((n) => !n.isRead).length;
+      final unreadCount = updatedNotifications.where((n) => !n.read).length;
       
       state = state.copyWith(
         notifications: updatedNotifications,
@@ -64,7 +64,7 @@ class NotificationController extends StateNotifier<NotificationState> {
         return notification;
       }).toList();
       
-      final unreadCount = updatedNotifications.where((n) => !n.isRead).length;
+      final unreadCount = updatedNotifications.where((n) => !n.read).length;
       
       state = state.copyWith(
         notifications: updatedNotifications,
@@ -100,7 +100,7 @@ class NotificationController extends StateNotifier<NotificationState> {
           .where((notification) => notification.id != notificationId)
           .toList();
       
-      final unreadCount = updatedNotifications.where((n) => !n.isRead).length;
+      final unreadCount = updatedNotifications.where((n) => !n.read).length;
       
       state = state.copyWith(
         notifications: updatedNotifications,

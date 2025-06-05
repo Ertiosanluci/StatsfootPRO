@@ -6,7 +6,6 @@ import 'package:statsfoota/features/friends/presentation/controllers/friend_cont
 import 'package:statsfoota/features/notifications/domain/models/notification_model.dart';
 import 'package:statsfoota/features/notifications/presentation/controllers/notification_controller.dart';
 import 'package:statsfoota/features/notifications/match_invitation_handler.dart';
-import 'package:statsfoota/features/notifications/presentation/widgets/notification_card.dart';
 
 class NotificationsDrawer extends ConsumerStatefulWidget {
   const NotificationsDrawer({Key? key}) : super(key: key);
@@ -229,25 +228,87 @@ class _NotificationsDrawerState extends ConsumerState<NotificationsDrawer> {
   }
   
   Widget _buildNotificationItem(BuildContext context, NotificationModel notification) {
-    // Si es una invitación a partido, proporcionar callbacks para aceptar/rechazar
-    if (notification.type == NotificationType.matchInvite) {
-      return NotificationCard(
-        notification: notification,
-        onAccept: () => _handleMatchInvitation(context, notification, true),
-        onReject: () => _handleMatchInvitation(context, notification, false),
-      );
+    // Mark notification as read when viewed
+    if (!notification.read) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(notificationControllerProvider.notifier).markAsRead(notification.id);
+      });
     }
     
-    // Para otros tipos de notificaciones, sin botones de acción
-    return NotificationCard(notification: notification);
-  }
-  
-  /// Método auxiliar para manejar las invitaciones a partidos
-  void _handleMatchInvitation(BuildContext context, NotificationModel notification, bool accept) {
-    // Crear una instancia temporal del handler y acceder al método público
-    final handler = MatchInvitationHandler(notification: notification);
-    // Usamos un método público para manejar la invitación
-    handler.handleInvitation(context, ref, accept);
+    return Column(
+      children: [
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color: notification.read ? Colors.white : Colors.blue.shade50,
+            border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+          ),
+          child: Row(
+            children: [
+              // Notification icon
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.blue.shade100,
+                ),
+                child: Icon(
+                  _getNotificationIcon(notification.type),
+                  color: Colors.blue.shade800,
+                  size: 28,
+                ),
+              ),
+              SizedBox(width: 15),
+              
+              // Notification content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      notification.title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      notification.message,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      _formatNotificationTime(notification.createdAt),
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Delete button
+              IconButton(
+                icon: Icon(Icons.close, color: Colors.grey.shade400, size: 18),
+                onPressed: () {
+                  ref.read(notificationControllerProvider.notifier).deleteNotification(notification.id);
+                },
+              ),
+            ],
+          ),
+        ),
+        
+        // Añadir botones de invitación a partido si es necesario
+        if (notification.type == NotificationType.matchInvite)
+          MatchInvitationHandler(notification: notification),
+      ],
+    );
   }
 
   Widget _buildFriendRequestItem(
@@ -408,6 +469,35 @@ class _NotificationsDrawerState extends ConsumerState<NotificationsDrawer> {
     );
   }
   
-  // Estos métodos se han movido a la clase NotificationCard
-  // y ya no son necesarios aquí
+  // Helper method to get appropriate icon for notification type
+  IconData _getNotificationIcon(NotificationType type) {
+    switch (type) {
+      case NotificationType.friendRequest:
+        return Icons.person_add;
+      case NotificationType.friendAccepted:
+        return Icons.people;
+      case NotificationType.matchInvite:
+        return Icons.sports_soccer;
+      case NotificationType.systemNotice:
+        return Icons.info;
+      default:
+        return Icons.notifications;
+    }
+  }
+  
+  // Format notification timestamp
+  String _formatNotificationTime(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+    
+    if (difference.inDays > 0) {
+      return '${difference.inDays} ${difference.inDays == 1 ? 'día' : 'días'} atrás';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} ${difference.inHours == 1 ? 'hora' : 'horas'} atrás';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} ${difference.inMinutes == 1 ? 'minuto' : 'minutos'} atrás';
+    } else {
+      return 'Ahora mismo';
+    }
+  }
 }

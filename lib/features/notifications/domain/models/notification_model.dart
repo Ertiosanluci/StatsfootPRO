@@ -1,4 +1,5 @@
 import 'package:uuid/uuid.dart';
+import 'dart:convert';
 
 enum NotificationType {
   friendRequest,
@@ -16,7 +17,7 @@ class NotificationModel {
   final String message;
   final String? resourceId; // Reference to related resource (e.g., friend request ID)
   final DateTime createdAt;
-  final bool isRead;
+  final bool read;
 
   const NotificationModel({
     required this.id,
@@ -27,20 +28,36 @@ class NotificationModel {
     required this.message,
     this.resourceId,
     required this.createdAt,
-    this.isRead = false,
+    this.read = false,
   });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
+    // Determinar el tipo de notificación
+    final notificationType = _typeFromString(json['type'] as String);
+    
+    // Extraer resourceId según el tipo de notificación
+    String? resourceId;
+    if (notificationType == NotificationType.matchInvite && json['data'] != null) {
+      // Para invitaciones a partidos, el resourceId es el match_id en el campo data
+      final Map<String, dynamic> data = json['data'] is String 
+          ? Map<String, dynamic>.from(jsonDecode(json['data'] as String)) 
+          : Map<String, dynamic>.from(json['data'] as Map);
+      resourceId = data['match_id']?.toString();
+    } else {
+      // Para otros tipos, usar el campo resource_id directamente
+      resourceId = json['resource_id'] as String?;
+    }
+    
     return NotificationModel(
       id: json['id'] as String,
       userId: json['user_id'] as String,
       senderId: json['sender_id'] as String?,
-      type: _typeFromString(json['type'] as String),
+      type: notificationType,
       title: json['title'] as String,
       message: json['message'] as String,
-      resourceId: json['resource_id'] as String?,
+      resourceId: resourceId,
       createdAt: DateTime.parse(json['created_at'] as String),
-      isRead: json['is_read'] as bool? ?? false,
+      read: json['read'] as bool? ?? false,
     );
   }
 
@@ -54,7 +71,7 @@ class NotificationModel {
       'message': message,
       'resource_id': resourceId,
       'created_at': createdAt.toIso8601String(),
-      'is_read': isRead,
+      'read': read,
     };
   }
 
@@ -101,6 +118,7 @@ class NotificationModel {
       case 'friend_accepted':
         return NotificationType.friendAccepted;
       case 'match_invite':
+      case 'match_invitation':
         return NotificationType.matchInvite;
       case 'system_notice':
         return NotificationType.systemNotice;
@@ -132,7 +150,7 @@ class NotificationModel {
     String? message,
     String? resourceId,
     DateTime? createdAt,
-    bool? isRead,
+    bool? read,
   }) {
     return NotificationModel(
       id: id ?? this.id,
@@ -143,12 +161,12 @@ class NotificationModel {
       message: message ?? this.message,
       resourceId: resourceId ?? this.resourceId,
       createdAt: createdAt ?? this.createdAt,
-      isRead: isRead ?? this.isRead,
+      read: read ?? this.read,
     );
   }
 
   // Mark this notification as read
   NotificationModel markAsRead() {
-    return copyWith(isRead: true);
+    return copyWith(read: true);
   }
 }
