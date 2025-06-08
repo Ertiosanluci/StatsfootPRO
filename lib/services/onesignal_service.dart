@@ -1,7 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class OneSignalService {
@@ -119,9 +119,6 @@ class OneSignalService {
             .insert({
               'user_id': userId,
               'player_id': playerId,
-              'device_type': 'mobile', // Puedes obtener más información del dispositivo si lo necesitas
-              'created_at': DateTime.now().toIso8601String(),
-              'updated_at': DateTime.now().toIso8601String(),
             });
         debugPrint('Token de dispositivo guardado para el usuario: $userId');
       }
@@ -151,54 +148,55 @@ class OneSignalService {
   }
   
   // API Key para OneSignal REST API
-  static const String _restApiKey = 'dc3vwio75bb47f2otj46vqhqdof6zpfdzc3earnlyhgiowm744x4xicqlyvvfestpgn2cw4rv6rix5agp6uxwwm2itnxc7rf2fjke6y';
+  static const String _restApiKey = 'os_v2_app_dc3vwio75bb47f2otj46vqhqdof6zpfdzc3earnlyhgiowm744x4xicqlyvvfestpgn2cw4rv6rix5agp6uxwwm2itnxc7rf2fjke6y';
+  
+  // Nota: La autenticación se realiza directamente en el método sendTestNotification
+  
   
   // Enviar una notificación usando la API REST de OneSignal
   static Future<void> sendTestNotification({
     required String title,
     required String content,
     Map<String, dynamic>? additionalData,
-    String? externalUserId, // ID del usuario destinatario (opcional)
-    String? playerIds, // IDs de dispositivos específicos (opcional)
+    String? externalUserId,
+    String? playerIds,
   }) async {
     try {
-      // Log para depuración
+      debugPrint('Enviando notificación usando la API REST de OneSignal');
       debugPrint('Enviando notificación de prueba:');
       debugPrint('Título: $title');
       debugPrint('Contenido: $content');
-      if (additionalData != null) {
-        debugPrint('Datos adicionales: $additionalData');
-      }
+      debugPrint('Datos adicionales: $additionalData');
       
-      // Para la API v2 de OneSignal
-      final Uri url = Uri.parse('https://onesignal.com/api/v2/notifications');
-      
-      // Preparar el cuerpo de la solicitud
+      final Uri url = Uri.parse('https://onesignal.com/api/v1/notifications');
       final Map<String, dynamic> requestBody = {
         'app_id': appId,
         'headings': {'en': title},
         'contents': {'en': content},
         'data': additionalData ?? {},
+        'target_channel': 'push', // Parámetro requerido según la documentación
       };
       
       // Configurar los destinatarios de la notificación
       if (externalUserId != null && externalUserId.isNotEmpty) {
-        // Si se proporciona un ID de usuario específico
         requestBody['include_external_user_ids'] = [externalUserId];
-      } 
-      else if (playerIds != null && playerIds.isNotEmpty) {
-        // Si se proporciona un ID de dispositivo específico
-        requestBody['include_player_ids'] = [playerIds];
-        debugPrint('Enviando notificación al dispositivo específico: $playerIds');
-      } 
-      else {
-        // Para pruebas, enviar solo al dispositivo actual
+      } else if (playerIds != null && playerIds.isNotEmpty) {
+        // Asegurarnos de que playerIds sea siempre un array
+        List<String> playerIdList;
+        if (playerIds.contains(',')) {
+          // Si contiene comas, dividirlo en una lista
+          playerIdList = playerIds.split(',').map((id) => id.trim()).toList();
+        } else {
+          playerIdList = [playerIds];
+        }
+        requestBody['include_player_ids'] = playerIdList;
+        debugPrint('Enviando notificación a player_ids: $playerIdList');
+      } else {
         final currentPlayerId = await getPlayerId();
         if (currentPlayerId != null) {
           requestBody['include_player_ids'] = [currentPlayerId];
           debugPrint('Enviando notificación al dispositivo actual: $currentPlayerId');
         } else {
-          // Si no podemos obtener el ID actual, enviar a todos los suscriptores
           requestBody['included_segments'] = ['Subscribed Users'];
           debugPrint('Enviando notificación a todos los usuarios suscritos');
         }
@@ -211,25 +209,25 @@ class OneSignalService {
       debugPrint('Cuerpo de la solicitud: ${jsonEncode(requestBody)}');
       
       // Realizar la solicitud HTTP POST
-      // Para la API REST de OneSignal, usamos Basic Auth
+      // Según la documentación oficial de OneSignal, el formato correcto es 'Key YOUR_API_KEY'
       final response = await http.post(
         url,
         headers: {
           'Content-Type': 'application/json; charset=utf-8',
-          'Authorization': 'Basic $_restApiKey',
+          'Authorization': 'Key $_restApiKey',
         },
         body: jsonEncode(requestBody),
       );
       
-      // Verificar la respuesta
       debugPrint('Código de respuesta: ${response.statusCode}');
-      debugPrint('Cuerpo de respuesta: ${response.body}');
+      debugPrint('Cuerpo de respuesta: ${response.body}\n');
       
+      // Verificar la respuesta
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final responseData = jsonDecode(response.body);
         debugPrint('Notificación enviada correctamente: ${response.statusCode}');
         debugPrint('ID de notificación: ${responseData['id']}');
-      } else {
+      }else {
         debugPrint('Error al enviar notificación: ${response.statusCode}');
         debugPrint('Respuesta: ${response.body}');
         throw Exception('Error al enviar notificación: ${response.statusCode} - ${response.body}');
