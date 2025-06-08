@@ -163,14 +163,8 @@ class _InviteFriendsDialogState extends ConsumerState<InviteFriendsDialog> {
     required String matchName,
   }) async {
     try {
-      // Obtener el external_id (OneSignal player ID) del amigo invitado
-      final friendData = await _supabase
-          .from('user_push_tokens')
-          .select('player_id')
-          .eq('user_id', friendId)
-          .maybeSingle();
-      
-      final playerIdToSend = friendData != null ? friendData['player_id'] as String? : null;
+      // Obtener el player ID del amigo invitado usando el nuevo método
+      final playerIdToSend = await OneSignalService.getPlayerIdByUserId(friendId);
       
       if (playerIdToSend != null && playerIdToSend.isNotEmpty) {
         // Preparar los datos adicionales para la notificación
@@ -187,14 +181,15 @@ class _InviteFriendsDialogState extends ConsumerState<InviteFriendsDialog> {
           title: 'Invitación a partido',
           content: '$inviterName te ha invitado al partido $matchName',
           additionalData: additionalData,
+          playerIds: playerIdToSend, // Usar el player_id del destinatario
         );
         
-        print('Notificación enviada a $friendName con ID: $playerIdToSend');
+        debugPrint('Notificación enviada a $friendName con ID: $playerIdToSend');
       } else {
-        print('No se encontró ID de OneSignal para $friendName');
+        debugPrint('No se encontró ID de OneSignal para $friendName');
       }
     } catch (e) {
-      print('Error al enviar notificación: $e');
+      debugPrint('Error al enviar notificación: $e');
     }
   }
 

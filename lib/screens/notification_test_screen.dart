@@ -73,10 +73,19 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
     });
 
     try {
+      // Mostrar que estamos usando la API REST de OneSignal
+      print('Enviando notificación usando la API REST de OneSignal');
+      
+      // Enviar notificación al dispositivo actual
       await OneSignalService.sendTestNotification(
         title: _titleController.text,
         content: _contentController.text,
-        additionalData: {'test': true, 'timestamp': DateTime.now().toIso8601String()},
+        additionalData: {
+          'test': true, 
+          'timestamp': DateTime.now().toIso8601String(),
+          'source': 'notification_test_screen'
+        },
+        // No especificamos playerIds para que use el dispositivo actual
       );
       
       setState(() {
@@ -85,11 +94,12 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Notificación enviada'),
+          content: Text('Notificación enviada correctamente'),
           backgroundColor: Colors.green,
         ),
       );
     } catch (e) {
+      print('Error detallado: $e');
       setState(() {
         _statusMessage = 'Error al enviar la notificación: $e';
       });
