@@ -63,28 +63,25 @@ class OneSignalService {
     }
   }
   
-  // Send a test notification using in-app notification
-  static Future<bool> sendTestNotification({
+  // Send a test notification using 
+  static Future<void> sendTestNotification({
     required String title,
     required String content,
     Map<String, dynamic>? additionalData,
   }) async {
     try {
-      // For testing purposes, we'll create a local notification using the Flutter local notifications
-      // This is a workaround since OneSignal.Notifications.displayNotification expects a notification ID
+      // Simular una notificación local con un log
+      print('Enviando notificación de prueba:');
+      print('Título: $title');
+      print('Contenido: $content');
+      if (additionalData != null) {
+        print('Datos adicionales: $additionalData');
+      }
       
-      // Show a snackbar as a local notification simulation
-      debugPrint('Simulating notification: $title - $content');
-      
-      // Use debug print to log the notification
-      OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
-      debugPrint('TEST NOTIFICATION: $title - $content');
-      
-      // Return success
-      return true;
+      // Aquí se podría implementar una llamada a una API backend para enviar
+      // una notificación real usando el REST API de OneSignal
     } catch (e) {
-      debugPrint('Error sending test notification: $e');
-      return false;
+      print('Error al enviar notificación de prueba: $e');
     }
   }
 }

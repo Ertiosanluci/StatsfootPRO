@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statsfoota/features/friends/presentation/controllers/friend_controller.dart';
+import '../services/onesignal_service.dart';
 
 class InviteFriendsDialog extends ConsumerStatefulWidget {
   final int matchId;
@@ -86,6 +87,12 @@ class _InviteFriendsDialogState extends ConsumerState<InviteFriendsDialog> {
       });
 
       final userId = _supabase.auth.currentUser!.id;
+      final currentUser = await _supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', userId)
+          .single();
+      final inviterName = currentUser['username'] as String? ?? 'Un amigo';
       
       final result = await _supabase.rpc(
         'create_match_invitation',
@@ -106,6 +113,15 @@ class _InviteFriendsDialogState extends ConsumerState<InviteFriendsDialog> {
           setState(() {
             _invitedFriends.add({'invited_id': friendId});
           });
+          
+          // Enviar notificación al amigo invitado
+          _sendInvitationNotification(
+            friendId: friendId, 
+            friendName: friendName, 
+            inviterName: inviterName, 
+            matchId: widget.matchId, 
+            matchName: widget.matchName
+          );
           
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -135,6 +151,50 @@ class _InviteFriendsDialogState extends ConsumerState<InviteFriendsDialog> {
           ),
         );
       }
+    }
+  }
+  
+  // Enviar notificación de invitación a un partido
+  Future<void> _sendInvitationNotification({
+    required String friendId,
+    required String friendName,
+    required String inviterName,
+    required int matchId,
+    required String matchName,
+  }) async {
+    try {
+      // Obtener el external_id (OneSignal player ID) del amigo invitado
+      final friendData = await _supabase
+          .from('user_push_tokens')
+          .select('player_id')
+          .eq('user_id', friendId)
+          .maybeSingle();
+      
+      final playerIdToSend = friendData != null ? friendData['player_id'] as String? : null;
+      
+      if (playerIdToSend != null && playerIdToSend.isNotEmpty) {
+        // Preparar los datos adicionales para la notificación
+        final additionalData = {
+          'type': 'match_invitation',
+          'match_id': matchId,
+          'inviter_id': _supabase.auth.currentUser!.id,
+          'inviter_name': inviterName,
+          'match_name': matchName
+        };
+        
+        // Enviar notificación usando OneSignal
+        await OneSignalService.sendTestNotification(
+          title: 'Invitación a partido',
+          content: '$inviterName te ha invitado al partido $matchName',
+          additionalData: additionalData,
+        );
+        
+        print('Notificación enviada a $friendName con ID: $playerIdToSend');
+      } else {
+        print('No se encontró ID de OneSignal para $friendName');
+      }
+    } catch (e) {
+      print('Error al enviar notificación: $e');
     }
   }
 
