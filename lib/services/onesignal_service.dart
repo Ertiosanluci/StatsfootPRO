@@ -134,13 +134,34 @@ class OneSignalService {
   // Obtener el player ID de un usuario específico desde Supabase
   static Future<String?> getPlayerIdByUserId(String userId) async {
     try {
+      debugPrint('Buscando player_id para el usuario: $userId');
+      
+      // Primero verificamos si la tabla existe y qué registros contiene
+      final allTokens = await _supabase
+          .from('user_push_tokens')
+          .select('*');
+         
+      
+      debugPrint('Tokens disponibles en la tabla: ${allTokens.length}');
+      for (var token in allTokens) {
+        debugPrint('Token encontrado - user_id: ${token['user_id']}, player_id: ${token['player_id']}');
+      }
+      
+      // Ahora buscamos el token específico para este usuario
       final data = await _supabase
           .from('user_push_tokens')
           .select('player_id')
-          .eq('user_id', userId)
+          .eq('user_id', userId.trim())
           .maybeSingle();
       
-      return data != null ? data['player_id'] as String? : null;
+      if (data != null) {
+        final playerId = data['player_id'] as String?;
+        debugPrint('Player ID encontrado para $userId: $playerId');
+        return playerId;
+      } else {
+        debugPrint('No se encontró ningún registro para el usuario $userId');
+        return null;
+      }
     } catch (e) {
       debugPrint('Error al obtener el player ID del usuario $userId: $e');
       return null;

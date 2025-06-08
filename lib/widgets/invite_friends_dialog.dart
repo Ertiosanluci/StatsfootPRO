@@ -113,7 +113,18 @@ class _InviteFriendsDialogState extends ConsumerState<InviteFriendsDialog> {
           setState(() {
             _invitedFriends.add({'invited_id': friendId});
           });
-          
+          debugPrint('ID de friend desde ListView: $friendId');
+  final matchingUser = await _supabase.from('profiles').select('id').eq('username', friendName).maybeSingle();
+debugPrint('ID real en Supabase para $friendName: ${matchingUser?['id']}');
+
+debugPrint('\n');
+debugPrint(' friendId: $friendId');
+debugPrint(' friendName: $friendName');
+debugPrint(' inviterName: $inviterName');
+debugPrint(' matchId: ${widget.matchId}');
+debugPrint(' matchName: ${widget.matchName}');
+debugPrint('\n');
+
           // Enviar notificación al amigo invitado
           _sendInvitationNotification(
             friendId: friendId, 
@@ -162,8 +173,13 @@ class _InviteFriendsDialogState extends ConsumerState<InviteFriendsDialog> {
     required int matchId,
     required String matchName,
   }) async {
+    bool notificationSent = false;
+    String errorMessage = '';
+    
     try {
-      // Obtener el player ID del amigo invitado usando el nuevo método
+      debugPrint('Intentando enviar notificación a $friendName (ID: $friendId)');
+      
+      // Obtener el player ID del amigo invitado
       final playerIdToSend = await OneSignalService.getPlayerIdByUserId(friendId);
       
       if (playerIdToSend != null && playerIdToSend.isNotEmpty) {
@@ -176,20 +192,90 @@ class _InviteFriendsDialogState extends ConsumerState<InviteFriendsDialog> {
           'match_name': matchName
         };
         
-        // Enviar notificación usando OneSignal
-        await OneSignalService.sendTestNotification(
-          title: 'Invitación a partido',
-          content: '$inviterName te ha invitado al partido $matchName',
-          additionalData: additionalData,
-          playerIds: playerIdToSend, // Usar el player_id del destinatario
-        );
+        debugPrint('Enviando notificación a $friendName con player_id: $playerIdToSend');
         
-        debugPrint('Notificación enviada a $friendName con ID: $playerIdToSend');
+        try {
+          // Enviar notificación usando OneSignal
+          await OneSignalService.sendTestNotification(
+            title: 'Invitación a partido',
+            content: '$inviterName te ha invitado al partido $matchName',
+            additionalData: additionalData,
+            playerIds: playerIdToSend, // Usar el player_id del destinatario
+          );
+          
+          notificationSent = true;
+          debugPrint('Notificación enviada exitosamente a $friendName');
+        } catch (notifError) {
+          errorMessage = 'Error al enviar la notificación: $notifError';
+          debugPrint(errorMessage);
+        }
       } else {
-        debugPrint('No se encontró ID de OneSignal para $friendName');
+        errorMessage = 'No se encontró ID de OneSignal para $friendName';
+        debugPrint('$errorMessage. Verificando tabla user_push_tokens...');
+        
+        // Verificar directamente en la tabla para depuración
+        try {
+          final result = await _supabase
+              .from('user_push_tokens')
+              .select('*')
+              .eq('user_id', friendId);
+          
+          if (result.isNotEmpty) {
+            final tokenData = result[0];
+            debugPrint('Se encontró registro en user_push_tokens: $tokenData');
+          } else {
+            debugPrint('No existe registro en user_push_tokens para el usuario $friendId');
+            
+            // Verificar si el usuario existe en la base de datos
+            final userExists = await _supabase
+                .from('profiles')
+                .select('id')
+                .eq('id', friendId)
+                .maybeSingle();
+                
+            if (userExists != null) {
+              debugPrint('El usuario $friendName existe pero no tiene token de OneSignal registrado');
+            } else {
+              debugPrint('El usuario $friendName no existe en la base de datos');
+            }
+          }
+        } catch (dbError) {
+          debugPrint('Error al verificar la tabla user_push_tokens: $dbError');
+        }
+      }
+      
+      // Mostrar mensaje apropiado al usuario
+      if (mounted) {
+        if (notificationSent) {
+          // La notificación se envió correctamente
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Has invitado a $friendName al partido'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          // La notificación no se pudo enviar, pero la invitación se registró
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Has invitado a $friendName al partido, pero no recibirá una notificación push'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
       }
     } catch (e) {
-      debugPrint('Error al enviar notificación: $e');
+      debugPrint('Error general al enviar notificación: $e');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al enviar la notificación a $friendName'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
