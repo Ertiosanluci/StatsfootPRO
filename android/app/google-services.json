@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "922821146380",
+    "project_id": "statfootpushnotifications",
+    "storage_bucket": "statfootpushnotifications.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:922821146380:android:31a592031ce664e760fb29",
+        "android_client_info": {
+          "package_name": "com.edusa.statsfut"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDL8l63It2gGPhD1opoxqWNC5ZrLJHYIa8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

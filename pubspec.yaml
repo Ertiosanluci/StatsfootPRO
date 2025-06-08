@@ -52,6 +52,7 @@ dependencies:
   path: ^1.9.0       # Añadido para trabajar con rutas de archivos
   fl_chart: ^0.66.0  # Añadido para crear gráficos estadísticos
   intl: ^0.20.2      # Añadido para formatear fechas
+  onesignal_flutter: ^5.1.0  # Añadido para notificaciones push
   # State Management
   flutter_riverpod: ^2.4.9
   riverpod_annotation: ^2.3.3

@@ -637,6 +637,22 @@ class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTick
           },
         ),
         PopupMenuItem<String>(
+          value: 'notification_test',
+          child: Row(
+            children: [
+              Icon(Icons.notifications, color: Colors.orange.shade600),
+              SizedBox(width: 10),
+              Text('Test de Notificaciones'),
+            ],
+          ),
+          onTap: () {
+            // Navegar a la pantalla de prueba de notificaciones después de que el menú se cierre
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.pushNamed(context, '/notification_test');
+            });
+          },
+        ),
+        PopupMenuItem<String>(
           value: 'logout',
           child: Row(
             children: [

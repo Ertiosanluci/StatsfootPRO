@@ -11,6 +11,8 @@ import 'package:statsfoota/match_join_screen.dart'; // Añadido para manejar los
 import 'package:statsfoota/profile_edit_screen.dart'; // Importamos la pantalla de edición de perfil
 import 'package:statsfoota/password_reset_request_screen.dart'; // Nueva pantalla para solicitar reset
 import 'package:statsfoota/password_reset_screen.dart'; // Nueva pantalla para establecer nueva contraseña
+import 'services/onesignal_service.dart'; // Servicio de OneSignal
+import 'screens/notification_test_screen.dart'; // Pantalla de prueba de notificaciones
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:app_links/app_links.dart'; // Cambiado de uni_links a app_links
@@ -85,10 +87,20 @@ Future<void> main() async {
     statusBarIconBrightness: Brightness.light,
   ));
 
+  // Inicializar Supabase
   await Supabase.initialize(
     url: 'https://vlygdxrppzoqlkntfypx.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZseWdkeHJwcHpvcWxrbnRmeXB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAwMzk0MDEsImV4cCI6MjA1NTYxNTQwMX0.gch5BXjGqXbNI2f0zkA3wPg2b357ZfxF97AMEk5CPdE',
   );
+  
+  // Inicializar OneSignal
+  try {
+    await OneSignalService.initializeOneSignal();
+    print('✅ OneSignal inicializado correctamente');
+  } catch (e) {
+    print('❌ Error al inicializar OneSignal: $e');
+  }
+  
   runApp(
     ProviderScope(
       child: MyApp(),
@@ -607,6 +619,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/friends': (context) => const FriendsMainScreen(),
         '/people': (context) => const PeopleScreen(),
         '/friend_requests': (context) => const FriendRequestsScreen(),
+        '/notification_test': (context) => const NotificationTestScreen(),
       },
       debugShowCheckedModeBanner: false,
       title: 'StatsFut',
