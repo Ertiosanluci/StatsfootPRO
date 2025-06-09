@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statsfoota/user_menu.dart';
 
+
 class MatchJoinScreen extends StatefulWidget {
   final String matchId;
   
@@ -38,7 +39,7 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
       });
       
       // Debug para ver el ID recibido
-      debugPrint('Intentando cargar partido con ID: "${widget.matchId}"');
+      print('Intentando cargar partido con ID: "${widget.matchId}"');
       
       // Asegurarnos de que el ID no está vacío
       if (widget.matchId.isEmpty) {
@@ -53,10 +54,10 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
       int? matchIdInt;
       try {
         matchIdInt = int.parse(widget.matchId);
-        debugPrint('ID convertido a entero: $matchIdInt');
+        print('ID convertido a entero: $matchIdInt');
       } catch (e) {
         // Si no se puede convertir, puede ser que el ID tenga otro formato
-        debugPrint('No se pudo convertir el ID a entero: $e');
+        print('No se pudo convertir el ID a entero: $e');
       }
       
       // Primero, obtener los datos básicos del partido
@@ -66,7 +67,7 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
           .eq('id', matchIdInt ?? widget.matchId)
           .maybeSingle();
       
-      debugPrint('Respuesta de la consulta matches: ${matchResponse != null ? 'Datos encontrados' : 'NULL'}');
+      print('Respuesta de la consulta matches: ${matchResponse != null ? 'Datos encontrados' : 'NULL'}');
       
       if (matchResponse == null) {
         setState(() {
@@ -84,59 +85,74 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
         try {
           String creatorId = matchResponse['creator_id'].toString();
           
-          // NUEVA IMPLEMENTACIÓN: Intentar obtener los datos directamente de la tabla profiles
-          // que está asociada con auth.users
+          // Mejorado: Consulta directa a la tabla profiles con join para obtener datos del usuario
           final profileData = await supabase
               .from('profiles')
-              .select('id, nombre, apellido, email')
+              .select('id, nombre, apellido, email, username')
               .eq('id', creatorId)
               .maybeSingle();
           
           if (profileData != null) {
-            // Construir el nombre completo
+            // Construir el nombre completo con prioridad
             String nombre = profileData['nombre'] ?? '';
             String apellido = profileData['apellido'] ?? '';
+            String username = profileData['username'] ?? '';
+            String email = profileData['email'] ?? '';
             
+            // Prioridad: nombre+apellido > username > email > ID
             if (nombre.isNotEmpty) {
               _creatorName = nombre;
               if (apellido.isNotEmpty) {
                 _creatorName += ' ' + apellido;
               }
+            } else if (username.isNotEmpty) {
+              _creatorName = username;
+            } else if (email.isNotEmpty) {
+              _creatorName = email;
             } else {
-              // Si no tiene nombre, usar email como fallback
-              _creatorName = profileData['email'] ?? 'Usuario #$creatorId';
+              _creatorName = 'Usuario #$creatorId';
             }
             
-            _creatorEmail = profileData['email'];
-            debugPrint('Información de creador obtenida: $_creatorName');
+            _creatorEmail = email;
+            print('Información de creador obtenida: $_creatorName');
           } else {
-            // Intentar un segundo método si el primero falla
-            // Esta es una consulta RPC si tienes una función específica en Supabase
+            // Intentar un segundo método con una consulta más directa a la tabla de usuarios
             try {
-              final response = await supabase
-                  .rpc('get_user_info', params: {'user_id': creatorId})
+              final userData = await supabase
+                  .from('auth.users')
+                  .select('email')
+                  .eq('id', creatorId)
                   .maybeSingle();
                   
-              if (response != null) {
-                _creatorName = response['name'] ?? response['email'] ?? 'Usuario #$creatorId';
-                _creatorEmail = response['email'];
-                debugPrint('Info de creador obtenida por RPC: $_creatorName');
+              if (userData != null && userData['email'] != null) {
+                _creatorName = userData['email'];
+                _creatorEmail = userData['email'];
               } else {
-                _creatorName = 'Usuario #$creatorId';
-                debugPrint('No se pudo obtener info del creador, usando ID como nombre');
+                // Última opción: intentar con RPC si existe
+                final response = await supabase
+                    .rpc('get_user_info', params: {'user_id': creatorId})
+                    .maybeSingle();
+                  
+                if (response != null) {
+                  _creatorName = response['name'] ?? response['email'] ?? 'Usuario #$creatorId';
+                  _creatorEmail = response['email'];
+                  print('Info de creador obtenida por RPC: $_creatorName');
+                } else {
+                  _creatorName = 'Usuario #$creatorId';
+                }
               }
             } catch (e) {
-              debugPrint('Error en la función RPC: $e');
+              print('Error en la función RPC: $e');
               // Tercer intento - usar el ID directo como nombre de usuario
               _creatorName = 'Usuario #$creatorId';
             }
           }
         } catch (e) {
-          debugPrint('Error al obtener datos del creador: $e');
+          print('Error al obtener datos del creador: $e');
           _creatorName = 'Desconocido';
         }
       } else {
-        debugPrint('No se encontró creator_id en los datos del partido');
+        print('No se encontró creator_id en los datos del partido');
         _creatorName = 'Desconocido';
       }
       
@@ -155,7 +171,7 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
             _alreadyJoined = participantResponse != null;
           });
         } catch (e) {
-          debugPrint('Error al verificar participación: $e');
+          print('Error al verificar participación: $e');
           // Continuamos asumiendo que no está unido
         }
       }
@@ -169,7 +185,7 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
         _isLoading = false;
         _errorMessage = 'Error al cargar datos del partido: $e';
       });
-      debugPrint('Error detallado al cargar datos: $e');
+      print('Error detallado al cargar datos: $e');
     }
   }
   
@@ -223,7 +239,7 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
         }
       }
       
-      debugPrint('Intentando unirse al partido con ID: $matchIdValue');
+      print('Intentando unirse al partido con ID: $matchIdValue');
       
       // Añadir usuario a match_participants
       await supabase.from('match_participants').insert({
@@ -250,7 +266,7 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
       // Refrescar datos del partido para ver la lista actualizada de participantes
       _loadMatchData();
     } catch (e) {
-      debugPrint('Error al unirse: $e');
+      print('Error al unirse: $e');
       
       // Mostrar un mensaje más descriptivo y posible solución
       String errorMessage = 'Error al unirse al partido: $e';
@@ -299,9 +315,17 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Unirse al Partido'),
+        title: const Text(
+          'Unirse al Partido',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
         backgroundColor: Colors.blue.shade800,
+        elevation: 2,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _isLoading 
           ? _buildLoadingView() 
@@ -432,7 +456,7 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
         formattedTime = '${matchDate.hour.toString().padLeft(2, '0')}:${matchDate.minute.toString().padLeft(2, '0')}';
       }
     } catch (e) {
-      debugPrint('Error al formatear fecha: $e');
+      print('Error al formatear fecha: $e');
     }
     
     // Validar el formato
@@ -480,9 +504,10 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
                       child: Text(
                         'INVITACIÓN AL PARTIDO',
                         style: TextStyle(
-                          color: Colors.blue.shade800,
+                          color: Colors.blue.shade900,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
@@ -510,7 +535,8 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
               
               // Match details card
               Card(
-                elevation: 8,
+                elevation: 4,
+                shadowColor: Colors.black.withOpacity(0.4),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
@@ -523,16 +549,17 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
                         children: [
                           Icon(
                             Icons.sports_soccer,
-                            color: Colors.blue.shade800,
+                            color: Colors.white,
                             size: 28,
                           ),
                           SizedBox(width: 10),
                           Text(
                             'Detalles del Partido',
                             style: TextStyle(
-                              color: Colors.blue.shade800,
+                              color: Colors.blue.shade900,
                               fontWeight: FontWeight.bold,
-                              fontSize: 18,
+                              fontSize: 20,
+                              letterSpacing: 0.3,
                             ),
                           ),
                         ],
@@ -581,7 +608,7 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
               
               // Join button
               _buildJoinButton(),
-                SizedBox(height: 20),
+              SizedBox(height: 20),
               
               // Back button
               OutlinedButton(
@@ -702,6 +729,8 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
           backgroundColor: Colors.green.shade600,
           disabledBackgroundColor: Colors.green.shade300,
           padding: EdgeInsets.symmetric(vertical: 15),
+          elevation: 3,
+          shadowColor: Colors.black.withOpacity(0.3),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
@@ -732,7 +761,10 @@ class _MatchJoinScreenState extends State<MatchJoinScreen> {
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.sports_soccer),
+                  const Icon(
+                    Icons.sports_soccer,
+                    color: Colors.white,
+                  ),
                   SizedBox(width: 10),
                   Text(
                     'UNIRSE AL PARTIDO',
