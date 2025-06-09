@@ -161,12 +161,32 @@ class _JoinMatchScreenState extends ConsumerState<JoinMatchScreen> {
       });
 
       if (mounted) {
+        // Mostrar mensaje de éxito brevemente
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Te has unido al partido correctamente'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 1),
           ),
         );
+        
+        // Navegar a la pantalla del partido
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (!mounted) return;
+          
+          // Si viene de una notificación, navegar a la pantalla de detalles del partido
+          if (widget.fromNotification) {
+            // Navegar a la pantalla de detalles del partido
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              '/match-detail', // Ruta a la pantalla de detalles del partido
+              (route) => false, // Eliminar todas las rutas anteriores
+              arguments: {'matchId': widget.matchId}, // Pasar el ID del partido como argumento
+            );
+          } else {
+            // Si no viene de notificación, simplemente volver a la pantalla anterior
+            Navigator.of(context).pop(true); // Devolver true para indicar que se unió
+          }
+        });
       }
     } catch (e) {
       setState(() {
@@ -244,15 +264,30 @@ class _JoinMatchScreenState extends ConsumerState<JoinMatchScreen> {
       });
 
       if (mounted) {
+        // Mostrar mensaje de rechazo brevemente
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Has rechazado la invitación'),
             backgroundColor: Colors.grey,
+            duration: Duration(seconds: 1),
           ),
         );
         
-        // Volver a la pantalla anterior
-        Navigator.of(context).pop();
+        // Navegar según el origen de la invitación
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (!mounted) return;
+          
+          if (widget.fromNotification) {
+            // Si viene de una notificación, navegar a la tab de partidos
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              '/matches', // Ruta a la tab de partidos
+              (route) => false, // Eliminar todas las rutas anteriores
+            );
+          } else {
+            // Si no viene de notificación, simplemente volver a la pantalla anterior
+            Navigator.of(context).pop();
+          }
+        });
       }
     } catch (e) {
       setState(() {

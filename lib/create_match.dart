@@ -203,12 +203,7 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
       // Cerrar el indicador de carga
       Navigator.pop(context);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Partido creado correctamente'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      
       
     } catch (e) {
       // Cerrar el indicador de carga si hay error
