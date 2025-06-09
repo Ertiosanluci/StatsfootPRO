@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'dart:developer' as dev;
 import 'package:statsfoota/features/notifications/presentation/controllers/notification_controller.dart';
 
 /// Pantalla para unirse a un partido desde una notificación de invitación
@@ -79,7 +78,7 @@ class _JoinMatchScreenState extends ConsumerState<JoinMatchScreen> {
         _hasError = true;
         _errorMessage = 'Error al cargar los detalles del partido: $e';
       });
-      dev.log(_errorMessage);
+      debugPrint(_errorMessage);
     }
   }
 
@@ -151,7 +150,7 @@ class _JoinMatchScreenState extends ConsumerState<JoinMatchScreen> {
           }
         } catch (notifError) {
           // Solo registrar el error, no interrumpir el flujo principal
-          dev.log('Error al actualizar la notificación: $notifError');
+          debugPrint('Error al actualizar la notificación: $notifError');
         }
       }
 
@@ -192,12 +191,21 @@ class _JoinMatchScreenState extends ConsumerState<JoinMatchScreen> {
     try {
       final userId = _supabase.auth.currentUser!.id;
 
-      // Actualizar el estado de la invitación a 'declined'
-      await _supabase
+      // Verificar si ya existe una invitación
+      final invitationResult = await _supabase
           .from('match_invitations')
-          .update({'status': 'declined'})
+          .select()
           .eq('match_id', widget.matchId)
-          .eq('invited_id', userId);
+          .eq('invited_id', userId)
+          .maybeSingle();
+
+      // Si existe una invitación, actualizarla a 'declined'
+      if (invitationResult != null) {
+        await _supabase
+            .from('match_invitations')
+            .update({'status': 'declined'})
+            .eq('id', invitationResult['id']);
+      }
 
       // Si la notificación viene de una notificación, marcarla como leída
       if (widget.fromNotification) {
@@ -235,7 +243,7 @@ class _JoinMatchScreenState extends ConsumerState<JoinMatchScreen> {
           }
         } catch (notifError) {
           // Solo registrar el error, no interrumpir el flujo principal
-          dev.log('Error al actualizar la notificación: $notifError');
+          debugPrint('Error al actualizar la notificación: $notifError');
         }
       }
 
@@ -293,15 +301,17 @@ class _JoinMatchScreenState extends ConsumerState<JoinMatchScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.error_outline,
-              color: Colors.red,
-              size: 60.0,
+              size: 80.0,
+              color: Colors.red.shade400,
             ),
             const SizedBox(height: 16.0),
             Text(
-              'No se pudo cargar la información del partido',
-              style: Theme.of(context).textTheme.titleLarge,
+              'Error al cargar los detalles',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8.0),
