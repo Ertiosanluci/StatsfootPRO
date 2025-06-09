@@ -326,167 +326,253 @@ class _JoinMatchScreenState extends ConsumerState<JoinMatchScreen> {
   }
 
   Widget _buildMatchDetailsView() {
-    // Usar los campos correctos de la tabla matches
-    final String matchName = _matchDetails?['match_name'] ?? _matchDetails?['nombre'] ?? 'Partido sin nombre';
-    final String location = _matchDetails?['nombre'] ?? 'Ubicación no especificada';
-    final String date = _matchDetails?['fecha']?.toString() ?? 'Fecha no especificada';
-    final String format = _matchDetails?['formato'] ?? 'Formato no especificado';
-    final String creatorName = _matchDetails?['profiles']?['username'] ?? 
-                              _matchDetails?['inviter_name'] ?? 'Organizador desconocido';
+    final matchName = _matchDetails!['nombre'] ?? 'Partido sin nombre';
+    final matchDate = _matchDetails!['fecha'] ?? 'Fecha no especificada';
+    final matchFormat = _matchDetails!['formato'] ?? 'Formato no especificado';
+    final matchLocation = _matchDetails!['ubicacion'] ?? 'Ubicación no especificada';
+    final matchCreator = _matchDetails!['profiles']?['username'] ?? 'Usuario desconocido';
+    final matchDescription = _matchDetails!['descripcion'] ?? 'Sin descripción';
 
     return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Encabezado con icono y título
-            Row(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Encabezado con estilo moderno
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20.0),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.blue.shade700, Colors.blue.shade900],
+              ),
+              borderRadius: BorderRadius.circular(16.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Column(
               children: [
                 Container(
                   padding: const EdgeInsets.all(12.0),
                   decoration: BoxDecoration(
-                    color: Colors.orange.shade600,
-                    borderRadius: BorderRadius.circular(12.0),
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.sports_soccer,
+                    size: 40.0,
                     color: Colors.white,
-                    size: 32.0,
                   ),
                 ),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Has sido invitado a',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      Text(
-                        matchName,
-                        style: const TextStyle(
-                          fontSize: 24.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                const SizedBox(height: 16.0),
+                Text(
+                  'Invitación a Partido',
+                  style: const TextStyle(
+                    fontSize: 22.0,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 8.0),
+                Text(
+                  'Has sido invitado a unirte a este partido',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14.0,
+                    color: Colors.white.withOpacity(0.9),
                   ),
                 ),
               ],
             ),
-            
-            const SizedBox(height: 32.0),
-            
-            // Detalles del partido
-            _buildDetailItem(
-              icon: Icons.person,
-              title: 'Organizador',
-              value: creatorName,
+          ),
+          
+          const SizedBox(height: 24.0),
+          
+          // Nombre del partido con estilo destacado
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 20.0),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12.0),
+              border: Border.all(color: Colors.grey.shade300),
             ),
-            
-            _buildDetailItem(
-              icon: Icons.location_on,
-              title: 'Nombre',
-              value: location,
+            child: Text(
+              matchName,
+              style: const TextStyle(
+                fontSize: 22.0,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
             ),
-            
-            _buildDetailItem(
-              icon: Icons.calendar_today,
-              title: 'Fecha',
-              value: date,
+          ),
+          
+          const SizedBox(height: 24.0),
+          
+          // Detalles del partido con tarjetas modernas
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            
-            _buildDetailItem(
-              icon: Icons.sports_soccer,
-              title: 'Formato',
-              value: format,
+            child: Column(
+              children: [
+                _buildDetailItem(
+                  icon: Icons.calendar_today,
+                  title: 'Fecha y Hora',
+                  value: matchDate,
+                  showDivider: true,
+                ),
+                
+                _buildDetailItem(
+                  icon: Icons.sports_soccer,
+                  title: 'Formato',
+                  value: matchFormat,
+                  showDivider: true,
+                ),
+                
+                _buildDetailItem(
+                  icon: Icons.location_on,
+                  title: 'Ubicación',
+                  value: matchLocation,
+                  showDivider: true,
+                ),
+                
+                _buildDetailItem(
+                  icon: Icons.person,
+                  title: 'Organizador',
+                  value: matchCreator,
+                  showDivider: matchDescription.isNotEmpty,
+                ),
+                
+                if (matchDescription.isNotEmpty)
+                  _buildDetailItem(
+                    icon: Icons.description,
+                    title: 'Descripción',
+                    value: matchDescription,
+                    showDivider: false,
+                  ),
+              ],
             ),
-            
-            const SizedBox(height: 40.0),
-            
-            // Botones de acción
-            if (!_hasJoined)
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _isJoining ? null : _joinMatch,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16.0),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
+          ),
+          
+          const SizedBox(height: 32.0),
+          
+          // Botones de acción con estilo moderno
+          if (!_hasJoined)
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _isJoining ? null : _joinMatch,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green.shade600,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0),
                       ),
-                      child: _isJoining
-                          ? const SizedBox(
-                              width: 24.0,
-                              height: 24.0,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2.0,
-                              ),
-                            )
-                          : const Text(
-                              'UNIRME AL PARTIDO',
-                              style: TextStyle(
-                                fontSize: 16.0,
-                                fontWeight: FontWeight.bold,
-                              ),
+                    ),
+                    child: _isJoining
+                        ? const SizedBox(
+                            width: 24.0,
+                            height: 24.0,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.0,
                             ),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(Icons.check_circle_outline),
+                              SizedBox(width: 8),
+                              Text(
+                                'UNIRME',
+                                style: TextStyle(
+                                  fontSize: 16.0,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                ),
+                const SizedBox(width: 16.0),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _isJoining ? null : _declineInvitation,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade500,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.close),
+                        SizedBox(width: 8),
+                        Text(
+                          'RECHAZAR',
+                          style: TextStyle(
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 16.0),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _isJoining ? null : _declineInvitation,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade400,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16.0),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                      ),
-                      child: const Text(
-                        'RECHAZAR',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                ),
+              ]
+            )
+          else
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue.shade800,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 56.0),
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.check_circle),
+                  SizedBox(width: 8),
+                  Text(
+                    'YA TE HAS UNIDO',
+                    style: TextStyle(
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
-              )
-            else
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.shade800,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 56.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                ),
-                child: const Text(
-                  'YA TE HAS UNIDO A ESTE PARTIDO',
-                  style: TextStyle(
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -495,42 +581,63 @@ class _JoinMatchScreenState extends ConsumerState<JoinMatchScreen> {
     required IconData icon,
     required String title,
     required String value,
+    bool showDivider = false,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            icon,
-            color: Colors.blue.shade800,
-            size: 24.0,
-          ),
-          const SizedBox(width: 16.0),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14.0,
-                    color: Colors.grey.shade600,
-                  ),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
-                const SizedBox(height: 4.0),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: Icon(
+                  icon,
+                  color: Colors.blue.shade800,
+                  size: 22.0,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 16.0),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 14.0,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4.0),
+                    Text(
+                      value,
+                      style: const TextStyle(
+                        fontSize: 16.0,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        if (showDivider)
+          Divider(
+            color: Colors.grey.shade200,
+            height: 1,
+            thickness: 1,
+            indent: 16,
+            endIndent: 16,
+          ),
+      ],
     );
   }
 }

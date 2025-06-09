@@ -200,15 +200,18 @@ class OneSignalService {
       'from_notification': true
     };
     
-    // Usar el navigatorKey para navegar a la pantalla de unirse al partido
-    // Esto funciona incluso si la app está en segundo plano o cerrada
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Retrasar la navegación para asegurar que la app esté completamente inicializada
+    // cuando se abre desde una notificación con la app cerrada
+    Future.delayed(const Duration(milliseconds: 1000), () {
       if (navigatorKey.currentState != null) {
-        // Cerrar cualquier diálogo que pueda estar abierto
+        debugPrint('Navegando a JoinMatchScreen después del retraso de inicialización');
+        
+        // Asegurarse de que estamos en la pantalla principal antes de navegar
         navigatorKey.currentState!.popUntil((route) => route.isFirst);
         
-        // Navegar a la pantalla de unirse al partido
-        navigatorKey.currentState!.push(
+        // Usar pushReplacement en lugar de push para evitar problemas de navegación
+        // cuando la app se abre desde una notificación
+        navigatorKey.currentState!.pushReplacement(
           MaterialPageRoute(
             builder: (context) => JoinMatchScreen(
               matchId: matchId,
@@ -220,7 +223,24 @@ class OneSignalService {
         
         debugPrint('Navegación iniciada a JoinMatchScreen con ID: $matchId');
       } else {
-        debugPrint('No se pudo navegar: navigatorKey.currentState es null');
+        // Si todavía no tenemos acceso al navigatorKey, intentar de nuevo después de un tiempo
+        debugPrint('navigatorKey.currentState es null, intentando de nuevo en 1 segundo...');
+        Future.delayed(const Duration(seconds: 1), () {
+          if (navigatorKey.currentState != null) {
+            navigatorKey.currentState!.pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => JoinMatchScreen(
+                  matchId: matchId,
+                  matchData: matchData,
+                  fromNotification: true,
+                ),
+              ),
+            );
+            debugPrint('Segundo intento de navegación exitoso');
+          } else {
+            debugPrint('No se pudo navegar después de múltiples intentos');
+          }
+        });
       }
     });
   }
