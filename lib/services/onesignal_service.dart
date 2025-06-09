@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:statsfoota/features/notifications/join_match_screen.dart';
 
 class OneSignalService {
   static final String appId = '18b75b21-dfe8-43cf-974e-9a79eac0f01b';
@@ -22,27 +23,26 @@ class OneSignalService {
       // Request permission to send notifications
       await OneSignal.Notifications.requestPermission(true);
       
-      // Add notification will display in foreground handler
-      OneSignal.Notifications.addForegroundWillDisplayListener(
-        (OSNotificationWillDisplayEvent event) {
-          // Will be called whenever a notification is received in foreground
-          debugPrint('Notification received in foreground: ${event.notification.title}');
-          
-          // Complete with null means show the notification
-          event.notification.display();
-        }
-      );
-      
       // Add notification click listener
       OneSignal.Notifications.addClickListener((OSNotificationClickEvent event) {
-        // Will be called whenever a notification is opened/button pressed
-        debugPrint('Notification clicked: ${event.notification.title}');
-        
-        // Handle notification data
         final additionalData = event.notification.additionalData;
         if (additionalData != null) {
-          debugPrint('Additional data: $additionalData');
-          // Handle navigation or other actions based on data
+          debugPrint('Notificación pulsada con datos: $additionalData');
+          
+          // Verificar si es una invitación a partido
+          if (additionalData.containsKey('type') && 
+              additionalData['type'] == 'match_invitation' &&
+              additionalData.containsKey('match_id')) {
+            // Extraer el ID del partido
+            final matchId = int.tryParse(additionalData['match_id'].toString());
+            if (matchId != null) {
+              debugPrint('Navigating to match details for match ID: $matchId');
+              
+              // Use a static method to handle navigation
+              // This will be called regardless of whether the app is in foreground, background or closed
+              _handleMatchInvitationNavigation(matchId, additionalData);
+            }
+          }
         }
       });
       
@@ -170,6 +170,60 @@ class OneSignalService {
   
   // API Key para OneSignal REST API
   static const String _restApiKey = 'os_v2_app_dc3vwio75bb47f2otj46vqhqdof6zpfdzc3earnlyhgiowm744x4xicqlyvvfestpgn2cw4rv6rix5agp6uxwwm2itnxc7rf2fjke6y';
+  
+  // Clave global para acceder al navegador desde cualquier parte de la app
+  static GlobalKey<NavigatorState>? _navigatorKey;
+  
+  // Getter para obtener la clave de navegación
+  static GlobalKey<NavigatorState> get navigatorKey {
+    _navigatorKey ??= GlobalKey<NavigatorState>();
+    return _navigatorKey!;
+  }
+  
+  // Setter para establecer la clave de navegación desde fuera
+  static set navigatorKey(GlobalKey<NavigatorState> key) {
+    _navigatorKey = key;
+  }
+  
+  // Método para manejar la navegación cuando se pulsa una notificación de invitación a partido
+  static void _handleMatchInvitationNavigation(int matchId, Map<String, dynamic> data) {
+    debugPrint('Preparando navegación a pantalla de unirse al partido con ID: $matchId');
+    
+    // Construir la ruta con los parámetros necesarios usando los campos que existen en la tabla matches
+    final Map<String, dynamic> matchData = {
+      'match_id': matchId,
+      'match_name': data['match_name'] ?? 'Partido de fútbol',
+      'inviter_name': data['inviter_name'] ?? 'Un amigo',
+      'nombre': data['nombre'] ?? '',
+      'fecha': data['fecha'] ?? '',
+      'formato': data['formato'] ?? '',
+      'from_notification': true
+    };
+    
+    // Usar el navigatorKey para navegar a la pantalla de unirse al partido
+    // Esto funciona incluso si la app está en segundo plano o cerrada
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (navigatorKey.currentState != null) {
+        // Cerrar cualquier diálogo que pueda estar abierto
+        navigatorKey.currentState!.popUntil((route) => route.isFirst);
+        
+        // Navegar a la pantalla de unirse al partido
+        navigatorKey.currentState!.push(
+          MaterialPageRoute(
+            builder: (context) => JoinMatchScreen(
+              matchId: matchId,
+              matchData: matchData,
+              fromNotification: true,
+            ),
+          ),
+        );
+        
+        debugPrint('Navegación iniciada a JoinMatchScreen con ID: $matchId');
+      } else {
+        debugPrint('No se pudo navegar: navigatorKey.currentState es null');
+      }
+    });
+  }
   
   // Nota: La autenticación se realiza directamente en el método sendTestNotification
   

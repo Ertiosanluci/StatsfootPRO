@@ -182,6 +182,18 @@ debugPrint('\n');
       // Obtener el player ID del amigo invitado
       final playerIdToSend = await OneSignalService.getPlayerIdByUserId(friendId);
       
+      // Obtener información adicional del partido para incluir en la notificación
+      final matchDetails = await _supabase
+          .from('matches')
+          .select('nombre, fecha, formato')
+          .eq('id', matchId)
+          .single();
+      
+      // Usar los campos que existen en la tabla matches
+      final String nombre = matchDetails['nombre'] ?? 'Partido sin nombre';
+      final String fecha = matchDetails['fecha']?.toString() ?? '';
+      final String formato = matchDetails['formato'] ?? '';
+      
       if (playerIdToSend != null && playerIdToSend.isNotEmpty) {
         // Preparar los datos adicionales para la notificación
         final additionalData = {
@@ -189,26 +201,30 @@ debugPrint('\n');
           'match_id': matchId,
           'inviter_id': _supabase.auth.currentUser!.id,
           'inviter_name': inviterName,
-          'match_name': matchName
+          'match_name': matchName,
+          'nombre': nombre,
+          'fecha': fecha,
+          'formato': formato
         };
         
         debugPrint('Enviando notificación a $friendName con player_id: $playerIdToSend');
         
         try {
-          // Enviar notificación usando OneSignal
-          await OneSignalService.sendTestNotification(
-            title: 'Invitación a partido',
-            content: '$inviterName te ha invitado al partido $matchName',
-            additionalData: additionalData,
-            playerIds: playerIdToSend, // Usar el player_id del destinatario
-          );
-          
-          notificationSent = true;
-          debugPrint('Notificación enviada exitosamente a $friendName');
+          debugPrint('Enviando notificación a $friendName con player_id: $playerIdToSend');
+        
+        await OneSignalService.sendTestNotification(
+          title: 'Invitación a partido de fútbol',
+          content: 'Has sido invitado a un partido de fútbol local. Pulsa para unirte y ver los detalles del evento.',
+          additionalData: additionalData,
+          playerIds: playerIdToSend, // Usar el player_id del destinatario
+        );
+        
+        notificationSent = true;
+        debugPrint('Notificación enviada exitosamente a $friendName');
         } catch (notifError) {
           errorMessage = 'Error al enviar la notificación: $notifError';
           debugPrint(errorMessage);
-        }
+        }  
       } else {
         errorMessage = 'No se encontró ID de OneSignal para $friendName';
         debugPrint('$errorMessage. Verificando tabla user_push_tokens...');

@@ -585,8 +585,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    // Usar el mismo navigatorKey para OneSignal y para la navegación interna
+    OneSignalService.navigatorKey = _navigatorKey;
+    
     return MaterialApp(
-      navigatorKey: _navigatorKey, // Añadido para manejar la navegación desde fuera de un BuildContext
+      navigatorKey: _navigatorKey, // Navegador global para toda la app
       // Configuración de localización
       locale: const Locale('es', 'ES'),
       localizationsDelegates: [
