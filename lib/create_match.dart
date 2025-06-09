@@ -267,8 +267,14 @@ ${_isPublic ? '🌐 Partido Público' : '🔒 Partido Privado'}
   }  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Usar un color de fondo azul para evitar franjas blancas
+      backgroundColor: Colors.blue.shade200,
+      // El body ahora está dentro de un SafeArea y Container con decoración
       body: SafeArea(
         child: Container(
+          // Asegurar que el contenedor ocupe toda la pantalla
+          height: double.infinity,
+          width: double.infinity,
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [Colors.blue.shade100, Colors.blue.shade200],
@@ -276,14 +282,18 @@ ${_isPublic ? '🌐 Partido Público' : '🔒 Partido Privado'}
               end: Alignment.bottomCenter,
             ),
           ),
-          child: _matchCreated ? _buildMatchCreatedContent() : _buildCreateMatchContent(),
+          // Envolver el contenido en un SingleChildScrollView para evitar desbordamientos
+          child: SingleChildScrollView(
+            physics: AlwaysScrollableScrollPhysics(),
+            child: _matchCreated ? _buildMatchCreatedContent() : _buildCreateMatchContent(),
+          ),
         ),
       ),
     );
   }
   
   Widget _buildCreateMatchContent() {
-    return SingleChildScrollView(
+    return Padding(
       padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -597,7 +607,7 @@ ${_isPublic ? '🌐 Partido Público' : '🔒 Partido Privado'}
   }
 
   Widget _buildMatchCreatedContent() {
-    return SingleChildScrollView(
+    return Padding(
       padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

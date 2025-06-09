@@ -23,13 +23,19 @@ class _NotificationsDrawerState extends ConsumerState<NotificationsDrawer> {
     super.initState();
     // Load both friend requests and notifications when drawer opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(notificationControllerProvider.notifier).loadNotifications();
+      // Load notifications only if they haven't been loaded already
+      final notificationState = ref.read(notificationControllerProvider);
+      if (notificationState.notifications.isEmpty && !notificationState.isLoading) {
+        ref.read(notificationControllerProvider.notifier).loadNotifications();
+      }
     });
 
-    // Set up a timer to periodically refresh notifications
-    _timer = Timer.periodic(Duration(minutes: 5), (timer) {
-      ref.read(notificationControllerProvider.notifier).loadNotifications();
-    });
+    // Automatic refresh timer disabled as requested
+    // _timer = Timer.periodic(Duration(minutes: 10), (timer) {
+    //   if (mounted) {
+    //     ref.read(notificationControllerProvider.notifier).loadNotifications();
+    //   }
+    // });
   }
 
   @override
@@ -104,25 +110,74 @@ class _NotificationsDrawerState extends ConsumerState<NotificationsDrawer> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(
-                Icons.notifications,
-                color: Colors.white,
-                size: 28,
-              ),
-              SizedBox(width: 10),
-              Text(
-                'Notificaciones',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+              // Left side with title
+              Flexible(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.notifications,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                    SizedBox(width: 10),
+                    Flexible(
+                      child: Text(
+                        'Notificaciones',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              Spacer(),
-              IconButton(
-                icon: Icon(Icons.close, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
+              
+              // Right side with actions
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Mark all as read button
+                  Container(
+                    height: 32,
+                    margin: EdgeInsets.only(right: 8),
+                    child: TextButton.icon(
+                      onPressed: () {
+                        ref.read(notificationControllerProvider.notifier).markAllAsRead();
+                        // SnackBar removed as requested
+                      },
+                      icon: Icon(Icons.done_all, color: Colors.white, size: 14),
+                      label: Text(
+                        'Marcar leídas',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                        minimumSize: Size(0, 0),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Close button
+                  IconButton(
+                    constraints: BoxConstraints(),
+                    padding: EdgeInsets.all(8),
+                    icon: Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
               ),
             ],
           ),
@@ -359,13 +414,17 @@ class _NotificationsDrawerState extends ConsumerState<NotificationsDrawer> {
                       _buildActionButton(
                         label: 'Cancelar solicitud',
                         color: Colors.orange,
-                        onPressed: () {
+                        onPressed: () async {
                           final friendController = ref.read(friendControllerProvider.notifier);
-                          friendController.cancelFriendRequest(request.id);
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Solicitud cancelada'))
-                          );
+                          await friendController.cancelFriendRequest(request.id);
+                          
+                          // Actualizar la UI inmediatamente
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Solicitud cancelada'))
+                            );
+                          }
                         },
                         isFullWidth: true,
                       ),

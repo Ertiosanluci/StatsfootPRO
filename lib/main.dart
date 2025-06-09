@@ -12,15 +12,11 @@ import 'package:statsfoota/profile_edit_screen.dart'; // Importamos la pantalla 
 import 'package:statsfoota/password_reset_request_screen.dart'; // Nueva pantalla para solicitar reset
 import 'package:statsfoota/password_reset_screen.dart'; // Nueva pantalla para establecer nueva contraseña
 import 'services/onesignal_service.dart'; // Servicio de OneSignal
-import 'screens/notification_test_screen.dart'; // Pantalla de prueba de notificaciones
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:app_links/app_links.dart'; // Cambiado de uni_links a app_links
 import 'dart:async';
-import 'dart:math' as Math; // Para Math.min
-
 // Importaciones del sistema de amigos
-import 'package:statsfoota/features/friends/friends_module.dart';
 import 'package:statsfoota/features/friends/presentation/screens/friends_main_screen.dart';
 import 'package:statsfoota/features/friends/presentation/screens/friend_requests_screen.dart';
 import 'package:statsfoota/features/friends/presentation/screens/people_screen.dart';
@@ -619,7 +615,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/friends': (context) => const FriendsMainScreen(),
         '/people': (context) => const PeopleScreen(),
         '/friend_requests': (context) => const FriendRequestsScreen(),
-        '/notification_test': (context) => const NotificationTestScreen(),
       },
       debugShowCheckedModeBanner: false,
       title: 'StatsFut',

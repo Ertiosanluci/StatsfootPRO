@@ -9,6 +9,7 @@ import 'package:statsfoota/screens/my_statistics_screen.dart'; // Importación p
 import 'package:statsfoota/features/friends/friends_module.dart';
 import 'package:statsfoota/features/friends/presentation/controllers/friend_controller.dart';
 import 'package:statsfoota/features/notifications/notifications_drawer.dart'; // Importación para el drawer de notificaciones
+import 'package:statsfoota/features/notifications/presentation/controllers/notification_controller.dart'; // Para el contador de notificaciones
 import 'package:statsfoota/features/friends/presentation/screens/friends_main_screen.dart'; // Para la pantalla de amigos
 import 'package:statsfoota/create_match.dart'; // Para la pantalla de crear partido
 import 'package:statsfoota/match_list.dart'; // Para la pantalla de ver partidos
@@ -95,16 +96,30 @@ class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTick
             letterSpacing: 0.5,
           ),
         ),
-        leading: IconButton(
-          icon: Badge(
-            label: _getBadgeLabel(),
-            isLabelVisible: _hasPendingFriendRequests(),
-            child: Icon(Icons.menu, color: Colors.white),
-          ),
-          onPressed: () {
-            _showNotificationsDrawer();
-          },
-        ),
+        leading: Consumer(builder: (context, ref, child) {
+          final friendState = ref.watch(friendControllerProvider);
+          final notificationState = ref.watch(notificationControllerProvider);
+          
+          // Calculate total unread items
+          final int pendingFriendRequests = friendState.pendingReceivedRequests.length;
+          final int unreadNotifications = notificationState.unreadCount;
+          final int totalUnread = pendingFriendRequests + unreadNotifications;
+          
+          return IconButton(
+            icon: Badge(
+              label: Text(
+                totalUnread > 99 ? '99+' : totalUnread.toString(),
+                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+              ),
+              isLabelVisible: totalUnread > 0,
+              backgroundColor: Colors.red,
+              child: Icon(Icons.notifications, color: Colors.white),
+            ),
+            onPressed: () {
+              _showNotificationsDrawer();
+            },
+          );
+        }),
         automaticallyImplyLeading: false,
         actions: [
           // Botón de perfil con imagen de usuario
@@ -206,38 +221,43 @@ class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTick
             label: 'Crear partido',
           ),
           BottomNavigationBarItem(
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(Icons.search), // Cambiado de people_alt a search (lupa)
-                if (_hasPendingFriendRequests())
-                  Positioned(
-                    top: -5,
-                    right: -5,
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.blue.shade800, width: 1.5),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        ref.watch(friendControllerProvider).pendingReceivedRequests.length.toString(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
+            icon: Consumer(builder: (context, ref, child) {
+              final friendState = ref.watch(friendControllerProvider);
+              final hasPendingRequests = friendState.pendingReceivedRequests.isNotEmpty;
+              
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(Icons.search), // Cambiado de people_alt a search (lupa)
+                  if (hasPendingRequests)
+                    Positioned(
+                      top: -5,
+                      right: -5,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.blue.shade800, width: 1.5),
                         ),
-                        textAlign: TextAlign.center,
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          ref.watch(friendControllerProvider).pendingReceivedRequests.length.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            ),
+                ],
+              );
+            }),
             label: 'Personas',
           ),
         ],
@@ -431,22 +451,6 @@ class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTick
     );
   }
   
-  // Método para verificar si hay solicitudes de amistad pendientes
-  bool _hasPendingFriendRequests() {
-    final state = ref.watch(friendControllerProvider);
-    return state.pendingReceivedRequests.isNotEmpty;
-  }
-  
-  // Método para obtener el número de solicitudes pendientes
-  Widget _getBadgeLabel() {
-    final state = ref.watch(friendControllerProvider);
-    final count = state.pendingReceivedRequests.length;
-    return Text(
-      count.toString(),
-      style: TextStyle(color: Colors.white, fontSize: 10),
-    );
-  }
-  
   // Método para mostrar el drawer de notificaciones
   void _showNotificationsDrawer() {
     // Abre el drawer de notificaciones personalizado desde la izquierda
@@ -633,22 +637,6 @@ class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTick
                 context,
                 MaterialPageRoute(builder: (context) => MyStatisticsScreen()),
               );
-            });
-          },
-        ),
-        PopupMenuItem<String>(
-          value: 'notification_test',
-          child: Row(
-            children: [
-              Icon(Icons.notifications, color: Colors.orange.shade600),
-              SizedBox(width: 10),
-              Text('Test de Notificaciones'),
-            ],
-          ),
-          onTap: () {
-            // Navegar a la pantalla de prueba de notificaciones después de que el menú se cierre
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.pushNamed(context, '/notification_test');
             });
           },
         ),
