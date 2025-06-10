@@ -662,19 +662,6 @@ Hora: $formattedTime
               // Acción para notificaciones
             },
           ),
-          bottom: TabBar(
-            controller: _tabController,
-            indicatorColor: Colors.white,
-            indicatorWeight: 3,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white.withOpacity(0.7),
-            labelStyle: TextStyle(fontWeight: FontWeight.bold),
-            tabs: [
-              Tab(text: 'Mis Partidos'),
-              Tab(text: 'Amigos'),
-              Tab(text: 'Públicos'),
-            ],
-          ),
         ),  
       body: Container(
         decoration: BoxDecoration(
@@ -974,7 +961,7 @@ Hora: $formattedTime
     final bool isPublic = match['es_publico'] ?? false;
     final String formattedDate = DateFormat('dd/MM/yyyy').format(DateTime.parse(match['fecha']));
     final String formattedTime = DateFormat('HH:mm').format(DateTime.parse(match['fecha']));
-    final bool isCreator = match['creador_id'] == supabase.auth.currentUser?.id;
+    // Use isOrganizer instead of a separate isCreator variable
     
     // Función para navegar a los detalles del partido
     void navigateToMatchDetails() {
@@ -1130,192 +1117,130 @@ Hora: $formattedTime
               ),
             ),
             
-           // Content
-Container(
-  color: Colors.white,
-  padding: EdgeInsets.all(16),
-  child: Column(
-    children: [
-      // Organizer info
-      if (match['profiles'] != null)
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-          decoration: BoxDecoration(
-            color: Colors.blue.shade50,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.blue.shade100),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    _buildInfoBadge(Icons.calendar_today, formattedDate),
-                    _buildInfoBadge(Icons.access_time, formattedTime),
+            // Content
+            Container(
+              color: Colors.white,
+              padding: EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  // Organizer info
+                  if (match['profiles'] != null)
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                       decoration: BoxDecoration(
-                        color: isPublic
-                            ? Colors.green.shade600.withOpacity(0.8)
-                            : Colors.orange.shade600.withOpacity(0.8),
-                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.blue.shade100),
                       ),
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            isPublic ? Icons.public : Icons.lock,
-                            color: Colors.white,
-                            size: 12,
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundImage: match['profiles']['avatar_url'] != null
+                                ? NetworkImage(match['profiles']['avatar_url'])
+                                : null,
+                            child: match['profiles']['avatar_url'] == null
+                                ? Icon(Icons.person, size: 16)
+                                : null,
                           ),
-                          SizedBox(width: 2),
-                          Text(
-                            isPublic ? 'Público' : 'Privado',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  isOrganizer ? 'Organizado por ti' : 'Organizado por',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.blue.shade800,
+                                  ),
+                                ),
+                                if (!isOrganizer)
+                                  Text(
+                                    match['profiles']['username'] ?? 'Desconocido',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue.shade800,
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
+                          // Mostrar insignia si el usuario participa pero no organiza
+                          if (!isOrganizer && match['is_participant'] == true)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade100,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.green.shade300, width: 1),
+                              ),
+                              child: Text(
+                                'Participas',
+                                style: TextStyle(
+                                  color: Colors.green.shade800,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-    ],
-  ),
-),
-
-          
-          // Content
-          Container(
-            color: Colors.white,
-            padding: EdgeInsets.all(16),
-            child: Column(
-              children: [
-                // Organizer info
-                if (match['profiles'] != null)
+                  // Mostrar número de participantes con dropdown
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    margin: EdgeInsets.symmetric(vertical: 12),
+                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
+                      color: Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.blue.shade100),
+                      border: Border.all(color: Colors.grey.shade300),
                     ),
-                    child: Row(
+                    child: Column(
                       children: [
-                        CircleAvatar(
-                          radius: 16,
-                          backgroundImage: match['profiles']['avatar_url'] != null
-                              ? NetworkImage(match['profiles']['avatar_url'])
-                              : null,
-                          child: match['profiles']['avatar_url'] == null
-                              ? Icon(Icons.person, size: 16)
-                              : null,
-                        ),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isOrganizer ? 'Organizado por ti' : 'Organizado por',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.blue.shade800,
-                                ),
-                              ),
-                              if (!isOrganizer)
-                                Text(
-                                  match['profiles']['username'] ?? 'Desconocido',
+                        Row(
+                          children: [
+                            Icon(Icons.group, color: Colors.blue.shade700, size: 20),
+                            SizedBox(width: 8),
+                            FutureBuilder<int>(
+                              future: _getMatchParticipantsCount(match['id']),
+                              builder: (context, snapshot) {
+                                final int count = snapshot.data ?? 0;
+                                final String formato = match['formato'] ?? '?v?';
+                                final int totalPlayers = int.parse(formato.split('v')[0]) * 2;
+                                
+                                return Text(
+                                  '$count/$totalPlayers jugadores unidos',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.blue.shade800,
                                   ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        // Mostrar insignia si el usuario participa pero no organiza
-                        if (!isOrganizer && match['is_participant'] == true)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade100,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.green.shade300, width: 1),
+                                );
+                              }
                             ),
-                            child: Text(
-                              'Participas',
-                              style: TextStyle(
-                                color: Colors.green.shade800,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
+                            Spacer(),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.shade100,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: Colors.orange.shade300),
                               ),
-                            ),
-                          ),
-                      ],
-                    ),                  ),
-                  // Mostrar número de participantes con dropdown
-                Container(
-                  margin: EdgeInsets.symmetric(vertical: 12),
-                  padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.group, color: Colors.blue.shade700, size: 20),
-                          SizedBox(width: 8),
-                          FutureBuilder<int>(
-                            future: _getMatchParticipantsCount(match['id']),
-                            builder: (context, snapshot) {
-                              final int count = snapshot.data ?? 0;
-                              final String formato = match['formato'] ?? '?v?';
-                              final int totalPlayers = int.parse(formato.split('v')[0]) * 2;
-                              
-                              return Text(
-                                '$count/$totalPlayers jugadores unidos',
+                              child: Text(
+                                match['formato'],
                                 style: TextStyle(
+                                  fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.blue.shade800,
+                                  color: Colors.orange.shade800,
                                 ),
-                              );
-                            }
-                          ),
-                          Spacer(),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.shade100,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.orange.shade300),
-                            ),
-                            child: Text(
-                              match['formato'],
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.orange.shade800,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8),                      FutureBuilder<List<Map<String, dynamic>>>(
-                        future: _getMatchParticipants(match['id']),
-                        builder: (context, snapshot) {
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        FutureBuilder<List<Map<String, dynamic>>>(
+                          future: _getMatchParticipants(match['id']),
+                          builder: (context, snapshot) {
                           if (snapshot.connectionState == ConnectionState.waiting) {
                             return Padding(
                               padding: const EdgeInsets.all(8.0),
