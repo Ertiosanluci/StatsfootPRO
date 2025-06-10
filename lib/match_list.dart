@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statsfoota/widgets/invite_friends_dialog.dart';
 import 'package:statsfoota/features/notifications/presentation/controllers/notification_controller.dart';
 import 'create_match.dart';
@@ -12,6 +12,10 @@ import 'team_management_screen.dart';
 import 'utils/match_operations.dart';
 
 class MatchListScreen extends ConsumerStatefulWidget {
+  final bool showAppBar;
+  
+  const MatchListScreen({this.showAppBar = true, Key? key}) : super(key: key);
+  
   @override
   _MatchListScreenState createState() => _MatchListScreenState();
 }
@@ -614,17 +618,16 @@ Hora: $formattedTime
   }
   @override
   Widget build(BuildContext context) {
-    // Obtener el estado de las notificaciones usando Riverpod
     final notificationState = ref.watch(notificationControllerProvider);
     final unreadCount = notificationState.unreadCount;
     
     return Scaffold(
-      appBar: _isSelectionMode
+      appBar: widget.showAppBar ? (_isSelectionMode
       ? AppBar(
           backgroundColor: Colors.red.shade700,
           title: Text('${_selectedMatches.length} seleccionados'),
           leading: IconButton(
-            icon: Icon(Icons.close),
+            icon: const Icon(Icons.close),
             onPressed: () {
               setState(() {
                 _isSelectionMode = false;
@@ -634,13 +637,13 @@ Hora: $formattedTime
           ),
           actions: [
             IconButton(
-              icon: Icon(Icons.delete),
+              icon: const Icon(Icons.delete),
               onPressed: _selectedMatches.isNotEmpty ? _deleteSelectedMatches : null,
             ),
           ],
         )
       : AppBar(
-          title: Text(
+          title: const Text(
             'StatsFut',
             style: TextStyle(
               color: Colors.white,
@@ -671,7 +674,7 @@ Hora: $formattedTime
             alignment: Alignment.center,
             children: [
               IconButton(
-                icon: Icon(Icons.notifications, color: Colors.white),
+                icon: const Icon(Icons.notifications, color: Colors.white),
                 onPressed: () {
                   // Acción para notificaciones
                   // Recargar notificaciones al presionar
@@ -683,18 +686,18 @@ Hora: $formattedTime
                   top: 8,
                   right: 8,
                   child: Container(
-                    padding: EdgeInsets.all(2),
+                    padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
                       color: Colors.red,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    constraints: BoxConstraints(
+                    constraints: const BoxConstraints(
                       minWidth: 16,
                       minHeight: 16,
                     ),
                     child: Text(
                       '$unreadCount',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -705,7 +708,7 @@ Hora: $formattedTime
                 ),
             ],
           ),
-        ),
+        )) : null,
       body: SafeArea(
         child: Container(
           decoration: BoxDecoration(

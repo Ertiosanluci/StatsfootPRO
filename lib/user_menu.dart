@@ -71,7 +71,7 @@ class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTick
     // Inicializar las pantallas
     _screens = [
       _buildMainScreen(), // Pantalla principal
-      MatchListScreen(), // Pantalla de ver partidos
+      const MatchListScreen(showAppBar: false), // Pantalla de ver partidos sin AppBar duplicado
       CreateMatchScreen(), // Pantalla de crear partido
       FriendsMainScreen(), // Pantalla de personas/amigos
     ];
