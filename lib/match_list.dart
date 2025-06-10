@@ -628,7 +628,53 @@ Hora: $formattedTime
             ),
           ],
         )
-      : null,
+      : AppBar(
+          title: Text(
+            'StatsFut',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
+            ),
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.blue.shade800,
+          automaticallyImplyLeading: false,
+          actions: [
+            IconButton(
+              icon: CircleAvatar(
+                radius: 16,
+                backgroundColor: Colors.white,
+                child: Icon(
+                  Icons.person,
+                  color: Colors.blue.shade800,
+                  size: 20,
+                ),
+              ),
+              onPressed: () {
+                // Acción para perfil de usuario
+              },
+            ),
+          ],
+          leading: IconButton(
+            icon: Icon(Icons.notifications, color: Colors.white),
+            onPressed: () {
+              // Acción para notificaciones
+            },
+          ),
+          bottom: TabBar(
+            controller: _tabController,
+            indicatorColor: Colors.white,
+            indicatorWeight: 3,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            tabs: [
+              Tab(text: 'Mis Partidos'),
+              Tab(text: 'Amigos'),
+              Tab(text: 'Públicos'),
+            ],
+          ),
+        ),
       body: SafeArea(
         child: Container(
           decoration: BoxDecoration(
@@ -644,22 +690,6 @@ Hora: $formattedTime
                   ? _buildErrorMessage()
                   : Column(
                       children: [
-                        // TabBar para las pestañas principales
-                        Container(
-                          color: Colors.blue.shade800,
-                          child: TabBar(
-                            controller: _tabController,
-                            indicatorColor: Colors.white,
-                            indicatorWeight: 3,
-                            labelColor: Colors.white,
-                            unselectedLabelColor: Colors.white70,
-                            tabs: [
-                              Tab(text: 'Mis Partidos'),
-                              Tab(text: 'Amigos'),
-                              Tab(text: 'Públicos'),
-                            ],
-                          ),
-                        ),
                         // Filtro de tiempo (Próximos/Pasados/Todos)
                         _buildTimeFilterRow(),
                         // Lista de partidos
