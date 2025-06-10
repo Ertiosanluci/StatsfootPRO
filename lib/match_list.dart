@@ -608,27 +608,27 @@ Hora: $formattedTime
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-    appBar: _isSelectionMode
-    ? AppBar(
-        backgroundColor: Colors.red.shade700,
-        title: Text('${_selectedMatches.length} seleccionados'),
-        leading: IconButton(
-          icon: Icon(Icons.close),
-          onPressed: () {
-            setState(() {
-              _isSelectionMode = false;
-              _selectedMatches.clear();
-            });
-          },
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.delete),
-            onPressed: _selectedMatches.isNotEmpty ? _deleteSelectedMatches : null,
+      appBar: _isSelectionMode
+      ? AppBar(
+          backgroundColor: Colors.red.shade700,
+          title: Text('${_selectedMatches.length} seleccionados'),
+          leading: IconButton(
+            icon: Icon(Icons.close),
+            onPressed: () {
+              setState(() {
+                _isSelectionMode = false;
+                _selectedMatches.clear();
+              });
+            },
           ),
-        ],
-      )
-    : null,  
+          actions: [
+            IconButton(
+              icon: Icon(Icons.delete),
+              onPressed: _selectedMatches.isNotEmpty ? _deleteSelectedMatches : null,
+            ),
+          ],
+        )
+      : null,
       body: SafeArea(
         child: Container(
           decoration: BoxDecoration(
@@ -644,6 +644,22 @@ Hora: $formattedTime
                   ? _buildErrorMessage()
                   : Column(
                       children: [
+                        // TabBar para las pestañas principales
+                        Container(
+                          color: Colors.blue.shade800,
+                          child: TabBar(
+                            controller: _tabController,
+                            indicatorColor: Colors.white,
+                            indicatorWeight: 3,
+                            labelColor: Colors.white,
+                            unselectedLabelColor: Colors.white70,
+                            tabs: [
+                              Tab(text: 'Mis Partidos'),
+                              Tab(text: 'Amigos'),
+                              Tab(text: 'Públicos'),
+                            ],
+                          ),
+                        ),
                         // Filtro de tiempo (Próximos/Pasados/Todos)
                         _buildTimeFilterRow(),
                         // Lista de partidos
