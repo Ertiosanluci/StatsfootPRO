@@ -7,11 +7,12 @@ import 'package:statsfoota/register.dart';
 import 'package:statsfoota/user_menu.dart';
 import 'package:statsfoota/match_list.dart';
 import 'package:statsfoota/ver_Jugadores.dart';
-import 'package:statsfoota/match_join_screen.dart'; // Añadido para manejar los deep links
+import 'package:statsfoota/features/notifications/join_match_screen.dart'; // Añadido para manejar los deep links
 import 'package:statsfoota/profile_edit_screen.dart'; // Importamos la pantalla de edición de perfil
 import 'package:statsfoota/password_reset_request_screen.dart'; // Nueva pantalla para solicitar reset
 import 'package:statsfoota/password_reset_screen.dart'; // Nueva pantalla para establecer nueva contraseña
 import 'services/onesignal_service.dart'; // Servicio de OneSignal
+import 'package:statsfoota/features/notifications/presentation/controllers/notification_controller.dart'; // Controlador de notificaciones
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:app_links/app_links.dart'; // Cambiado de uni_links a app_links
@@ -233,7 +234,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         // Si tiene sesión, navegar directamente a la pantalla de unirse al partido
         navigator.pushAndRemoveUntil(
           MaterialPageRoute(
-            builder: (context) => MatchJoinScreen(matchId: matchId),
+            builder: (context) => JoinMatchScreen(matchId: int.parse(matchId)),
           ),
           (route) => false, // Eliminar todas las rutas del stack
         );
@@ -610,7 +611,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/ver_Jugadores':(context) => PlayerListScreen(),
         '/create_match': (context) => CreateMatchScreen(),
         '/match_list': (context) => MatchListScreen(),
-        '/match_join': (context) => MatchJoinScreen(matchId: ''),
+        '/match_join': (context) => JoinMatchScreen(matchId: 0),
         '/profile_edit': (context) => ProfileEditScreen(), // Añadido para manejar la edición de perfil
         '/password_reset_request': (context) => PasswordResetRequestScreen(), // Ruta para solicitar reset
         '/password_reset': (context) => PasswordResetScreen(), // Ruta para establecer nueva contraseña
@@ -686,6 +687,10 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
     
     if (session != null) {
+      // Precargar las notificaciones antes de navegar para que estén disponibles inmediatamente
+      final container = ProviderContainer();
+      await container.read(notificationControllerProvider.notifier).loadNotifications();
+      
       // Si hay sesión activa, ir al menú de usuario
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => UserMenuScreen(initialTabIndex: 0))

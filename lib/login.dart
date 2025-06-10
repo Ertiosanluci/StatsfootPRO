@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:statsfoota/register.dart';
 import 'package:statsfoota/resetpasswordscreen.dart';
+import 'package:statsfoota/features/notifications/join_match_screen.dart'; // Actualizado path
 import 'package:statsfoota/password_reset_request_screen.dart'; // Nueva pantalla de solicitud de reset
-import 'package:statsfoota/match_join_screen.dart'; // Añadido para la redirección
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
 
@@ -110,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               Navigator.pushReplacement(
                 context, 
                 MaterialPageRoute(
-                  builder: (context) => MatchJoinScreen(matchId: widget.redirectMatchId!),
+                  builder: (context) => JoinMatchScreen(matchId: int.parse(widget.redirectMatchId!)),
                 ),
               );
             } else {

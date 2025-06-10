@@ -5,7 +5,6 @@ import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:statsfoota/widgets/invite_friends_dialog.dart';
 import 'create_match.dart';
-import 'match_join_screen.dart';
 import 'match_details_screen.dart';
 import 'team_management_screen.dart';
 import 'utils/match_operations.dart';
@@ -31,6 +30,10 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
   
   // Variable para el filtro de tiempo
   String _timeFilter = 'Próximos'; // 'Próximos', 'Pasados', 'Todos'
+  
+  // Variables para la selección múltiple
+  bool _isSelectionMode = false;
+  Set<int> _selectedMatches = {}; // Conjunto de IDs de partidos seleccionados
   
   bool _isLoading = true;
   late TabController _tabController;
@@ -476,37 +479,179 @@ Hora: $formattedTime
       _fetchMatches();
     }
   }
+  
+  // Método para eliminar múltiples partidos seleccionados
+  Future<void> _deleteSelectedMatches() async {
+    // Verificar que hay partidos seleccionados
+    if (_selectedMatches.isEmpty) return;
+    
+    // Mostrar diálogo de confirmación
+    bool confirmDelete = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Eliminar partidos'),
+          content: Text(
+            'Estás a punto de eliminar ${_selectedMatches.length} partido${_selectedMatches.length > 1 ? "s" : ""}. '
+            'Esta acción no se puede deshacer.'
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    ) ?? false;
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    // Mostrar diálogo de carga
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                CircularProgressIndicator(),
+                SizedBox(height: 20),
+                Text('Eliminando partidos...'),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    try {
+      final currentUser = supabase.auth.currentUser;
+      if (currentUser == null) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Debes iniciar sesión para eliminar partidos'),
+          backgroundColor: Colors.red,
+        ));
+        return;
+      }
+
+      final List<int> matchIds = _selectedMatches.toList();
+      for (final matchId in matchIds) {
+        final match = _myMatches.firstWhere(
+          (m) => m['id'] == matchId,
+          orElse: () => <String, dynamic>{},
+        );
+
+        if (match.isEmpty) continue;
+        
+        // Solo permitir eliminar partidos que el usuario ha creado
+        if (match['creador_id'] != currentUser.id) continue;
+
+        // Eliminar estadísticas relacionadas con el partido
+        await supabase.from('estadisticas').delete().eq('partido_id', matchId);
+        
+        // Eliminar participantes del partido
+        await supabase.from('match_participants').delete().eq('match_id', matchId);
+        
+        // Eliminar el partido
+        await supabase.from('matches').delete().eq('id', matchId);
+      }
+
+      // Cerrar diálogo y mostrar mensaje de éxito
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            matchIds.length > 1
+                ? '${matchIds.length} partidos eliminados correctamente'
+                : 'Partido eliminado correctamente'
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Salir del modo de selección
+      setState(() {
+        _isSelectionMode = false;
+        _selectedMatches.clear();
+      });
+
+      // Refrescar la lista de partidos
+      _fetchMatches();
+    } catch (e) {
+      // Cerrar diálogo de carga
+      Navigator.of(context).pop();
+
+      // Mostrar mensaje de error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al eliminar los partidos: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        // Eliminamos el contenedor vacío del título
-        toolbarHeight: 0, // Reducimos la altura de la barra a 0 para eliminar el espacio
-        backgroundColor: Colors.blue.shade800,
-        automaticallyImplyLeading: false, // Eliminado la flecha de navegación
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.orange.shade600,
-          indicatorWeight: 3,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white.withOpacity(0.7),
-          labelStyle: TextStyle(fontWeight: FontWeight.bold),
-          tabs: [
-            Tab(
-              icon: Icon(Icons.person),
-              text: 'Mis Partidos',
+      appBar: _isSelectionMode
+        ? AppBar(
+            backgroundColor: Colors.red.shade700,
+            title: Text('${_selectedMatches.length} seleccionados'),
+            leading: IconButton(
+              icon: Icon(Icons.close),
+              onPressed: () {
+                setState(() {
+                  _isSelectionMode = false;
+                  _selectedMatches.clear();
+                });
+              },
             ),
-            Tab(
-              icon: Icon(Icons.group),
-              text: 'Amigos',
+            actions: [
+              IconButton(
+                icon: Icon(Icons.delete),
+                onPressed: _selectedMatches.isNotEmpty ? _deleteSelectedMatches : null,
+              ),
+            ],
+          )
+        : AppBar(
+            toolbarHeight: 0, // Reducimos la altura de la barra a 0 para eliminar el espacio
+            backgroundColor: Colors.blue.shade800,
+            automaticallyImplyLeading: false, // Eliminado la flecha de navegación
+            bottom: TabBar(
+              controller: _tabController,
+              indicatorColor: Colors.orange.shade600,
+              indicatorWeight: 3,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white.withOpacity(0.7),
+              labelStyle: TextStyle(fontWeight: FontWeight.bold),
+              tabs: [
+                Tab(
+                  icon: Icon(Icons.person),
+                  text: 'Mis Partidos',
+                ),
+                Tab(
+                  icon: Icon(Icons.group),
+                  text: 'Amigos',
+                ),
+                Tab(
+                  icon: Icon(Icons.public),
+                  text: 'Públicos',
+                ),
+              ],
             ),
-            Tab(
-              icon: Icon(Icons.public),
-              text: 'Públicos',
-            ),
-          ],
-        ),
-      ),
+          ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -731,35 +876,50 @@ Hora: $formattedTime
     );
   }
   Widget _buildMatchCard(Map<String, dynamic> match, {required bool isOrganizer}) {
-    final String matchId = match['id'].toString();
-    final DateTime matchDate = DateTime.parse(match['fecha']);
-    final bool isPast = matchDate.isBefore(DateTime.now());
-    final bool isPublic = match['publico'] == true;
-    
-    // Formatear la fecha
-    final String formattedDate = DateFormat('EEEE d MMMM, HH:mm', 'es').format(matchDate);
-    final String formattedTime = '${matchDate.hour.toString().padLeft(2, '0')}:${matchDate.minute.toString().padLeft(2, '0')}';
+    final int matchId = match['id'];
+    final bool isSelected = _selectedMatches.contains(matchId);
+    final bool isPast = DateTime.parse(match['fecha']).isBefore(DateTime.now());
+    final bool isPublic = match['es_publico'] ?? false;
+    final String formattedDate = DateFormat('dd/MM/yyyy').format(DateTime.parse(match['fecha']));
+    final String formattedTime = DateFormat('HH:mm').format(DateTime.parse(match['fecha']));
+    final bool isCreator = match['creador_id'] == supabase.auth.currentUser?.id;
     
     // Función para navegar a los detalles del partido
     void navigateToMatchDetails() {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MatchDetailsScreen(matchId: matchId),
-        ),
-      ).then((_) {
-        // Recargar los partidos cuando regresemos de la pantalla de detalles
-        _fetchMatches();
-      });
+      if (_isSelectionMode) {
+        setState(() {
+          if (isSelected) {
+            _selectedMatches.remove(matchId);
+            if (_selectedMatches.isEmpty) {
+              _isSelectionMode = false;
+            }
+          } else {
+            _selectedMatches.add(matchId);
+          }
+        });
+      } else {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => MatchDetailsScreen(matchId: matchId.toString()))).then((_) => _fetchMatches());
+      }
     }
 
+    // Función para activar el modo de selección con pulsación larga
+    void handleLongPress() {
+      setState(() {
+        _isSelectionMode = true;
+        _selectedMatches.add(matchId);
+      });
+    }
+    
     return GestureDetector(
       onTap: navigateToMatchDetails,
+      onLongPress: handleLongPress,
       child: Card(
         margin: EdgeInsets.only(bottom: 16),
         elevation: 6,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         clipBehavior: Clip.antiAlias,
+        // Añadir un color de fondo si está seleccionado
+        color: isSelected ? Colors.blue.shade50 : null,
         child: Column(
           children: [
             // Header
@@ -778,69 +938,154 @@ Hora: $formattedTime
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.sports_soccer,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        match['nombre'] ?? 'Partido sin nombre',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    _buildStatusBadge(isPast),
-                  ],
-                ),
-                SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          _buildInfoBadge(Icons.calendar_today, formattedDate),
-                          _buildInfoBadge(Icons.access_time, formattedTime),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: isPublic ? Colors.green.shade600.withOpacity(0.8) : Colors.orange.shade600.withOpacity(0.8),
-                              borderRadius: BorderRadius.circular(12),
+                    children: [
+                      // Checkbox para selección múltiple
+                      if (_isSelectionMode || isSelected)
+                        Transform.scale(
+                          scale: 1.2,
+                          child: Checkbox(
+                            value: isSelected,
+                            onChanged: (bool? value) {
+                              setState(() {
+                                if (value == true) {
+                                  _selectedMatches.add(matchId);
+                                  _isSelectionMode = true;
+                                } else {
+                                  _selectedMatches.remove(matchId);
+                                  if (_selectedMatches.isEmpty) {
+                                    _isSelectionMode = false;
+                                  }
+                                }
+                              });
+                            },
+                            activeColor: Colors.blue.shade700,
+                            checkColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  isPublic ? Icons.public : Icons.lock,
-                                  color: Colors.white,
-                                  size: 12,
-                                ),
-                                SizedBox(width: 2),
-                                Text(
-                                  isPublic ? 'Público' : 'Privado',
-                                  style: TextStyle(
+                          ),
+                        ),
+                      Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.sports_soccer,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          match['nombre'] ?? 'Partido sin nombre',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      _buildStatusBadge(isPast),
+                    ],
+                  ),
+                  SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            _buildInfoBadge(Icons.calendar_today, formattedDate),
+                            _buildInfoBadge(Icons.access_time, formattedTime),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isPublic ? Colors.green.shade600.withOpacity(0.8) : Colors.orange.shade600.withOpacity(0.8),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    isPublic ? Icons.public : Icons.lock,
                                     color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
+                                    size: 12,
                                   ),
-                                ),
-                              ],
+                                  SizedBox(width: 2),
+                                  Text(
+                                    isPublic ? 'Público' : 'Privado',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            
+           // Content
+Container(
+  color: Colors.white,
+  padding: EdgeInsets.all(16),
+  child: Column(
+    children: [
+      // Organizer info
+      if (match['profiles'] != null)
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          decoration: BoxDecoration(
+            color: Colors.blue.shade50,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.blue.shade100),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    _buildInfoBadge(Icons.calendar_today, formattedDate),
+                    _buildInfoBadge(Icons.access_time, formattedTime),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isPublic
+                            ? Colors.green.shade600.withOpacity(0.8)
+                            : Colors.orange.shade600.withOpacity(0.8),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isPublic ? Icons.public : Icons.lock,
+                            color: Colors.white,
+                            size: 12,
+                          ),
+                          SizedBox(width: 2),
+                          Text(
+                            isPublic ? 'Público' : 'Privado',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
@@ -848,9 +1093,14 @@ Hora: $formattedTime
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+        ),
+    ],
+  ),
+),
+
           
           // Content
           Container(
@@ -1062,20 +1312,17 @@ Hora: $formattedTime
                               onPressed: () => _navigateToMatchJoinScreen(match['id'].toString()),
                               color: Colors.blue,
                             ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: Icon(Icons.person_add),
-                                  tooltip: 'Invitar amigos',
-                                  onPressed: () => _showInviteFriendsDialog(match),
-                                ),
-                                IconButton(
-                                  icon: Icon(Icons.share),
-                                  tooltip: 'Compartir enlace',
-                                  onPressed: () => _shareMatchLink(match),
-                                ),
-                              ],
+                            _buildActionButton(
+                              icon: Icons.person_add,
+                              label: 'Invitar',
+                              onPressed: () => _showInviteFriendsDialog(match),
+                              color: Colors.teal,
+                            ),
+                            _buildActionButton(
+                              icon: Icons.share,
+                              label: 'Compartir',
+                              onPressed: () => _shareMatchLink(match),
+                              color: Colors.indigo,
                             ),
                             // Añadir botón de eliminar partido para el organizador
                             if (!isPast) // Solo si el partido no ha pasado
