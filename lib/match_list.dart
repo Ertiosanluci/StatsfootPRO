@@ -608,92 +608,61 @@ Hora: $formattedTime
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _isSelectionMode
-      ? AppBar(
-          backgroundColor: Colors.red.shade700,
-          title: Text('${_selectedMatches.length} seleccionados'),
-          leading: IconButton(
-            icon: Icon(Icons.close),
-            onPressed: () {
-              setState(() {
-                _isSelectionMode = false;
-                _selectedMatches.clear();
-              });
-            },
-          ),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.delete),
-              onPressed: _selectedMatches.isNotEmpty ? _deleteSelectedMatches : null,
-            ),
-          ],
-        )
-      : AppBar(
-          title: Text(
-            'StatsFut',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 22,
-            ),
-          ),
-          centerTitle: true,
-          backgroundColor: Colors.blue.shade800,
-          automaticallyImplyLeading: false,
-          actions: [
-            IconButton(
-              icon: CircleAvatar(
-                radius: 16,
-                backgroundColor: Colors.white,
-                child: Icon(
-                  Icons.person,
-                  color: Colors.blue.shade800,
-                  size: 20,
-                ),
-              ),
-              onPressed: () {
-                // Acción para perfil de usuario
-              },
-            ),
-          ],
-          leading: IconButton(
-            icon: Icon(Icons.notifications, color: Colors.white),
-            onPressed: () {
-              // Acción para notificaciones
-            },
-          ),
-        ),  
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blue.shade300, Colors.blue.shade800],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+    appBar: _isSelectionMode
+    ? AppBar(
+        backgroundColor: Colors.red.shade700,
+        title: Text('${_selectedMatches.length} seleccionados'),
+        leading: IconButton(
+          icon: Icon(Icons.close),
+          onPressed: () {
+            setState(() {
+              _isSelectionMode = false;
+              _selectedMatches.clear();
+            });
+          },
         ),
-        child: _isLoading
-            ? Center(child: CircularProgressIndicator(color: Colors.white))
-            : _error != null
-                ? _buildErrorMessage()
-                : Column(
-                    children: [
-                      // Filtro de tiempo (Próximos/Pasados/Todos)
-                      _buildTimeFilterRow(),                      // Lista de partidos
-                      Expanded(
-                        child: TabBarView(
-                          controller: _tabController,
-                          children: [
-                            // Tab 0: Mis Partidos (incluye organizados + unidos)
-                            _buildMatchListView(_filteredMyMatches, isOrganizer: false, listType: "my"),
-                            // Tab 1: Amigos
-                            _buildMatchListView(_filteredFriendsMatches, isOrganizer: false, listType: "friends"),
-                            // Tab 2: Públicos
-                            _buildMatchListView(_filteredPublicMatches, isOrganizer: false, listType: "public"),
-                          ],
+        actions: [
+          IconButton(
+            icon: Icon(Icons.delete),
+            onPressed: _selectedMatches.isNotEmpty ? _deleteSelectedMatches : null,
+          ),
+        ],
+      )
+    : null,  
+      body: SafeArea(
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue.shade300, Colors.blue.shade800],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: _isLoading
+              ? Center(child: CircularProgressIndicator(color: Colors.white))
+              : _error != null
+                  ? _buildErrorMessage()
+                  : Column(
+                      children: [
+                        // Filtro de tiempo (Próximos/Pasados/Todos)
+                        _buildTimeFilterRow(),
+                        // Lista de partidos
+                        Expanded(
+                          child: TabBarView(
+                            controller: _tabController,
+                            children: [
+                              // Tab 0: Mis Partidos (incluye organizados + unidos)
+                              _buildMatchListView(_filteredMyMatches, isOrganizer: false, listType: "my"),
+                              // Tab 1: Amigos
+                              _buildMatchListView(_filteredFriendsMatches, isOrganizer: false, listType: "friends"),
+                              // Tab 2: Públicos
+                              _buildMatchListView(_filteredPublicMatches, isOrganizer: false, listType: "public"),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
