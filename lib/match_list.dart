@@ -67,7 +67,7 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> with SingleTi
       }
     });
     
-    // Cargar notificaciones
+    // Cargar notificaciones inmediatamente al iniciar la pantalla
     Future.microtask(() {
       ref.read(notificationControllerProvider.notifier).loadNotifications();
     });

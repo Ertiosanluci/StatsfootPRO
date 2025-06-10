@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statsfoota/profile_edit_screen.dart'; // Importación para la pantalla de edición de perfil
 import 'package:statsfoota/player_stats_graph_screen.dart'; // Importación para la pantalla de estadísticas antigua
-import 'package:statsfoota/screens/my_statistics_screen.dart'; // Importación para la nueva pantalla de estadísticas
+import 'package:statsfoota/screens/my_statistics_screen.dart' as stats_screen; // Importación para la nueva pantalla de estadísticas
 import 'package:statsfoota/features/friends/friends_module.dart';
 import 'package:statsfoota/features/friends/presentation/controllers/friend_controller.dart';
 import 'package:statsfoota/features/notifications/notifications_drawer.dart'; // Importación para el drawer de notificaciones
@@ -52,10 +52,19 @@ class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTick
     // Cargar las solicitudes de amistad pendientes al iniciar
     ref.read(friendControllerProvider.notifier).loadPendingRequests();
     
-    // Configurar un timer para refrescar periodicamente las solicitudes de amistad
+    // Cargar las notificaciones al iniciar la aplicación
+    // Usar Future.microtask para asegurar que se ejecute después de que el widget se haya construido
+    Future.microtask(() {
+      if (mounted) {
+        ref.read(notificationControllerProvider.notifier).loadNotifications();
+      }
+    });
+    
+    // Configurar un timer para refrescar periodicamente las solicitudes de amistad y notificaciones
     _refreshTimer = Timer.periodic(Duration(seconds: 30), (timer) {
       if (mounted) {
         ref.read(friendControllerProvider.notifier).loadPendingRequests();
+        ref.read(notificationControllerProvider.notifier).loadNotifications();
       }
     });
 
@@ -375,9 +384,11 @@ class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTick
           description: "Analiza tu rendimiento en los partidos",
           color: Colors.orange,
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => MyStatisticsScreen()),
+            // Navegar a la pantalla de estadísticas
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const stats_screen.MyStatisticsScreen(),
+              ),
             );
           },
         ),
@@ -632,10 +643,11 @@ class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTick
           ),
           onTap: () {
             // Navegar a la pantalla de estadísticas después de que el menú se cierre
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => MyStatisticsScreen()),
+            Future.microtask(() {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const stats_screen.MyStatisticsScreen(),
+                ),
               );
             });
           },
