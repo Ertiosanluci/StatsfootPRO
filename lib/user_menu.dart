@@ -377,7 +377,7 @@ class _UserMenuScreenState extends ConsumerState<UserMenuScreen> with SingleTick
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => PlayerStatsGraphScreen()),
+              MaterialPageRoute(builder: (context) => MyStatisticsScreen()),
             );
           },
         ),

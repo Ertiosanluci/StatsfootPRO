@@ -3,18 +3,20 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statsfoota/widgets/invite_friends_dialog.dart';
+import 'package:statsfoota/features/notifications/presentation/controllers/notification_controller.dart';
 import 'create_match.dart';
 import 'match_details_screen.dart';
 import 'team_management_screen.dart';
 import 'utils/match_operations.dart';
 
-class MatchListScreen extends StatefulWidget {
+class MatchListScreen extends ConsumerStatefulWidget {
   @override
   _MatchListScreenState createState() => _MatchListScreenState();
 }
 
-class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProviderStateMixin {
+class _MatchListScreenState extends ConsumerState<MatchListScreen> with SingleTickerProviderStateMixin {
   // Controller para el campo de búsqueda
   final TextEditingController _searchController = TextEditingController();
   final SupabaseClient supabase = Supabase.instance.client;
@@ -63,6 +65,11 @@ class _MatchListScreenState extends State<MatchListScreen> with SingleTickerProv
           }
         }
       }
+    });
+    
+    // Cargar notificaciones
+    Future.microtask(() {
+      ref.read(notificationControllerProvider.notifier).loadNotifications();
     });
     
     _fetchMatches();
@@ -607,6 +614,10 @@ Hora: $formattedTime
   }
   @override
   Widget build(BuildContext context) {
+    // Obtener el estado de las notificaciones usando Riverpod
+    final notificationState = ref.watch(notificationControllerProvider);
+    final unreadCount = notificationState.unreadCount;
+    
     return Scaffold(
       appBar: _isSelectionMode
       ? AppBar(
@@ -628,7 +639,73 @@ Hora: $formattedTime
             ),
           ],
         )
-      : null,
+      : AppBar(
+          title: Text(
+            'StatsFut',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
+            ),
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.blue.shade800,
+          automaticallyImplyLeading: false,
+          actions: [
+            IconButton(
+              icon: CircleAvatar(
+                radius: 16,
+                backgroundColor: Colors.white,
+                child: Icon(
+                  Icons.person,
+                  color: Colors.blue.shade800,
+                  size: 20,
+                ),
+              ),
+              onPressed: () {
+                // Acción para perfil de usuario
+              },
+            ),
+          ],
+          leading: Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: Icon(Icons.notifications, color: Colors.white),
+                onPressed: () {
+                  // Acción para notificaciones
+                  // Recargar notificaciones al presionar
+                  ref.read(notificationControllerProvider.notifier).loadNotifications();
+                },
+              ),
+              if (unreadCount > 0)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '$unreadCount',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       body: SafeArea(
         child: Container(
           decoration: BoxDecoration(
