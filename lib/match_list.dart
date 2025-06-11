@@ -690,27 +690,27 @@ Hora: $formattedTime
         await supabase.from('matches').delete().eq('id', matchId);
       }
 
-      // Cerrar diálogo y mostrar mensaje de éxito
+      // Cerrar diálogo
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            matchIds.length > 1
-                ? '${matchIds.length} partidos eliminados correctamente'
-                : 'Partido eliminado correctamente'
-          ),
-          backgroundColor: Colors.green,
-        ),
-      );
 
-      // Salir del modo de selección
+      // Actualizar listas localmente y salir del modo de selección
       setState(() {
+        // Eliminar los partidos de todas las listas
+        for (final matchId in matchIds) {
+          _myMatches.removeWhere((m) => m['id'] == matchId);
+          _friendsMatches.removeWhere((m) => m['id'] == matchId);
+          _publicMatches.removeWhere((m) => m['id'] == matchId);
+          
+          // También actualizar las listas filtradas
+          _filteredMyMatches.removeWhere((m) => m['id'] == matchId);
+          _filteredFriendsMatches.removeWhere((m) => m['id'] == matchId);
+          _filteredPublicMatches.removeWhere((m) => m['id'] == matchId);
+        }
+        
+        // Salir del modo de selección
         _isSelectionMode = false;
         _selectedMatches.clear();
       });
-
-      // Refrescar la lista de partidos
-      _fetchMatches();
     } catch (e) {
       // Cerrar diálogo de carga
       Navigator.of(context).pop();
@@ -2187,17 +2187,21 @@ Hora: $formattedTime
           .delete()
           .eq('id', matchId);
 
-      // Cerrar diálogo y mostrar mensaje de éxito
+      // Cerrar diálogo
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Partido eliminado correctamente'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      // Refrescar la lista de partidos
-      _fetchMatches();
+      
+      // Actualizar listas localmente sin recargar de la base de datos
+      setState(() {
+        // Eliminar el partido de todas las listas
+        _myMatches.removeWhere((m) => m['id'] == matchId);
+        _friendsMatches.removeWhere((m) => m['id'] == matchId);
+        _publicMatches.removeWhere((m) => m['id'] == matchId);
+        
+        // También actualizar las listas filtradas
+        _filteredMyMatches.removeWhere((m) => m['id'] == matchId);
+        _filteredFriendsMatches.removeWhere((m) => m['id'] == matchId);
+        _filteredPublicMatches.removeWhere((m) => m['id'] == matchId);
+      });
     } catch (e) {
       // Cerrar diálogo de carga
       Navigator.of(context).pop();
