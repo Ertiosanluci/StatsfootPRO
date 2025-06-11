@@ -6,6 +6,9 @@ import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
 import 'dart:developer' as dev;
 import 'dart:convert';
+import 'dart:async';
+import 'dart:collection';
+import 'dart:math' as math;
 
 import 'package:statsfoota/widgets/invite_friends_dialog.dart';
 import 'package:statsfoota/features/notifications/presentation/controllers/notification_controller.dart';
@@ -2043,230 +2046,17 @@ Hora: $formattedTime
           print('Caché de participantes actualizada. Ahora hay ${_participantCountCache[matchIdInt]} participantes en el partido $matchIdInt');
         }
       } catch (e) {
-        print('Error al actualizar caché: $e');
+        dev.log('Error al actualizar caché de participantes: $e');
       }
       
-      // Cerrar diálogo
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
+      // Cerrar diálogo de carga
+      if (context.mounted && Navigator.canPop(context)) {
+        Navigator.of(context).pop();
       }
-        // Mostrar mensaje de éxito
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Has abandonado el partido correctamente'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      // En lugar de intentar modificar las listas localmente (que puede causar problemas),
-      // vamos a recargar completamente los datos desde Supabase
-      print('Recargando todos los partidos desde la base de datos...');
-      await _fetchMatches();
       
-      // Seleccionar la pestaña "Mis Partidos" para que el usuario vea los cambios
-      _tabController.animateTo(0); // Asegura que mostramos la pestaña "Mis Partidos"
-      
-      // Forzar la actualización de la UI
+      // Actualizar la UI
       setState(() {
-        print('UI actualizada después de abandonar el partido');
-      });
-      
-    } catch (e) {
-      print('Error en _leaveMatch: $e');
-      
-      // Cerrar diálogo de carga de forma segura
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-
-      // Mostrar mensaje de error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al abandonar el partido: $e'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 5),
-        ),
-      );
-    }
-  }
-
-  // Método para que un organizador elimine un partido
-  Future<void> _deleteMatch(Map<String, dynamic> match) async {
-    // Mostrar diálogo de confirmación
-    bool confirmDelete = await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Eliminar partido'),
-          content: Text('¿Estás seguro de que quieres eliminar este partido? Esta acción no se puede deshacer.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text('Eliminar', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
-    ) ?? false;
-
-    if (!confirmDelete) return;
-
-    // Mostrar diálogo de carga
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 20),
-                Text('Eliminando el partido...'),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    try {
-      final currentUser = supabase.auth.currentUser;
-      if (currentUser == null) {
-        Navigator.of(context).pop(); // Cerrar diálogo
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Debes iniciar sesión para eliminar un partido'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      // Verificar que el usuario es el creador del partido
-      if (match['creador_id'] != currentUser.id) {
-        Navigator.of(context).pop(); // Cerrar diálogo
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Solo el creador puede eliminar el partido'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      // Obtener el ID del partido
-      final matchId = match['id'];
-      print('Eliminando partido con ID: $matchId');
-      print('Usuario actual: ${currentUser.id}');
-      
-      // Eliminar el partido y todos los registros relacionados
-      
-      // Primero eliminar las invitaciones relacionadas con este partido
-      try {
-        await supabase
-            .from('match_invitations')
-            .delete()
-            .eq('match_id', matchId);
-        
-        print('Eliminadas invitaciones del partido: $matchId');
-      } catch (invitationError) {
-        // Registrar el error pero continuar con el proceso de eliminación
-        dev.log('Error al eliminar invitaciones: $invitationError', name: 'deleteMatch');
-      }
-      
-      // Eliminar las notificaciones relacionadas con este partido
-      try {
-        // Las notificaciones tienen el match_id en el campo data como JSON
-        final notificationsToDelete = await supabase
-            .from('notifications')
-            .select('id, data, type')
-            .eq('type', 'match_invite');
-            
-        // Filtrar las notificaciones que contienen este match_id
-        final List<dynamic> notificationIds = [];
-        
-        for (final notification in notificationsToDelete) {
-          try {
-            if (notification['data'] != null) {
-              // El campo data puede ser un string JSON o un mapa
-              Map<String, dynamic> data;
-              if (notification['data'] is String) {
-                // Intentar parsear el JSON si es un string
-                try {
-                  data = jsonDecode(notification['data']);
-                } catch (_) {
-                  continue; // Si no se puede parsear, pasar a la siguiente
-                }
-              } else if (notification['data'] is Map) {
-                data = Map<String, dynamic>.from(notification['data']);
-              } else {
-                continue; // Si no es string ni mapa, pasar a la siguiente
-              }
-              
-              // Verificar si el match_id coincide
-              if (data.containsKey('match_id') && 
-                  data['match_id'] != null && 
-                  data['match_id'].toString() == matchId.toString()) {
-                notificationIds.add(notification['id']);
-              }
-            }
-          } catch (e) {
-            dev.log('Error al procesar notificación: $e', name: 'deleteMatch');
-          }
-        }
-        
-        // Eliminar las notificaciones encontradas
-        if (notificationIds.isNotEmpty) {
-          // Usar el método correcto para filtrar por una lista de IDs
-          for (final id in notificationIds) {
-            await supabase
-                .from('notifications')
-                .delete()
-                .eq('id', id);
-          }
-          
-          print('Eliminadas ${notificationIds.length} notificaciones del partido: $matchId');
-        }
-      } catch (notificationError) {
-        // Registrar el error pero continuar con el proceso de eliminación
-        dev.log('Error al eliminar notificaciones: $notificationError', name: 'deleteMatch');
-      }
-      
-      // Eliminar las estadísticas de los jugadores
-      await supabase
-          .from('estadisticas')
-          .delete()
-          .eq('partido_id', matchId);
-      
-      print('Eliminadas estadísticas del partido: $matchId');
-      
-      // Eliminar los participantes
-      await supabase
-          .from('match_participants')
-          .delete()
-          .eq('match_id', matchId);
-      
-      print('Eliminados participantes del partido: $matchId');
-
-      // Finalmente eliminar el partido
-      await supabase
-          .from('matches')
-          .delete()
-          .eq('id', matchId);
-
-      // Cerrar diálogo
-      Navigator.of(context).pop();
-      
-      // Actualizar listas localmente sin recargar de la base de datos
-      setState(() {
-        // Eliminar el partido de todas las listas
+        // Actualizar listas de partidos
         _myMatches.removeWhere((m) => m['id'] == matchId);
         _friendsMatches.removeWhere((m) => m['id'] == matchId);
         _publicMatches.removeWhere((m) => m['id'] == matchId);
@@ -2276,22 +2066,344 @@ Hora: $formattedTime
         _filteredFriendsMatches.removeWhere((m) => m['id'] == matchId);
         _filteredPublicMatches.removeWhere((m) => m['id'] == matchId);
       });
-      
-      // Actualizar las notificaciones en la UI
-      ref.read(notificationControllerProvider.notifier).loadNotifications();
-      
     } catch (e) {
-      // Cerrar diálogo de carga
-      Navigator.of(context).pop();
-
+      // Cerrar diálogo de carga si hay error
+      if (context.mounted && Navigator.canPop(context)) {
+        Navigator.of(context).pop();
+      }
+      
       // Mostrar mensaje de error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al eliminar el partido: $e'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 5),
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al abandonar el partido: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Método para que un organizador elimine un partido
+  Future<void> _deleteMatch(Map<String, dynamic> match) async {
+    try {
+      // Mostrar diálogo de confirmación
+      bool confirm = await showDialog<bool>(
+{{ ... }}
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.blue.shade900,
+          title: const Text('Eliminar partido', style: TextStyle(color: Colors.white)),
+          content: const Text(
+            '¿Estás seguro de que deseas eliminar este partido? Esta acción no se puede deshacer.',
+            style: TextStyle(color: Colors.white),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.white)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
+      ) ?? false;
+
+      if (!confirm) return;
+
+      // Mostrar diálogo de carga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          backgroundColor: Colors.blue,
+          content: Row(
+            children: [
+              CircularProgressIndicator(color: Colors.white),
+              SizedBox(width: 20),
+              Text('Eliminando partido...', style: TextStyle(color: Colors.white)),
+            ],
+          ),
         ),
       );
+
+      final matchId = match['id'];
+
+      // Eliminar estadísticas relacionadas
+      await supabase.from('statistics').delete().eq('match_id', matchId);
+
+      // Eliminar participantes relacionados
+      await supabase.from('match_participants').delete().eq('match_id', matchId);
+      
+      // Eliminar invitaciones relacionadas
+      await supabase.from('match_invitations').delete().eq('match_id', matchId);
+      
+      // Buscar y eliminar notificaciones relacionadas con este partido
+      // Primero obtenemos todas las notificaciones de tipo match_invite
+      final matchInviteNotifications = await supabase
+          .from('notifications')
+          .select()
+          .eq('type', 'match_invite');
+      
+      // Filtramos las que tienen este partido como match_id en el campo data
+      if (matchInviteNotifications != null && matchInviteNotifications.isNotEmpty) {
+        for (final notification in matchInviteNotifications) {
+          try {
+            // Extraer el match_id del campo data
+            if (notification['data'] != null) {
+              final Map<String, dynamic> data = notification['data'] is String 
+                  ? jsonDecode(notification['data']) 
+                  : notification['data'];
+              
+              if (data['match_id'] == matchId) {
+                // Eliminar la notificación si corresponde a este partido
+                await supabase
+                    .from('notifications')
+                    .delete()
+                    .eq('id', notification['id']);
+              }
+            }
+          } catch (e) {
+            dev.log('Error procesando notificación: $e');
+          }
+        }
+      }
+
+      // Eliminar el partido
+      await supabase.from('matches').delete().eq('id', matchId);
+
+      // Cerrar diálogo de carga
+      if (context.mounted && Navigator.canPop(context)) {
+        Navigator.of(context).pop();
+      }
+
+      // Actualizar listas localmente
+      if (context.mounted) {
+        setState(() {
+          _myMatches.removeWhere((m) => m['id'] == matchId);
+          _friendsMatches.removeWhere((m) => m['id'] == matchId);
+          _publicMatches.removeWhere((m) => m['id'] == matchId);
+          
+          // También actualizar las listas filtradas
+          _filteredMyMatches.removeWhere((m) => m['id'] == matchId);
+          _filteredFriendsMatches.removeWhere((m) => m['id'] == matchId);
+          _filteredPublicMatches.removeWhere((m) => m['id'] == matchId);
+        });
+      }
+      
+      // Actualizar el controlador de notificaciones para reflejar los cambios
+      if (context.mounted) {
+        final notificationController = ref.read(notificationControllerProvider.notifier);
+        notificationController.loadNotifications();
+      }
+    } catch (e) {
+      // Cerrar diálogo de carga si hay error
+      if (context.mounted && Navigator.canPop(context)) {
+        Navigator.of(context).pop();
+      }
+      
+      // Mostrar mensaje de error
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al eliminar el partido: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+  
+  // Método para eliminar múltiples partidos seleccionados
+  Future<void> _deleteSelectedMatches() async {
+    try {
+      // Verificar si hay partidos seleccionados
+      if (_selectedMatches.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No hay partidos seleccionados para eliminar'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+      
+      // Mostrar diálogo de confirmación
+      bool confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.blue.shade900,
+          title: const Text('Eliminar partidos', style: TextStyle(color: Colors.white)),
+          content: Text(
+            '¿Estás seguro de que deseas eliminar ${_selectedMatches.length} partidos? Esta acción no se puede deshacer.',
+            style: const TextStyle(color: Colors.white),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.white)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
+      ) ?? false;
+
+      if (!confirm) return;
+
+      // Mostrar diálogo de carga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.blue,
+          content: Row(
+            children: [
+              const CircularProgressIndicator(color: Colors.white),
+              const SizedBox(width: 20),
+              Text(
+                'Eliminando ${_selectedMatches.length} partidos...',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      // Recopilar todos los partidos seleccionados de las diferentes listas
+      final List<Map<String, dynamic>> matchesToDelete = [];
+      
+      // Buscar en todas las listas los partidos seleccionados
+      for (final matchId in _selectedMatches) {
+        // Buscar en mis partidos
+        final myMatch = _myMatches.firstWhere(
+          (m) => m['id'] == matchId,
+          orElse: () => <String, dynamic>{},
+        );
+        if (myMatch.isNotEmpty) {
+          matchesToDelete.add(myMatch);
+          continue;
+        }
+        
+        // Buscar en partidos de amigos
+        final friendMatch = _friendsMatches.firstWhere(
+          (m) => m['id'] == matchId,
+          orElse: () => <String, dynamic>{},
+        );
+        if (friendMatch.isNotEmpty) {
+          matchesToDelete.add(friendMatch);
+          continue;
+        }
+        
+        // Buscar en partidos públicos
+        final publicMatch = _publicMatches.firstWhere(
+          (m) => m['id'] == matchId,
+          orElse: () => <String, dynamic>{},
+        );
+        if (publicMatch.isNotEmpty) {
+          matchesToDelete.add(publicMatch);
+        }
+      }
+      
+      // Obtener todas las notificaciones de tipo match_invite para procesarlas una sola vez
+      final matchInviteNotifications = await supabase
+          .from('notifications')
+          .select()
+          .eq('type', 'match_invite');
+      
+      // Procesar cada partido seleccionado
+      for (final match in matchesToDelete) {
+        final matchId = match['id'];
+        
+        try {
+          // Eliminar estadísticas relacionadas
+          await supabase.from('statistics').delete().eq('match_id', matchId);
+
+          // Eliminar participantes relacionados
+          await supabase.from('match_participants').delete().eq('match_id', matchId);
+          
+          // Eliminar invitaciones relacionadas
+          await supabase.from('match_invitations').delete().eq('match_id', matchId);
+          
+          // Procesar notificaciones relacionadas con este partido
+          if (matchInviteNotifications != null && matchInviteNotifications.isNotEmpty) {
+            for (final notification in matchInviteNotifications) {
+              try {
+                // Extraer el match_id del campo data
+                if (notification['data'] != null) {
+                  final Map<String, dynamic> data = notification['data'] is String 
+                      ? jsonDecode(notification['data']) 
+                      : notification['data'];
+                  
+                  if (data['match_id'] == matchId) {
+                    // Eliminar la notificación si corresponde a este partido
+                    await supabase
+                        .from('notifications')
+                        .delete()
+                        .eq('id', notification['id']);
+                  }
+                }
+              } catch (e) {
+                dev.log('Error procesando notificación: $e');
+              }
+            }
+          }
+
+          // Eliminar el partido
+          await supabase.from('matches').delete().eq('id', matchId);
+        } catch (e) {
+          dev.log('Error eliminando partido $matchId: $e');
+        }
+      }
+
+      // Cerrar diálogo de carga
+      if (context.mounted && Navigator.canPop(context)) {
+        Navigator.of(context).pop();
+      }
+
+      // Actualizar listas localmente
+      if (context.mounted) {
+        setState(() {
+          // Eliminar partidos de las listas originales
+          _myMatches.removeWhere((m) => _selectedMatches.contains(m['id']));
+          _friendsMatches.removeWhere((m) => _selectedMatches.contains(m['id']));
+          _publicMatches.removeWhere((m) => _selectedMatches.contains(m['id']));
+          
+          // También actualizar las listas filtradas
+          _filteredMyMatches.removeWhere((m) => _selectedMatches.contains(m['id']));
+          _filteredFriendsMatches.removeWhere((m) => _selectedMatches.contains(m['id']));
+          _filteredPublicMatches.removeWhere((m) => _selectedMatches.contains(m['id']));
+          
+          // Limpiar la selección y salir del modo de selección
+          _selectedMatches.clear();
+          _isSelectionMode = false;
+        });
+      }
+      
+      // Actualizar el controlador de notificaciones para reflejar los cambios
+      if (context.mounted) {
+        final notificationController = ref.read(notificationControllerProvider.notifier);
+        notificationController.loadNotifications();
+      }
+    } catch (e) {
+      // Cerrar diálogo de carga si hay error
+      if (context.mounted && Navigator.canPop(context)) {
+        Navigator.of(context).pop();
+      }
+      
+      // Mostrar mensaje de error
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al eliminar los partidos seleccionados: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }
