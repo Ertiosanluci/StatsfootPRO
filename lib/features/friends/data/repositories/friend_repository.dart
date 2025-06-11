@@ -370,24 +370,27 @@ class FriendRepository {
         throw Exception('User not authenticated');
       }
 
-      // Verify the request was sent by the current user
-      final response = await _supabaseClient
+      // Primero intentamos buscar por ID directamente
+      final request = await _supabaseClient
           .from('friends')
           .select()
           .eq('id', requestId)
-          .eq('user_id_1', currentUserId)
-          .eq('status', 'pending');
-
-      if (response.isEmpty) {
-        throw Exception('Friend request not found or not eligible for cancellation');
+          .single();
+      
+      // Verificar que el usuario actual sea el remitente (user_id_1)
+      if (request['user_id_1'] != currentUserId) {
+        throw Exception('Friend request not eligible for cancellation');
       }
 
-      // Delete the friend request
+      // Actualizar el estado a 'cancelled' que es un valor válido para la columna status
       await _supabaseClient
           .from('friends')
-          .delete()
+          .update({'status': 'cancelled'})
           .eq('id', requestId);
+          
+      print('Friend request with ID $requestId cancelled successfully');
     } catch (e) {
+      print('Error in cancelFriendRequest: $e');
       throw Exception('Failed to cancel friend request: $e');
     }
   }

@@ -40,10 +40,21 @@ class NotificationCard extends ConsumerWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Avatar del remitente
+                // Avatar del remitente con indicador de carga
                 FutureBuilder<String?>(
                   future: _getUserAvatar(notification.senderId),
                   builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Colors.grey,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      );
+                    }
+                    
                     return CircleAvatar(
                       radius: 24,
                       backgroundColor: Colors.grey.shade200,
@@ -147,21 +158,35 @@ class NotificationCard extends ConsumerWidget {
     );
   }
 
-  /// Obtiene el avatar del usuario desde Supabase
+  // Caché de avatares para evitar múltiples consultas
+  static final Map<String, String?> _avatarCache = {};
+  
+  /// Obtiene el avatar del usuario desde Supabase con caché
   Future<String?> _getUserAvatar(String? userId) async {
     if (userId == null) return null;
+    
+    // Si ya tenemos el avatar en caché, devolverlo inmediatamente
+    if (_avatarCache.containsKey(userId)) {
+      return _avatarCache[userId];
+    }
     
     try {
       final supabase = Supabase.instance.client;
       final response = await supabase
           .from('profiles')
-          .select('avatar_url')
+          .select('avatar_url, full_name') // También obtenemos el nombre completo
           .eq('id', userId)
           .single();
       
-      return response['avatar_url'] as String?;
+      // Guardar en caché para futuras consultas
+      final avatarUrl = response['avatar_url'] as String?;
+      _avatarCache[userId] = avatarUrl;
+      
+      return avatarUrl;
     } catch (e) {
       debugPrint('Error al obtener avatar: $e');
+      // Guardar null en caché para evitar consultas repetidas que fallan
+      _avatarCache[userId] = null;
       return null;
     }
   }

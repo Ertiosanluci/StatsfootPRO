@@ -65,36 +65,26 @@ class MatchInvitationHandler extends ConsumerWidget {
           final friendController = ref.read(friendControllerProvider.notifier);
 
           if (notification.resourceId != null) {
-            // Actualizar el estado a 'cancelled' que es un valor válido para la columna status
-            await supabase
-                .from('friends')
-                .update({'status': 'cancelled'})
-                .match({'id': notification.resourceId!});
-                
+            await friendController.cancelFriendRequest(notification.resourceId!);
             await friendController.loadPendingRequests();
             
             if (context.mounted) {
               _showSnackBar(context, "Solicitud de amistad cancelada", const Color(0xFF90CAF9));
             }
           } else {
-            // Si no hay resourceId, intentar buscar la solicitud por senderId y userId (receptor)
+            // Si no hay resourceId, intentar buscar la solicitud por senderId y receiverId
             final result = await supabase
                 .from('friends')
                 .select()
-                .eq('user_id_1', userId) // El usuario actual es quien envió la solicitud
-                .eq('user_id_2', notification.userId) // El destinatario de la notificación
+                .eq('user_id_1', userId)
+                .eq('user_id_2', notification.receiverId)
                 .eq('status', 'pending')
                 .limit(1)
                 .maybeSingle();
                 
             if (result != null && result['id'] != null) {
               final String friendRequestId = result['id'];
-              // Actualizar el estado a 'cancelled' en lugar de eliminar
-              await supabase
-                  .from('friends')
-                  .update({'status': 'cancelled'})
-                  .match({'id': friendRequestId});
-                  
+              await friendController.cancelFriendRequest(friendRequestId);
               await friendController.loadPendingRequests();
               
               if (context.mounted) {
