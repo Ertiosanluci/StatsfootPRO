@@ -198,16 +198,78 @@ class FriendRepository {
         throw Exception('El usuario destinatario no existe');
       }
 
-      // Check if there's already a request between these users
+      // Check if there's already an active request between these users (pending or accepted only)
       final existingRequest = await _supabaseClient
           .from('friends')
           .select()
           .or('and(user_id_1.eq.$currentUserId,user_id_2.eq.$receiverId),and(user_id_1.eq.$receiverId,user_id_2.eq.$currentUserId)')
+          .not('status', 'eq', 'cancelled')
           .maybeSingle();
 
       if (existingRequest != null) {
-        print('FriendRepository: Friend request already exists between users $currentUserId and $receiverId');
+        print('FriendRepository: Friend request already exists between users $currentUserId and $receiverId with status: ${existingRequest['status']}');
         throw Exception('Ya existe una solicitud de amistad entre estos usuarios');
+      }
+      
+      // Check if there's a cancelled request that can be reused
+      final cancelledRequest = await _supabaseClient
+          .from('friends')
+          .select()
+          .or('and(user_id_1.eq.$currentUserId,user_id_2.eq.$receiverId),and(user_id_1.eq.$receiverId,user_id_2.eq.$currentUserId)')
+          .eq('status', 'cancelled')
+          .maybeSingle();
+          
+      if (cancelledRequest != null) {
+        print('FriendRepository: Found cancelled request between users, will update it');
+        // Update the cancelled request instead of creating a new one
+        await _supabaseClient
+            .from('friends')
+            .update({
+              'user_id_1': currentUserId,
+              'user_id_2': receiverId,
+              'status': 'pending',
+              'created_at': DateTime.now().toIso8601String(), // Update timestamp
+            })
+            .eq('id', cancelledRequest['id']);
+            
+        // Get the updated request
+        final updatedRequest = await _supabaseClient
+            .from('friends')
+            .select()
+            .eq('id', cancelledRequest['id'])
+            .single();
+            
+        // Create a notification for the receiver
+        try {
+          // Get sender's name
+          final senderProfile = await _supabaseClient
+              .from('profiles')
+              .select('username')
+              .eq('id', currentUserId)
+              .maybeSingle();
+          
+          final senderName = (senderProfile != null ? senderProfile['username'] : null) as String? ?? 'Usuario';
+          
+          // Create notification
+          await _supabaseClient.from('notifications').insert({
+            'id': DateTime.now().millisecondsSinceEpoch.toString(),
+            'user_id': receiverId,
+            'sender_id': currentUserId,
+            'type': 'friend_request',
+            'title': 'Nueva solicitud de amistad',
+            'message': '$senderName te ha enviado una solicitud de amistad',
+            'resource_id': updatedRequest['id'],
+            'created_at': DateTime.now().toIso8601String(),
+            'is_read': false,
+          });
+          
+          print('FriendRepository: Notification created successfully for reactivated request');
+        } catch (notifError) {
+          // No interrumpir el flujo principal si falla la notificación
+          print('FriendRepository: Failed to create notification for reactivated request: $notifError');
+        }
+        
+        return; // Exit early as we've handled the request update
       }
 
       // Get sender's name to include in the notification
