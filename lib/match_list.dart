@@ -114,6 +114,11 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> with SingleTi
     final now = DateTime.now();
     final formatter = DateFormat('yyyy-MM-dd');
     
+    // Debug log for selected date
+    if (_selectedDate != null) {
+      dev.log('Filtering by date: ${formatter.format(_selectedDate!)}');
+    }
+    
     setState(() {
       // Paso 1: Aplicar el filtro de tiempo (base)
       List<Map<String, dynamic>> tempMyMatches;
@@ -206,24 +211,49 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> with SingleTi
       // Paso 3: Aplicar el filtro de fecha si existe
       if (_selectedDate != null) {
         final selectedDateString = formatter.format(_selectedDate!);
+        dev.log('Filtering matches by date: $selectedDateString');
         
         tempMyMatches = tempMyMatches.where((match) {
-          final matchDate = DateTime.parse(match['fecha']);
-          final matchDateString = formatter.format(matchDate);
-          return matchDateString == selectedDateString;
+          try {
+            if (match['fecha'] == null) {
+              dev.log('Match has null fecha field: ${match['id']}');
+              return false;
+            }
+            final matchDate = DateTime.parse(match['fecha']);
+            final matchDateString = formatter.format(matchDate);
+            dev.log('Match ${match['id']} date: $matchDateString');
+            return matchDateString == selectedDateString;
+          } catch (e) {
+            dev.log('Error parsing date for match ${match['id']}: $e');
+            return false;
+          }
         }).toList();
         
         tempFriendsMatches = tempFriendsMatches.where((match) {
-          final matchDate = DateTime.parse(match['fecha']);
-          final matchDateString = formatter.format(matchDate);
-          return matchDateString == selectedDateString;
+          try {
+            if (match['fecha'] == null) return false;
+            final matchDate = DateTime.parse(match['fecha']);
+            final matchDateString = formatter.format(matchDate);
+            return matchDateString == selectedDateString;
+          } catch (e) {
+            dev.log('Error parsing date for friend match: $e');
+            return false;
+          }
         }).toList();
         
         tempPublicMatches = tempPublicMatches.where((match) {
-          final matchDate = DateTime.parse(match['fecha']);
-          final matchDateString = formatter.format(matchDate);
-          return matchDateString == selectedDateString;
+          try {
+            if (match['fecha'] == null) return false;
+            final matchDate = DateTime.parse(match['fecha']);
+            final matchDateString = formatter.format(matchDate);
+            return matchDateString == selectedDateString;
+          } catch (e) {
+            dev.log('Error parsing date for public match: $e');
+            return false;
+          }
         }).toList();
+        
+        dev.log('After date filtering: My matches: ${tempMyMatches.length}, Friends: ${tempFriendsMatches.length}, Public: ${tempPublicMatches.length}');
       }
       
       // Asignar las listas filtradas
@@ -955,7 +985,7 @@ Hora: $formattedTime
                       context: context,
                       initialDate: _selectedDate ?? DateTime.now(),
                       firstDate: DateTime(2023),
-                      lastDate: DateTime(2025),
+                      lastDate: DateTime(2030),
                       builder: (context, child) {
                         return Theme(
                           data: Theme.of(context).copyWith(
