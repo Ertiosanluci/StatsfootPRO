@@ -3,6 +3,7 @@ import 'dart:developer' as dev;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 // Importaciones absolutas para usar las clases existentes
 import 'package:statsfoota/features/notifications/domain/models/notification_model.dart';
@@ -35,71 +36,47 @@ class MatchInvitationHandler extends ConsumerWidget {
     return const SizedBox.shrink();
   }
 
-  /// Muestra un mensaje usando SnackBar de forma segura
-  void _showSnackBar(BuildContext context, String message, Color backgroundColor) {
-    if (!context.mounted) return;
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: backgroundColor,
-      ),
-    );
-  }
   
   /// Maneja la respuesta a una solicitud de amistad (aceptar, rechazar o cancelar)
   Future<void> _handleFriendRequestResponse(BuildContext context, WidgetRef ref, NotificationModel notification, bool accept) async {
+    final supabase = Supabase.instance.client;
+    final userId = supabase.auth.currentUser?.id;
+    
+    if (userId == null) {
+      _showToast("Error: Usuario no autenticado");
+      _removeNotificationFromFeed(ref, notification.id);
+      return;
+    }
+
+    final isSentRequest = userId == notification.senderId;
+
     try {
-      final supabase = Supabase.instance.client;
-      final userId = supabase.auth.currentUser?.id;
-      
-      if (userId == null) {
-        _showSnackBar(context, "Error: Usuario no autenticado", const Color(0xFFE57373));
-        return;
-      }
-
-      final isSentRequest = userId == notification.senderId;
-
       if (isSentRequest) {
-        try {
-          final friendController = ref.read(friendControllerProvider.notifier);
+        // Es una solicitud enviada por el usuario actual (cancelar)
+        final friendController = ref.read(friendControllerProvider.notifier);
 
-          if (notification.resourceId != null) {
-            await friendController.cancelFriendRequest(notification.resourceId!);
-            await friendController.loadPendingRequests();
-            
-            if (context.mounted) {
-              _showSnackBar(context, "Solicitud de amistad cancelada", const Color(0xFF90CAF9));
-            }
-          } else {
-            // Si no hay resourceId, intentar buscar la solicitud por senderId y receiverId
-            final result = await supabase
-                .from('friends')
-                .select()
-                .eq('user_id_1', userId)
-                .eq('user_id_2', notification.receiverId)
-                .eq('status', 'pending')
-                .limit(1)
-                .maybeSingle();
-                
-            if (result != null && result['id'] != null) {
-              final String friendRequestId = result['id'];
-              await friendController.cancelFriendRequest(friendRequestId);
-              await friendController.loadPendingRequests();
+        if (notification.resourceId != null) {
+          await friendController.cancelFriendRequest(notification.resourceId!);
+          await friendController.loadPendingRequests();
+          _showToast("Solicitud de amistad cancelada");
+        } else {
+          // Si no hay resourceId, intentar buscar la solicitud por senderId y userId (receptor)
+          final result = await supabase
+              .from('friends')
+              .select()
+              .eq('user_id_1', userId)
+              .eq('user_id_2', notification.userId)
+              .eq('status', 'pending')
+              .limit(1)
+              .maybeSingle();
               
-              if (context.mounted) {
-                _showSnackBar(context, "Solicitud de amistad cancelada", const Color(0xFF90CAF9));
-              }
-            } else {
-              if (context.mounted) {
-                _showSnackBar(context, "No se pudo identificar la solicitud de amistad", const Color(0xFFE57373));
-              }
-            }
-          }
-        } catch (e) {
-          dev.log('Error al cancelar solicitud de amistad: $e');
-          if (context.mounted) {
-            _showSnackBar(context, "Error al cancelar la solicitud: ${e.toString()}", const Color(0xFFE57373));
+          if (result != null && result['id'] != null) {
+            final String friendRequestId = result['id'];
+            await friendController.cancelFriendRequest(friendRequestId);
+            await friendController.loadPendingRequests();
+            _showToast("Solicitud de amistad cancelada");
+          } else {
+            _showToast("Esta solicitud de amistad ya no está disponible");
           }
         }
       } else if (accept) {
@@ -111,9 +88,9 @@ class MatchInvitationHandler extends ConsumerWidget {
               .update({'status': 'accepted'})
               .match({'id': resourceId});
 
-          if (context.mounted) {
-            _showSnackBar(context, "Solicitud de amistad aceptada", const Color(0xFF81C784));
-          }
+          _showToast("Solicitud de amistad aceptada");
+        } else {
+          _showToast("Esta solicitud de amistad ya no está disponible");
         }
       } else {
         // Rechazar solicitud de amistad
@@ -124,9 +101,9 @@ class MatchInvitationHandler extends ConsumerWidget {
               .update({'status': 'rejected'})
               .match({'id': resourceId});
 
-          if (context.mounted) {
-            _showSnackBar(context, "Solicitud de amistad rechazada", const Color(0xFFE57373));
-          }
+          _showToast("Solicitud de amistad rechazada");
+        } else {
+          _showToast("Esta solicitud de amistad ya no está disponible");
         }
       }
 
@@ -137,36 +114,36 @@ class MatchInvitationHandler extends ConsumerWidget {
           .match({'id': notification.id});
 
       // Actualizar el estado local
-      ref.read(notificationControllerProvider.notifier).markAsRead(notification.id);
-      ref.read(notificationControllerProvider.notifier).deleteNotification(notification.id);
+      _removeNotificationFromFeed(ref, notification.id);
       ref.read(friendControllerProvider.notifier).loadFriends();
     } catch (e) {
       dev.log('Error al procesar solicitud de amistad: $e');
-      if (context.mounted) {
-        _showSnackBar(context, "Error al procesar la solicitud: ${e.toString()}", const Color(0xFFE57373));
-      }
+      _showToast("Esta solicitud de amistad ya no está disponible");
+      _removeNotificationFromFeed(ref, notification.id);
     }
   }
 
   /// Maneja la respuesta a una invitación a un partido (aceptar o rechazar)
   Future<void> _handleMatchInvitationResponse(BuildContext context, WidgetRef ref, NotificationModel notification, bool accept) async {
+    final supabase = Supabase.instance.client;
+    final userId = supabase.auth.currentUser?.id;
+    
+    if (userId == null) {
+      _showToast("Error: Usuario no autenticado");
+      _removeNotificationFromFeed(ref, notification.id);
+      return;
+    }
+
+    // Verificar si hay un ID de partido en la notificación
+    if (notification.resourceId == null) {
+      _showToast("Este partido ya no está disponible.");
+      _removeNotificationFromFeed(ref, notification.id);
+      return;
+    }
+
+    final String matchId = notification.resourceId!;
+    
     try {
-      final supabase = Supabase.instance.client;
-      final userId = supabase.auth.currentUser?.id;
-      
-      if (userId == null) {
-        _showSnackBar(context, "Error: Usuario no autenticado", const Color(0xFFE57373));
-        return;
-      }
-
-      // Verificar si hay un ID de partido en la notificación
-      if (notification.resourceId == null) {
-        _showSnackBar(context, "No se pudo identificar el partido", const Color(0xFFE57373));
-        return;
-      }
-
-      final String matchId = notification.resourceId!;
-      
       if (accept) {
         // Aceptar invitación al partido
         await supabase
@@ -177,9 +154,7 @@ class MatchInvitationHandler extends ConsumerWidget {
               'status': 'accepted',
             });
             
-        if (context.mounted) {
-          _showSnackBar(context, "Has aceptado unirte al partido", const Color(0xFF81C784));
-        }
+        _showToast("Has aceptado unirte al partido");
       } else {
         // Rechazar invitación al partido
         await supabase
@@ -190,9 +165,7 @@ class MatchInvitationHandler extends ConsumerWidget {
               'status': 'rejected',
             });
             
-        if (context.mounted) {
-          _showSnackBar(context, "Has rechazado la invitación al partido", const Color(0xFFE57373));
-        }
+        _showToast("Has rechazado la invitación al partido");
       }
 
       // Marcar la notificación como leída
@@ -202,13 +175,30 @@ class MatchInvitationHandler extends ConsumerWidget {
           .match({'id': notification.id});
 
       // Actualizar el estado local
-      ref.read(notificationControllerProvider.notifier).markAsRead(notification.id);
-      ref.read(notificationControllerProvider.notifier).deleteNotification(notification.id);
+      _removeNotificationFromFeed(ref, notification.id);
     } catch (e) {
       dev.log('Error al procesar invitación a partido: $e');
-      if (context.mounted) {
-        _showSnackBar(context, "Error al procesar la invitación: ${e.toString()}", const Color(0xFFE57373));
-      }
+      _showToast("Este partido ya no está disponible.");
+      _removeNotificationFromFeed(ref, notification.id);
     }
+  }
+  
+  /// Muestra un mensaje usando Fluttertoast
+  void _showToast(String message) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      timeInSecForIosWeb: 2,
+      backgroundColor: const Color(0xFF333333),
+      textColor: Colors.white,
+      fontSize: 16.0
+    );
+  }
+  
+  /// Elimina la notificación del feed local
+  void _removeNotificationFromFeed(WidgetRef ref, String notificationId) {
+    ref.read(notificationControllerProvider.notifier).markAsRead(notificationId);
+    ref.read(notificationControllerProvider.notifier).deleteNotification(notificationId);
   }
 }

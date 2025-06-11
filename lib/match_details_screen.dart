@@ -1520,6 +1520,19 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
     try {
       final matchId = _matchData['id'];
       
+      // Eliminar las invitaciones asociadas al partido
+      try {
+        await supabase
+            .from('match_invitations')
+            .delete()
+            .eq('match_id', matchId);
+        
+        print('Eliminadas invitaciones del partido: $matchId');
+      } catch (invitationError) {
+        // Registrar el error pero continuar con el proceso de eliminación
+        print('Error al eliminar invitaciones: $invitationError');
+      }
+      
       // Eliminar las notificaciones relacionadas con este partido
       try {
         // Las notificaciones tienen el match_id en el campo data como JSON
