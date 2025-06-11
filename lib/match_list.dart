@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
+import 'dart:developer' as dev;
+
 import 'package:statsfoota/widgets/invite_friends_dialog.dart';
 import 'package:statsfoota/features/notifications/presentation/controllers/notification_controller.dart';
 import 'create_match.dart';
@@ -28,6 +30,10 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> with SingleTi
   List<Map<String, dynamic>> _friendsMatches = []; // Partidos de amigos (privados)
   List<Map<String, dynamic>> _publicMatches = []; // Partidos públicos
   
+  // Variables para los filtros de búsqueda
+  String _searchQuery = '';
+  DateTime? _selectedDate;
+  
   // Cache para los contadores de participantes
   final Map<int, int> _participantCountCache = {};
   
@@ -49,7 +55,26 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> with SingleTi
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this); // 3 pestañas: Mis Partidos, Amigos, Públicos
+    _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      // Manejar cambio de pestaña
+      if (!_tabController.indexIsChanging) {
+        _applyFilters();
+      }
+    });
+    _fetchMatches();
+    
+    // Inicializar el controlador de búsqueda
+    _searchController.addListener(() {
+      if (_searchController.text != _searchQuery) {
+        setState(() {
+          _searchQuery = _searchController.text;
+          _applyFilters();
+        });
+      }
+    });
+    _searchQuery = '';
+    _selectedDate = null;
     
     // Establecer el filtro por defecto para Mis Partidos como "Próximos"
     _timeFilter = 'Próximos';
@@ -64,7 +89,7 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> with SingleTi
           if (_timeFilter != 'Próximos') {
             setState(() {
               _timeFilter = 'Próximos';
-              _applyTimeFilter();
+              _applyFilters();
             });
           }
         }
@@ -75,8 +100,6 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> with SingleTi
     Future.microtask(() {
       ref.read(notificationControllerProvider.notifier).loadNotifications();
     });
-    
-    _fetchMatches();
   }
 
   @override
@@ -86,74 +109,130 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> with SingleTi
     super.dispose();
   }
   
-  // Método para aplicar el filtro de tiempo a las listas de partidos
-  void _applyTimeFilter() {
+  // Método para aplicar todos los filtros a las listas de partidos
+  void _applyFilters() {
     final now = DateTime.now();
+    final formatter = DateFormat('yyyy-MM-dd');
     
-    setState(() {      if (_timeFilter == 'Próximos') {
+    setState(() {
+      // Paso 1: Aplicar el filtro de tiempo (base)
+      List<Map<String, dynamic>> tempMyMatches;
+      List<Map<String, dynamic>> tempFriendsMatches;
+      List<Map<String, dynamic>> tempPublicMatches;
+      
+      if (_timeFilter == 'Próximos') {
         // Filtrar solo partidos con fecha futura
-        _filteredMyMatches = _myMatches.where((match) {
-          final matchDate = DateTime.parse(match['fecha']);
-          // Para Mis Partidos, filtrar solo por fecha futura
-          return matchDate.isAfter(now);
-        }).toList();
-        
-        _filteredFriendsMatches = _friendsMatches.where((match) {
+        tempMyMatches = _myMatches.where((match) {
           final matchDate = DateTime.parse(match['fecha']);
           return matchDate.isAfter(now);
         }).toList();
         
-        _filteredPublicMatches = _publicMatches.where((match) {
+        tempFriendsMatches = _friendsMatches.where((match) {
           final matchDate = DateTime.parse(match['fecha']);
           return matchDate.isAfter(now);
         }).toList();
-      } 
-      else if (_timeFilter == 'Pasados') {
+        
+        tempPublicMatches = _publicMatches.where((match) {
+          final matchDate = DateTime.parse(match['fecha']);
+          return matchDate.isAfter(now);
+        }).toList();
+      } else if (_timeFilter == 'Pasados') {
         // Filtrar solo partidos con fecha pasada
-        _filteredMyMatches = _myMatches.where((match) {
+        tempMyMatches = _myMatches.where((match) {
           final matchDate = DateTime.parse(match['fecha']);
           return matchDate.isBefore(now);
         }).toList();
         
         // Para las tabs de Amigos y Públicos, no mostramos partidos pasados
-        // independientemente del filtro seleccionado
         if (_tabController.index == 1 || _tabController.index == 2) {
-          _filteredFriendsMatches = [];
-          _filteredPublicMatches = [];
+          tempFriendsMatches = [];
+          tempPublicMatches = [];
         } else {
-          _filteredFriendsMatches = _friendsMatches.where((match) {
+          tempFriendsMatches = _friendsMatches.where((match) {
             final matchDate = DateTime.parse(match['fecha']);
             return matchDate.isBefore(now);
           }).toList();
           
-          _filteredPublicMatches = _publicMatches.where((match) {
+          tempPublicMatches = _publicMatches.where((match) {
             final matchDate = DateTime.parse(match['fecha']);
             return matchDate.isBefore(now);
           }).toList();
         }
-      } 
-      else {
-        // Mostrar todos los partidos para Mis Partidos
-        _filteredMyMatches = List.from(_myMatches);
+      } else { // 'Todos'
+        // No filtrar por tiempo
+        tempMyMatches = List.from(_myMatches);
         
         // Para las tabs de Amigos y Públicos, solo mostramos partidos futuros
         if (_tabController.index == 1 || _tabController.index == 2) {
-          _filteredFriendsMatches = _friendsMatches.where((match) {
+          tempFriendsMatches = _friendsMatches.where((match) {
             final matchDate = DateTime.parse(match['fecha']);
             return matchDate.isAfter(now);
           }).toList();
           
-          _filteredPublicMatches = _publicMatches.where((match) {
+          tempPublicMatches = _publicMatches.where((match) {
             final matchDate = DateTime.parse(match['fecha']);
             return matchDate.isAfter(now);
           }).toList();
         } else {
-          _filteredFriendsMatches = List.from(_friendsMatches);
-          _filteredPublicMatches = List.from(_publicMatches);
+          tempFriendsMatches = List.from(_friendsMatches);
+          tempPublicMatches = List.from(_publicMatches);
         }
       }
-    });
+      
+      // Paso 2: Aplicar filtro de búsqueda por nombre o ubicación
+      if (_searchQuery.isNotEmpty) {
+        final searchLower = _searchQuery.toLowerCase();
+        
+        // Filtrar por nombre o ubicación (insensible a mayúsculas/minúsculas)
+        tempMyMatches = tempMyMatches.where((match) {
+          final nombre = match['nombre']?.toString().toLowerCase() ?? '';
+          final ubicacion = match['ubicacion']?.toString().toLowerCase() ?? '';
+          return nombre.contains(searchLower) || ubicacion.contains(searchLower);
+        }).toList();
+        
+        tempFriendsMatches = tempFriendsMatches.where((match) {
+          final nombre = match['nombre']?.toString().toLowerCase() ?? '';
+          final ubicacion = match['ubicacion']?.toString().toLowerCase() ?? '';
+          return nombre.contains(searchLower) || ubicacion.contains(searchLower);
+        }).toList();
+        
+        tempPublicMatches = tempPublicMatches.where((match) {
+          final nombre = match['nombre']?.toString().toLowerCase() ?? '';
+          final ubicacion = match['ubicacion']?.toString().toLowerCase() ?? '';
+          return nombre.contains(searchLower) || ubicacion.contains(searchLower);
+        }).toList();
+      }
+      
+      // Paso 3: Aplicar el filtro de fecha si existe
+      if (_selectedDate != null) {
+        final selectedDateString = formatter.format(_selectedDate!);
+        
+        tempMyMatches = tempMyMatches.where((match) {
+          final matchDate = DateTime.parse(match['fecha']);
+          final matchDateString = formatter.format(matchDate);
+          return matchDateString == selectedDateString;
+        }).toList();
+        
+        tempFriendsMatches = tempFriendsMatches.where((match) {
+          final matchDate = DateTime.parse(match['fecha']);
+          final matchDateString = formatter.format(matchDate);
+          return matchDateString == selectedDateString;
+        }).toList();
+        
+        tempPublicMatches = tempPublicMatches.where((match) {
+          final matchDate = DateTime.parse(match['fecha']);
+          final matchDateString = formatter.format(matchDate);
+          return matchDateString == selectedDateString;
+        }).toList();
+      }
+      
+      // Asignar las listas filtradas
+      _filteredMyMatches = tempMyMatches;
+      _filteredFriendsMatches = tempFriendsMatches;
+      _filteredPublicMatches = tempPublicMatches;
+    });  
   }
+
   Future<void> _fetchMatches() async {
     try {
       setState(() {
@@ -371,8 +450,8 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> with SingleTi
           _friendsMatches = friendsMatchesList;
           _isLoading = false;
           
-          // Aplicar el filtro de tiempo actual
-          _applyTimeFilter();
+          // Aplicar todos los filtros
+          _applyFilters();
         });
       } catch (e) {
         print('Error en consulta específica: $e');
@@ -775,166 +854,190 @@ Hora: $formattedTime
   }
 
   Widget _buildTimeFilterRow() {
-  return Container(
-    padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
-    decoration: BoxDecoration(
-      color: Colors.blue.shade900.withOpacity(0.5),
-    ),
-    child: Column(
-      children: [
-        // Search bar
-        Container(
-          margin: EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: TextField(
-            style: TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              hintText: 'Buscar partidos...',
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-              prefixIcon: Icon(Icons.search, color: Colors.white),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 12),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade900.withOpacity(0.5),
+      ),
+      child: Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
             ),
-            onChanged: (value) {
-              // Implementar la búsqueda aquí
-              // TODO: Filtrar partidos por nombre
-            },
-          ),
-        ),
-        // Filter row
-        Row(
-          children: [
-            Icon(Icons.filter_list, color: Colors.white),
-            SizedBox(width: 8),
-            Text(
-              'Mostrar:',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+            child: TextField(
+              controller: _searchController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Buscar partidos...',
+                hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                prefixIcon: const Icon(Icons.search, color: Colors.white),
+                suffixIcon: _searchQuery.isNotEmpty ? IconButton(
+                  icon: const Icon(Icons.clear, color: Colors.white),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() {
+                      _searchQuery = '';
+                      _applyFilters();
+                    });
+                  },
+                ) : null,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                  _applyFilters();
+                });
+              },
             ),
-            SizedBox(width: 12),
-            Expanded(
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
+          ),
+          Row(
+            children: [
+              Icon(Icons.filter_list, color: Colors.white),
+              const SizedBox(width: 8),
+              const Text(
+                'Mostrar:',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
                 ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _timeFilter,
-                    isDense: true,
-                    dropdownColor: Colors.blue.shade800,
-                    icon: Icon(Icons.arrow_drop_down, color: Colors.white),
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-                    onChanged: (String? newValue) {
-                      if (newValue != null) {
-                        setState(() {
-                          _timeFilter = newValue;
-                          _applyTimeFilter();
-                        });
-                      }
-                    },
-                    items: ['Próximos', 'Pasados', 'Todos']
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _timeFilter,
+                      isDense: true,
+                      dropdownColor: Colors.blue.shade800,
+                      icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            _timeFilter = newValue;
+                            _applyFilters();
+                          });
+                        }
+                      },
+                      items: ['Próximos', 'Pasados', 'Todos']
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
               ),
-            ),
-            SizedBox(width: 12),
-            // Date picker button
-            InkWell(
-              onTap: () async {
-                final DateTime? picked = await showDatePicker(
-                  context: context,
-                  initialDate: DateTime.now(),
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime(2030),
-                  builder: (BuildContext context, Widget? child) {
-                    return Theme(
-                      data: ThemeData.light().copyWith(
-                        primaryColor: Colors.blue.shade800,
-                        colorScheme: ColorScheme.light(
-                          primary: Colors.blue.shade800,
-                          onPrimary: Colors.white,
-                        ),
-                      ),
-                      child: child!,
-                    );
-                  },
-                );
-                if (picked != null) {
-                  // Implementar filtro por fecha
-                  // TODO: Filtrar partidos por fecha seleccionada
-                }
-              },
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: _selectedDate != null 
+                      ? Colors.blue.shade700 
+                      : Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.calendar_today, color: Colors.white, size: 20),
-                    SizedBox(width: 4),
-                    Text(
-                      'Fecha',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ],
+                child: InkWell(
+                  onTap: () async {
+                    final DateTime? picked = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedDate ?? DateTime.now(),
+                      firstDate: DateTime(2023),
+                      lastDate: DateTime(2025),
+                      builder: (context, child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: ColorScheme.dark(
+                              primary: Colors.blue.shade400,
+                              onPrimary: Colors.white,
+                              surface: Colors.blue.shade900,
+                              onSurface: Colors.white,
+                            ),
+                            dialogBackgroundColor: Colors.blue.shade800,
+                          ),
+                          child: child!,
+                        );
+                      },
+                    );
+                    
+                    if (picked != null) {
+                      setState(() {
+                        // Si ya estaba seleccionada la misma fecha, la deseleccionamos
+                        final formatter = DateFormat('yyyy-MM-dd');
+                        if (_selectedDate != null && 
+                            formatter.format(_selectedDate!) == formatter.format(picked)) {
+                          _selectedDate = null;
+                        } else {
+                          _selectedDate = picked;
+                        }
+                        _applyFilters();
+                      });
+                    }
+                  },
+                  child: Row(
+                    children: [
+                      const Icon(Icons.calendar_today, color: Colors.white, size: 20),
+                      const SizedBox(width: 4),
+                      Text(
+                        _selectedDate != null 
+                            ? DateFormat('dd/MM/yyyy').format(_selectedDate!) 
+                            : 'Fecha',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      if (_selectedDate != null)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4),
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _selectedDate = null;
+                                _applyFilters();
+                              });
+                            },
+                            child: const Icon(Icons.clear, color: Colors.white, size: 16),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
+            ],
+          ),
+        ],
+      ),
+    );
 }  
 
   Widget _buildErrorMessage() {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              color: Colors.white,
-              size: 70,
-            ),
-            SizedBox(height: 20),
+            const Icon(Icons.error_outline, size: 60, color: Colors.red),
+            const SizedBox(height: 16),
             Text(
-              _error ?? 'Ocurrió un error',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-              ),
+              _error ?? 'Error desconocido',
+              style: const TextStyle(fontSize: 18),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _fetchMatches,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.blue.shade800,
-                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-              child: Text('Reintentar'),
+              child: const Text('Reintentar'),
             ),
           ],
         ),
