@@ -299,10 +299,10 @@ class _NotificationsDrawerState extends ConsumerState<NotificationsDrawer> {
   
   /// Método auxiliar para manejar las invitaciones a partidos
   void _handleMatchInvitation(BuildContext context, NotificationModel notification, bool accept) {
-    // Crear una instancia temporal del handler y acceder al método público
-    final handler = MatchInvitationHandler(notification: notification);
-    // Usamos un método público para manejar la invitación
-    handler.handleInvitation(context, ref, accept);
+    // Crear una instancia temporal del handler con el parámetro accept
+    final handler = MatchInvitationHandler(notification: notification, accept: accept);
+    // El handler procesará la invitación automáticamente en su build
+    handler.build(context, ref);
   }
 
   Widget _buildFriendRequestItem(
