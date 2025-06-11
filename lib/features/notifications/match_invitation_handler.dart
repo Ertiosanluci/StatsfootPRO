@@ -139,13 +139,26 @@ class MatchInvitationHandler extends ConsumerWidget {
       ref.read(notificationControllerProvider.notifier).deleteNotification(notification.id);
       
       // Mostrar mensaje de confirmación
-      Navigator.pop(context); // Cerrar el cajón de notificaciones
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(accept ? 'Te has unido al partido' : 'Has rechazado la invitación'))
       );
       
+      // Si acepta, navegar a la pantalla de detalles del partido
+      if (accept) {
+        // Cerrar el cajón de notificaciones antes de navegar
+        Navigator.of(context).pop();
+        
+        // Navegar a la pantalla de detalles del partido usando una ruta dinámica
+        // Esto evita tener que importar directamente la clase MatchDetailsScreen
+        Navigator.of(context).pushNamed(
+          '/match_details',
+          arguments: matchId,
+        );
+      }
+      // Si rechaza, no cerramos la pantalla de notificaciones
+      
     } catch (e) {
-      debugPrint('Error al responder a la invitación: $e');
+      print('Error al responder a la invitación: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al procesar la invitación: $e'))
       );
