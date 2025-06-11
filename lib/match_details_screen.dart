@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'dart:convert'; // Añadir para usar jsonDecode
+import 'dart:convert'; // Para usar jsonDecode
+import 'dart:async'; // Para Future
+import 'dart:developer' as dev; // Para logging
 
 // Importar los widgets y servicios creados
 import 'widgets/match_details/scoreboard_widget.dart';
@@ -1084,7 +1086,8 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
   @override
   Widget build(BuildContext context) {
     final int golesEquipoClaro = _matchData['resultado_claro'] ?? 0;
-    final int golesEquipoOscuro = _matchData['resultado_oscuro'] ?? 0;    final bool isPartidoFinalizado = _matchData['estado'] == 'finalizado';
+    final int golesEquipoOscuro = _matchData['resultado_oscuro'] ?? 0;
+    final bool isPartidoFinalizado = _matchData['estado'] == 'finalizado';
     
     // Determinar si el usuario actual es el creador del partido
     final currentUser = Supabase.instance.client.auth.currentUser;
@@ -1122,26 +1125,27 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
         title: Text(_isLoading ? 'Cargando detalles...' : _matchData['nombre'] ?? 'Detalles del Partido'),
         centerTitle: true,
         backgroundColor: Colors.blue.shade800,
-        titleTextStyle: TextStyle(
+        titleTextStyle: const TextStyle(
           color: Colors.white,
           fontSize: 20,
           fontWeight: FontWeight.bold,
         ),
-        leading: BackButton(color: Colors.white),
+        leading: const BackButton(color: Colors.white),
         bottom: TabBar(
           controller: _tabController,
-          tabs: [
+          tabs: const [
             Tab(text: 'Equipo Claro'),
             Tab(text: 'Equipo Oscuro'),
           ],
           indicatorColor: Colors.orange.shade600,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
-        ),        // Mostrar opciones de edición solo al creador del partido
-        actions: [          // Mostrar botón de votación para usuarios (si hay votación activa)
+        ),
+        actions: [
+          // Mostrar botón de votación para usuarios (si hay votación activa)
           if (isPartidoFinalizado && _activeVoting != null && !isReadOnly)
             IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.how_to_vote,
                 color: Colors.white,
                 size: 26,
@@ -1153,7 +1157,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           // Botón para ver historial de votaciones (solo visible si partido finalizado)
           if (isPartidoFinalizado)
             IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.history,
                 color: Colors.white70,
                 size: 24,
@@ -1165,7 +1169,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           if (!isReadOnly && !_isLoading) ...[
             if (!isPartidoFinalizado)
               IconButton(
-                icon: Icon(
+                icon: const Icon(
                   Icons.sports_score,
                   color: Colors.white,
                   size: 26,
@@ -1184,111 +1188,114 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
               ),
             if (!isPartidoFinalizado)
               IconButton(
-                icon: Icon(
+                icon: const Icon(
                   Icons.flag_outlined,
                   color: Colors.white,
                   size: 26,
                 ),
                 tooltip: 'Finalizar partido',
                 onPressed: _showFinalizarPartidoDialog,
-              ),            if (isPartidoFinalizado && _activeVoting == null)
-              IconButton(
-                icon: Icon(
-                  Icons.how_to_vote,
-                  color: Colors.amber,
-                  size: 26,
-                ),
-                tooltip: 'Iniciar votación MVPs',
-                onPressed: _showStartVotingDialog,
               ),
-                // Botón para rehacer votación (solo para el creador y si el partido está finalizado)
-            if (isPartidoFinalizado && isCreator)
-              IconButton(
-                icon: Icon(
-                  Icons.replay_circle_filled,
-                  color: Colors.orange.shade600,
-                  size: 26,
+          ],
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
+              children: [
+                Column(
+                  children: [
+                    // Marcador
+                    ScoreboardWidget(
+                      golesEquipoClaro: golesEquipoClaro,
+                      golesEquipoOscuro: golesEquipoOscuro,
+                      isPartidoFinalizado: isPartidoFinalizado,
+                      onViewResultsTap: isPartidoFinalizado ? _navigateToMVPResultsReveal : null,
+                    ),
+                    
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          // Equipo Claro
+                          TeamFormation(
+                            players: _teamClaro,
+                            positions: _teamClaroPositions,
+                            isTeamClaro: true,
+                            matchData: _matchData,
+                            onPlayerTap: isReadOnly || isPartidoFinalizado ? null : _showPlayerStatsDialog,
+                            onPlayerPositionChanged: (playerId, position) => 
+                                _updatePlayerPosition(playerId, position, true),
+                            onSavePositions: () => _saveAllPositionsToDatabase(true),
+                            isReadOnly: !isCreator || isPartidoFinalizado,
+                            mvpId: _mvpTeamClaro,
+                          ),
+                          
+                          // Equipo Oscuro
+                          TeamFormation(
+                            players: _teamOscuro,
+                            positions: _teamOscuroPositions,
+                            isTeamClaro: false,
+                            matchData: _matchData,
+                            onPlayerTap: isReadOnly || isPartidoFinalizado ? null : _showPlayerStatsDialog,
+                            onPlayerPositionChanged: (playerId, position) => 
+                                _updatePlayerPosition(playerId, position, false),
+                            onSavePositions: () => _saveAllPositionsToDatabase(false),
+                            isReadOnly: !isCreator || isPartidoFinalizado,
+                            mvpId: _mvpTeamOscuro,
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Mostrar los mejores jugadores de MVP si hay votación activa
+                    if (_activeVoting != null)
+                      FutureBuilder<List<Map<String, dynamic>>>(
+                        future: _mvpVotingService.getTopVotedPlayers(_matchData['id']),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return TopMVPPlayersWidget(
+                              topPlayers: const [],
+                              isLoading: true,
+                            );
+                          } else if (snapshot.hasError) {
+                            return const SizedBox.shrink(); // No mostrar nada en caso de error
+                          } else if (snapshot.hasData) {
+                            return TopMVPPlayersWidget(
+                              topPlayers: snapshot.data!,
+                              isLoading: false,
+                            );
+                          } else {
+                            return const SizedBox.shrink();
+                          }
+                        },
+                      ),
+                  ],
                 ),
-                tooltip: 'Rehacer votación MVP',
-                onPressed: _rehacerMVPVotacion,
-              ),
-              
-            // Botón de test eliminado
-          ],        ],      ),
-      body: _isLoading 
-        ? Center(child: CircularProgressIndicator(color: Colors.blue))
-        : Stack(
-            children: [
-              // Contenido principal
-              Column(
-                children: [              
-                  // Marcador
-                  ScoreboardWidget(
-                    golesEquipoClaro: golesEquipoClaro,
-                    golesEquipoOscuro: golesEquipoOscuro,
-                    isPartidoFinalizado: isPartidoFinalizado,
-                    onViewResultsTap: isPartidoFinalizado ? _navigateToMVPResultsReveal : null,
+                
+                // Widget flotante de votación (solo si hay votación activa)
+                if (_activeVoting != null)
+                  FloatingVotingTimerWidget(
+                    votingData: _activeVoting!,
+                    onVoteButtonPressed: _showMVPVotingDialog,
+                    onFinishVotingPressed: isCreator ? _finishMVPVotingManually : null,
+                    onResetVotingPressed: isCreator ? _rehacerMVPVotacion : null,
                   ),
-              
-              // Campo y jugadores
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.blue.shade100, Colors.blue.shade300],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
+                
+                // Botón flotante para abandonar o eliminar el partido
+                if (!isPartidoFinalizado)
+                  Positioned(
+                    right: 16,
+                    bottom: 16,
+                    child: FloatingActionButton.extended(
+                      onPressed: isCreator ? _showDeleteMatchDialog : _showLeaveMatchDialog,
+                      backgroundColor: isCreator ? Colors.red : Colors.orange,
+                      icon: Icon(isCreator ? Icons.delete : Icons.exit_to_app),
+                      label: Text(isCreator ? 'Eliminar partido' : 'Abandonar partido'),
                     ),
                   ),
-                  child: TabBarView(
-                    controller: _tabController,
-                    physics: BouncingScrollPhysics(),
-                    children: [
-                      // Equipo Claro
-                      TeamFormation(
-                        players: _teamClaro,
-                        positions: _teamClaroPositions,
-                        isTeamClaro: true,
-                        matchData: _matchData,
-                        // Deshabilitar la edición de posiciones en modo de solo lectura
-                        onPlayerPositionChanged: isReadOnly ? null : (playerId, position) => 
-                            _updatePlayerPosition(playerId, position, true),
-                        // Ocultar botón de guardar en modo de solo lectura
-                        onSavePositions: isReadOnly ? null : () => _saveAllPositionsToDatabase(true),
-                        mvpId: _mvpTeamClaro,
-                        isReadOnly: isReadOnly, // Pasar el modo de solo lectura al componente
-                        onPlayerTap: isReadOnly || isPartidoFinalizado ? null : _showPlayerStatsDialog, // Permitir editar estadísticas
-                      ),
-                      
-                      // Equipo Oscuro
-                      TeamFormation(
-                        players: _teamOscuro,
-                        positions: _teamOscuroPositions,
-                        isTeamClaro: false,
-                        matchData: _matchData,
-                        // Deshabilitar la edición de posiciones en modo de solo lectura
-                        onPlayerPositionChanged: isReadOnly ? null : (playerId, position) => 
-                            _updatePlayerPosition(playerId, position, false),
-                        // Ocultar botón de guardar en modo de solo lectura
-                        onSavePositions: isReadOnly ? null : () => _saveAllPositionsToDatabase(false),
-                        mvpId: _mvpTeamOscuro,
-                        isReadOnly: isReadOnly, // Pasar el modo de solo lectura al componente
-                        onPlayerTap: isReadOnly || isPartidoFinalizado ? null : _showPlayerStatsDialog, // Permitir editar estadísticas
-                      ),
-                    ],
-                  ),
-                ),              ),
-            ],
-          ),                // Widget flotante de votación (solo si hay votación activa)
-              if (_activeVoting != null)
-                FloatingVotingTimerWidget(
-                  votingData: _activeVoting!,
-                  onVoteButtonPressed: _showMVPVotingDialog,
-                  onFinishVotingPressed: isCreator ? _finishMVPVotingManually : null,
-                  onResetVotingPressed: isCreator ? _rehacerMVPVotacion : null,
-                ),
-            ],
-          ),
+              ],
+            ),
     );
   }
   
@@ -1339,6 +1346,287 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
       }
     } catch (e) {
       print('Error al revisar notificaciones: $e');
+    }
+  }
+
+  // Método para mostrar el diálogo de confirmación para abandonar el partido
+  Future<void> _showLeaveMatchDialog() async {
+    final bool confirmLeave = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: const Text('Abandonar partido'),
+        content: const Text('¿Estás seguro de que quieres abandonar este partido? Ya no podrás volver a unirte a menos que te inviten de nuevo.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Abandonar'),
+          ),
+        ],
+      ),
+    ) ?? false;
+
+    if (!confirmLeave) return;
+
+    // Mostrar diálogo de carga
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 20),
+                const Text('Abandonando partido...'),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    try {
+      final currentUser = supabase.auth.currentUser;
+      if (currentUser == null) {
+        // Cerrar diálogo de carga
+        if (!mounted) return;
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error: No se ha iniciado sesión'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      final matchId = _matchData['id'];
+      
+      // Verificar que el usuario es participante
+      final participante = await supabase
+          .from('match_participants')
+          .select()
+          .eq('match_id', matchId)
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+
+      if (participante == null) {
+        // Cerrar diálogo de carga
+        if (!mounted) return;
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error: No eres participante de este partido'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Eliminar al usuario de los participantes
+      await supabase
+          .from('match_participants')
+          .delete()
+          .eq('match_id', matchId)
+          .eq('user_id', currentUser.id);
+
+      // Cerrar diálogo de carga
+      if (!mounted) return;
+      Navigator.of(context).pop();
+
+      // Mostrar mensaje de éxito
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Has abandonado el partido correctamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Volver a la pantalla anterior
+      Navigator.of(context).pop();
+      
+    } catch (e) {
+      print('Error al abandonar partido: $e');
+      
+      // Cerrar diálogo de carga
+      if (!mounted) return;
+      Navigator.of(context).pop();
+
+      // Mostrar mensaje de error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al abandonar el partido: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Método para mostrar el diálogo de confirmación para eliminar un partido
+  Future<void> _showDeleteMatchDialog() async {
+    // Mostrar diálogo de confirmación
+    final bool confirmDelete = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Eliminar partido'),
+          content: Text('¿Estás seguro de que quieres eliminar este partido? Esta acción no se puede deshacer.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text('Eliminar', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    ) ?? false;
+
+    if (!confirmDelete) return;
+
+    // Mostrar diálogo de carga
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 20),
+                Text('Eliminando partido...'),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    try {
+      final matchId = _matchData['id'];
+      
+      // Eliminar las notificaciones relacionadas con este partido
+      try {
+        // Las notificaciones tienen el match_id en el campo data como JSON
+        final notificationsToDelete = await supabase
+            .from('notifications')
+            .select('id, data, type')
+            .eq('type', 'match_invite');
+            
+        // Filtrar las notificaciones que contienen este match_id
+        final List<dynamic> notificationIds = [];
+        
+        for (final notification in notificationsToDelete) {
+          try {
+            if (notification['data'] != null) {
+              // El campo data puede ser un string JSON o un mapa
+              Map<String, dynamic> data;
+              if (notification['data'] is String) {
+                // Intentar parsear el JSON si es un string
+                try {
+                  data = jsonDecode(notification['data']);
+                } catch (_) {
+                  continue; // Si no se puede parsear, pasar a la siguiente
+                }
+              } else if (notification['data'] is Map) {
+                data = Map<String, dynamic>.from(notification['data']);
+              } else {
+                continue; // Si no es string ni mapa, pasar a la siguiente
+              }
+              
+              // Verificar si el match_id coincide
+              if (data.containsKey('match_id') && 
+                  data['match_id'] != null && 
+                  data['match_id'].toString() == matchId.toString()) {
+                notificationIds.add(notification['id']);
+              }
+            }
+          } catch (e) {
+            print('Error al procesar notificación: $e');
+          }
+        }
+        
+        // Eliminar las notificaciones encontradas
+        if (notificationIds.isNotEmpty) {
+          // Usar el método correcto para filtrar por una lista de IDs
+          for (final id in notificationIds) {
+            await supabase
+                .from('notifications')
+                .delete()
+                .eq('id', id);
+          }
+          
+          print('Eliminadas ${notificationIds.length} notificaciones del partido: $matchId');
+        }
+      } catch (notificationError) {
+        // Registrar el error pero continuar con el proceso de eliminación
+        print('Error al eliminar notificaciones: $notificationError');
+      }
+      
+      // Eliminar las estadísticas de los jugadores
+      await supabase
+          .from('estadisticas')
+          .delete()
+          .eq('partido_id', matchId);
+      
+      print('Eliminadas estadísticas del partido: $matchId');
+      
+      // Eliminar los participantes
+      await supabase
+          .from('match_participants')
+          .delete()
+          .eq('match_id', matchId);
+      
+      print('Eliminados participantes del partido: $matchId');
+
+      // Finalmente eliminar el partido
+      await supabase
+          .from('matches')
+          .delete()
+          .eq('id', matchId);
+
+      // Cerrar diálogo de carga
+      Navigator.pop(context);
+      
+      // Mostrar mensaje de éxito
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Partido eliminado correctamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Volver a la pantalla anterior
+      Navigator.pop(context);
+      
+    } catch (e) {
+      print('Error al eliminar partido: $e');
+      
+      // Cerrar diálogo de carga
+      Navigator.pop(context);
+
+      // Mostrar mensaje de error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al eliminar el partido: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 }

@@ -179,9 +179,6 @@ debugPrint('\n');
     try {
       debugPrint('Intentando enviar notificación a $friendName (ID: $friendId)');
       
-      // Obtener el player ID del amigo invitado
-      final playerIdToSend = await OneSignalService.getPlayerIdByUserId(friendId);
-      
       // Obtener información adicional del partido para incluir en la notificación
       final matchDetails = await _supabase
           .from('matches')
@@ -194,40 +191,34 @@ debugPrint('\n');
       final String fecha = matchDetails['fecha']?.toString() ?? '';
       final String formato = matchDetails['formato'] ?? '';
       
-      if (playerIdToSend != null && playerIdToSend.isNotEmpty) {
-        // Preparar los datos adicionales para la notificación
-        final additionalData = {
-          'type': 'match_invitation',
-          'match_id': matchId,
-          'inviter_id': _supabase.auth.currentUser!.id,
-          'inviter_name': inviterName,
-          'match_name': matchName,
-          'nombre': nombre,
-          'fecha': fecha,
-          'formato': formato
-        };
-        
-        debugPrint('Enviando notificación a $friendName con player_id: $playerIdToSend');
-        
-        try {
-          debugPrint('Enviando notificación a $friendName con player_id: $playerIdToSend');
-        
+      // Preparar los datos adicionales para la notificación
+      final additionalData = {
+        'type': 'match_invitation',
+        'match_id': matchId,
+        'inviter_id': _supabase.auth.currentUser!.id,
+        'inviter_name': inviterName,
+        'match_name': matchName,
+        'nombre': nombre,
+        'fecha': fecha,
+        'formato': formato
+      };
+      
+      debugPrint('Enviando notificación a $friendName (ID: $friendId) en todos sus dispositivos');
+      
+      try {
+        // Enviar notificación a todos los dispositivos del usuario
         await OneSignalService.sendTestNotification(
           title: 'Invitación a partido de fútbol',
           content: 'Has sido invitado a un partido de fútbol local. Pulsa para unirte y ver los detalles del evento.',
           additionalData: additionalData,
-          playerIds: playerIdToSend, // Usar el player_id del destinatario
+          userId: friendId, // Usar el ID del usuario para enviar a todos sus dispositivos
         );
         
         notificationSent = true;
-        debugPrint('Notificación enviada exitosamente a $friendName');
-        } catch (notifError) {
-          errorMessage = 'Error al enviar la notificación: $notifError';
-          debugPrint(errorMessage);
-        }  
-      } else {
-        errorMessage = 'No se encontró ID de OneSignal para $friendName';
-        debugPrint('$errorMessage. Verificando tabla user_push_tokens...');
+        debugPrint('Notificación enviada exitosamente a todos los dispositivos de $friendName');
+      } catch (notifError) {
+        errorMessage = 'Error al enviar la notificación: $notifError';
+        debugPrint(errorMessage);
         
         // Verificar directamente en la tabla para depuración
         try {
@@ -237,8 +228,10 @@ debugPrint('\n');
               .eq('user_id', friendId);
           
           if (result.isNotEmpty) {
-            final tokenData = result[0];
-            debugPrint('Se encontró registro en user_push_tokens: $tokenData');
+            debugPrint('Se encontraron ${result.length} tokens registrados para el usuario $friendId');
+            for (var token in result) {
+              debugPrint('Token: ${token['player_id']}');
+            }
           } else {
             debugPrint('No existe registro en user_push_tokens para el usuario $friendId');
             

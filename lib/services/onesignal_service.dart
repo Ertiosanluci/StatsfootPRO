@@ -95,32 +95,34 @@ class OneSignalService {
       
       final userId = _supabase.auth.currentUser!.id;
       
-      // Verificar si ya existe un registro para este usuario
+      // Verificar si ya existe un registro para este usuario y este dispositivo
       final existingData = await _supabase
           .from('user_push_tokens')
           .select()
           .eq('user_id', userId)
+          .eq('player_id', playerId)
           .maybeSingle();
       
       if (existingData != null) {
-        // Actualizar el registro existente
+        // Actualizar el registro existente (solo la fecha)
         await _supabase
             .from('user_push_tokens')
             .update({
-              'player_id': playerId,
               'updated_at': DateTime.now().toIso8601String(),
             })
-            .eq('user_id', userId);
+            .eq('id', existingData['id']);
         debugPrint('Token de dispositivo actualizado para el usuario: $userId');
       } else {
-        // Crear un nuevo registro
+        // Crear un nuevo registro para este dispositivo
         await _supabase
             .from('user_push_tokens')
             .insert({
               'user_id': userId,
               'player_id': playerId,
+              'created_at': DateTime.now().toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(),
             });
-        debugPrint('Token de dispositivo guardado para el usuario: $userId');
+        debugPrint('Nuevo token de dispositivo guardado para el usuario: $userId');
       }
     } catch (e) {
       debugPrint('Error al guardar el token del dispositivo: $e');
@@ -131,41 +133,45 @@ class OneSignalService {
     }
   }
   
-  // Obtener el player ID de un usuario específico desde Supabase
-  static Future<String?> getPlayerIdByUserId(String userId) async {
+  // Obtener todos los player IDs de un usuario específico desde Supabase
+  static Future<List<String>> getPlayerIdsByUserId(String userId) async {
     try {
-      debugPrint('Buscando player_id para el usuario: $userId');
+      debugPrint('Buscando player_ids para el usuario: $userId');
       
       // Primero verificamos si la tabla existe y qué registros contiene
       final allTokens = await _supabase
           .from('user_push_tokens')
           .select('*');
-         
-      
+       
       debugPrint('Tokens disponibles en la tabla: ${allTokens.length}');
       for (var token in allTokens) {
         debugPrint('Token encontrado - user_id: ${token['user_id']}, player_id: ${token['player_id']}');
       }
       
-      // Ahora buscamos el token específico para este usuario
+      // Ahora buscamos todos los tokens para este usuario
       final data = await _supabase
           .from('user_push_tokens')
           .select('player_id')
-          .eq('user_id', userId.trim())
-          .maybeSingle();
+          .eq('user_id', userId.trim());
       
-      if (data != null) {
-        final playerId = data['player_id'] as String?;
-        debugPrint('Player ID encontrado para $userId: $playerId');
-        return playerId;
+      if (data.isNotEmpty) {
+        final playerIds = data.map((item) => item['player_id'] as String).toList();
+        debugPrint('Player IDs encontrados para $userId: $playerIds');
+        return playerIds;
       } else {
         debugPrint('No se encontró ningún registro para el usuario $userId');
-        return null;
+        return [];
       }
     } catch (e) {
-      debugPrint('Error al obtener el player ID del usuario $userId: $e');
-      return null;
+      debugPrint('Error al obtener los player IDs del usuario $userId: $e');
+      return [];
     }
+  }
+  
+  // Método de compatibilidad para código existente
+  static Future<String?> getPlayerIdByUserId(String userId) async {
+    final playerIds = await getPlayerIdsByUserId(userId);
+    return playerIds.isNotEmpty ? playerIds.first : null;
   }
   
   // API Key para OneSignal REST API
@@ -255,6 +261,7 @@ class OneSignalService {
     Map<String, dynamic>? additionalData,
     String? externalUserId,
     String? playerIds,
+    String? userId,
   }) async {
     try {
       debugPrint('Enviando notificación usando la API REST de OneSignal');
@@ -273,7 +280,17 @@ class OneSignalService {
       };
       
       // Configurar los destinatarios de la notificación
-      if (externalUserId != null && externalUserId.isNotEmpty) {
+      if (userId != null && userId.isNotEmpty) {
+        // Si tenemos un userId, obtenemos todos sus dispositivos
+        final userPlayerIds = await getPlayerIdsByUserId(userId);
+        if (userPlayerIds.isNotEmpty) {
+          requestBody['include_player_ids'] = userPlayerIds;
+          debugPrint('Enviando notificación a todos los dispositivos del usuario $userId: $userPlayerIds');
+        } else {
+          debugPrint('No se encontraron dispositivos registrados para el usuario $userId');
+          return; // No hay dispositivos a los que enviar la notificación
+        }
+      } else if (externalUserId != null && externalUserId.isNotEmpty) {
         requestBody['include_external_user_ids'] = [externalUserId];
       } else if (playerIds != null && playerIds.isNotEmpty) {
         // Asegurarnos de que playerIds sea siempre un array
@@ -285,7 +302,7 @@ class OneSignalService {
           playerIdList = [playerIds];
         }
         requestBody['include_player_ids'] = playerIdList;
-        debugPrint('Enviando notificación a player_ids: $playerIdList');
+        debugPrint('Enviando notificación a player_ids específicos: $playerIdList');
       } else {
         final currentPlayerId = await getPlayerId();
         if (currentPlayerId != null) {
