@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statsfoota/features/friends/domain/models/user_profile.dart';
 import 'package:statsfoota/features/friends/presentation/controllers/friend_controller.dart';
+import 'package:statsfoota/screens/friend_statistics_screen.dart';
 
 class UserProfileScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -375,6 +376,38 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 ),
               ),
             SizedBox(height: 30),
+            
+            // Botón para ver estadísticas detalladas
+            if (_isFriend) // Solo mostrar si es amigo
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.bar_chart),
+                  label: const Text('Ver Estadísticas'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange.shade600,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    minimumSize: const Size(double.infinity, 54),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    elevation: 5,
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FriendStatisticsScreen(
+                          friendId: widget.userId,
+                          friendName: _userProfile!.username,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            SizedBox(height: 30),
           ],
         ),
       ),
@@ -574,6 +607,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       );
     }
   }
+
+
 
   void _showRemoveFriendDialog() {
     showDialog(
