@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statsfoota/features/friends/presentation/controllers/friend_controller.dart';
-import 'package:statsfoota/features/friends/presentation/screens/friend_requests_screen.dart';
 import 'package:statsfoota/features/friends/presentation/screens/friends_list_screen.dart';
 import 'package:statsfoota/features/friends/presentation/screens/people_screen.dart';
 
@@ -17,13 +16,12 @@ class _FriendsMainScreenState extends ConsumerState<FriendsMainScreen> with Sing
   final List<Widget> _screens = [
     const PeopleScreen(),
     const FriendsListScreen(),
-    const FriendRequestsScreen(),
   ];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _loadData();
   }
   
@@ -42,8 +40,6 @@ class _FriendsMainScreenState extends ConsumerState<FriendsMainScreen> with Sing
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(friendControllerProvider);
-    
     // Calculando la altura con margen adicional para las pestañas
     final double tabBarHeight = kToolbarHeight + 16.0;
     
@@ -87,48 +83,6 @@ class _FriendsMainScreenState extends ConsumerState<FriendsMainScreen> with Sing
                       fit: BoxFit.scaleDown,
                       child: Text(
                         'Mis amigos',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ),
-                  ),
-                  Tab(
-                    height: 60, // Altura fija para el Tab
-                    icon: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Icon(Icons.notifications, size: 22),
-                        if (state.pendingReceivedRequests.isNotEmpty)
-                          Positioned(
-                            top: -5,
-                            right: -5,
-                            child: Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.blue.shade800, width: 1.5),
-                              ),
-                              constraints: const BoxConstraints(
-                                minWidth: 14,
-                                minHeight: 14,
-                              ),
-                              child: Text(
-                                state.pendingReceivedRequests.length.toString(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        'Solicitudes',
                         style: TextStyle(fontSize: 12),
                       ),
                     ),

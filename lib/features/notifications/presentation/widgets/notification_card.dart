@@ -41,32 +41,7 @@ class NotificationCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Avatar del remitente con indicador de carga
-                FutureBuilder<String?>(
-                  future: _getUserAvatar(notification.senderId),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const CircleAvatar(
-                        radius: 24,
-                        backgroundColor: Colors.grey,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      );
-                    }
-                    
-                    return CircleAvatar(
-                      radius: 24,
-                      backgroundColor: Colors.grey.shade200,
-                      backgroundImage: snapshot.data != null && snapshot.data!.isNotEmpty
-                          ? NetworkImage(snapshot.data!)
-                          : null,
-                      child: snapshot.data == null || snapshot.data!.isEmpty
-                          ? _getInitialsOrIcon(notification)
-                          : null,
-                    );
-                  },
-                ),
+                _buildSenderAvatar(notification),
                 const SizedBox(width: 12),
                 
                 // Contenido de la notificación
@@ -161,83 +136,313 @@ class NotificationCard extends ConsumerWidget {
   // Caché de avatares para evitar múltiples consultas
   static final Map<String, String?> _avatarCache = {};
   
+  // Caché de nombres para evitar múltiples consultas
+  static final Map<String, String> _nameCache = {};
+  
   /// Obtiene el avatar del usuario desde Supabase con caché
   Future<String?> _getUserAvatar(String? userId) async {
-    if (userId == null) return null;
+    if (userId == null) {
+      debugPrint('DEBUG: getUserAvatar - userId es null');
+      return null;
+    }
+    
+    debugPrint('DEBUG: getUserAvatar - Buscando avatar para userId: $userId');
     
     // Si ya tenemos el avatar en caché, devolverlo inmediatamente
     if (_avatarCache.containsKey(userId)) {
+      debugPrint('DEBUG: getUserAvatar - Avatar encontrado en caché: ${_avatarCache[userId]}');
       return _avatarCache[userId];
+    }
+    
+    try {
+      debugPrint('DEBUG: getUserAvatar - Consultando a Supabase');
+      final supabase = Supabase.instance.client;
+      
+      // Consultar todos los campos para depuración
+      final response = await supabase
+          .from('profiles')
+          .select()
+          .eq('id', userId)
+          .single();
+      
+      // Imprimir todos los campos de la respuesta para depuración
+      debugPrint('DEBUG: getUserAvatar - Campos disponibles en la respuesta: ${response.keys.join(', ')}');
+      debugPrint('DEBUG: getUserAvatar - Respuesta completa de Supabase: $response');
+      
+      // Intentar obtener el avatar_url (según la imagen compartida)
+      String? avatarUrl;
+      if (response.containsKey('avatar_url')) {
+        avatarUrl = response['avatar_url'] as String?;
+        debugPrint('DEBUG: getUserAvatar - URL del avatar obtenida desde avatar_url: $avatarUrl');
+      } else {
+        debugPrint('DEBUG: getUserAvatar - Campo avatar_url no encontrado en la respuesta');
+      }
+      
+      // Guardar en caché para futuras consultas
+      _avatarCache[userId] = avatarUrl;
+      
+      // También guardamos el nombre en caché
+      String? fullName;
+      if (response.containsKey('full_name')) {
+        fullName = response['full_name'] as String?;
+      } else if (response.containsKey('username')) {
+        fullName = response['username'] as String?;
+      }
+      
+      if (fullName != null && fullName.isNotEmpty) {
+        _nameCache[userId] = fullName;
+        debugPrint('DEBUG: getUserAvatar - Nombre guardado en caché: $fullName');
+      }
+      
+      return avatarUrl;
+    } catch (e) {
+      debugPrint('ERROR: getUserAvatar - Error al obtener avatar: $e');
+      // Guardar null en caché para evitar consultas repetidas que fallan
+      _avatarCache[userId] = null;
+      return null;
+    }
+  }
+  
+  /// Obtiene el nombre del remitente desde Supabase con caché
+  Future<String> _getSenderName(String? userId) async {
+    if (userId == null) return '?';
+    
+    // Si ya tenemos el nombre en caché, devolverlo inmediatamente
+    if (_nameCache.containsKey(userId)) {
+      return _nameCache[userId]!;
     }
     
     try {
       final supabase = Supabase.instance.client;
       final response = await supabase
           .from('profiles')
-          .select('avatar_url, full_name') // También obtenemos el nombre completo
+          .select('username, full_name')
           .eq('id', userId)
           .single();
       
-      // Guardar en caché para futuras consultas
-      final avatarUrl = response['avatar_url'] as String?;
-      _avatarCache[userId] = avatarUrl;
+      // Preferimos el nombre completo, pero si no está disponible usamos el username
+      String name = response['full_name'] as String? ?? '';
+      if (name.isEmpty) {
+        name = response['username'] as String? ?? '?';
+      }
       
-      return avatarUrl;
+      // Guardar en caché para futuras consultas
+      _nameCache[userId] = name;
+      
+      return name;
     } catch (e) {
-      debugPrint('Error al obtener avatar: $e');
-      // Guardar null en caché para evitar consultas repetidas que fallan
-      _avatarCache[userId] = null;
-      return null;
+      debugPrint('Error al obtener nombre: $e');
+      return '?';
     }
   }
 
-  /// Obtiene las iniciales del usuario o un icono según el tipo de notificación
-  Widget _getInitialsOrIcon(NotificationModel notification) {
-    // Si hay un mensaje que contiene un nombre, extraer las iniciales
-    if (notification.message.contains(' te ha ')) {
-      final parts = notification.message.split(' te ha ');
-      if (parts.isNotEmpty && parts[0].isNotEmpty) {
-        final name = parts[0];
-        final words = name.split(' ');
-        String initials = '';
-        
-        for (var word in words) {
-          if (word.isNotEmpty && initials.length < 2) {
-            initials += word[0].toUpperCase();
+  // El método _getInitialsOrIcon ha sido eliminado ya que ahora usamos _getSenderName para obtener la inicial del remitente
+
+  /// Construye el avatar del remitente de la notificación
+  Widget _buildSenderAvatar(NotificationModel notification) {
+    // Si no hay senderId, intentar extraerlo del campo data para invitaciones a partidos
+    if (notification.senderId == null && notification.type == NotificationType.matchInvite) {
+      debugPrint('DEBUG: _buildSenderAvatar - senderId es null, intentando extraer inviter_id del campo data');
+      
+      // Usar FutureBuilder para manejar la extracción asíncrona del inviter_id
+      return FutureBuilder<String?>(
+        future: _extractInviterIdFromData(notification),
+        builder: (context, inviterIdSnapshot) {
+          // Mientras se carga el inviter_id, mostrar un indicador de carga
+          if (inviterIdSnapshot.connectionState == ConnectionState.waiting) {
+            return const CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.grey,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            );
           }
-        }
-        
-        if (initials.isNotEmpty) {
-          return Text(
-            initials,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.black54,
-              fontSize: 16,
+          
+          // Si encontramos el inviter_id, usarlo para obtener el avatar
+          if (inviterIdSnapshot.hasData && inviterIdSnapshot.data != null) {
+            String inviterId = inviterIdSnapshot.data!;
+            debugPrint('DEBUG: _buildSenderAvatar - Se encontró inviter_id: $inviterId');
+            
+            return FutureBuilder<String?>(
+              future: _getUserAvatar(inviterId),
+              builder: (context, avatarSnapshot) {
+                if (avatarSnapshot.connectionState == ConnectionState.waiting) {
+                  return const CircleAvatar(
+                    radius: 24,
+                    backgroundColor: Colors.grey,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  );
+                }
+                
+                // Mostrar la foto de perfil si está disponible
+                if (avatarSnapshot.hasData && avatarSnapshot.data != null && avatarSnapshot.data!.isNotEmpty) {
+                  return CircleAvatar(
+                    radius: 24,
+                    backgroundColor: Colors.grey.shade200,
+                    backgroundImage: NetworkImage(avatarSnapshot.data!),
+                  );
+                } else {
+                  // Si no hay foto, mostrar un avatar con la primera letra del nombre
+                  return FutureBuilder<String>(
+                    future: _getSenderName(inviterId),
+                    builder: (context, nameSnapshot) {
+                      String initial = '';
+                      if (nameSnapshot.hasData && nameSnapshot.data!.isNotEmpty) {
+                        initial = nameSnapshot.data![0].toUpperCase();
+                      }
+                      
+                      return CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Colors.blue.shade300,
+                        child: Text(
+                          initial.isNotEmpty ? initial : '?',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                }
+              },
+            );
+          } else {
+            // Si no se encuentra inviter_id, extraer el nombre del mensaje
+            debugPrint('DEBUG: _buildSenderAvatar - No se encontró inviter_id, extrayendo nombre del mensaje');
+            String senderName = _extractSenderNameFromMessage(notification.message);
+            debugPrint('DEBUG: _buildSenderAvatar - Nombre extraído del mensaje: $senderName');
+            
+            String initial = senderName.isNotEmpty ? senderName[0].toUpperCase() : '?';
+            
+            return CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.blue.shade300,
+              child: Text(
+                initial,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+            );
+          }
+        },
+      );
+    }
+    
+    // Si hay senderId, intentar obtener el avatar
+    return FutureBuilder<String?>(
+      future: _getUserAvatar(notification.senderId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircleAvatar(
+            radius: 24,
+            backgroundColor: Colors.grey,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.white,
             ),
           );
         }
+        
+        // Mostrar la foto de perfil si está disponible
+        if (snapshot.data != null && snapshot.data!.isNotEmpty) {
+          return CircleAvatar(
+            radius: 24,
+            backgroundColor: Colors.grey.shade200,
+            backgroundImage: NetworkImage(snapshot.data!),
+          );
+        } else {
+          // Si no hay foto, mostrar un avatar con la primera letra del nombre
+          return FutureBuilder<String>(
+            future: _getSenderName(notification.senderId),
+            builder: (context, nameSnapshot) {
+              String initial = '';
+              if (nameSnapshot.hasData && nameSnapshot.data!.isNotEmpty) {
+                initial = nameSnapshot.data![0].toUpperCase();
+              }
+              
+              return CircleAvatar(
+                radius: 24,
+                backgroundColor: Colors.blue.shade300,
+                child: Text(
+                  initial.isNotEmpty ? initial : '?',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
+              );
+            },
+          );
+        }
+      },
+    );
+  }
+  
+  /// Extrae el nombre del remitente del mensaje de la notificación
+  String _extractSenderNameFromMessage(String message) {
+    // Patrones comunes en mensajes de notificación
+    if (message.contains(' te ha ')) {
+      return message.split(' te ha ')[0];
+    } else if (message.contains(' ha ')) {
+      return message.split(' ha ')[0];
+    }
+    return '';
+  }
+  
+  /// Extrae el ID del remitente desde el campo data de una notificación de invitación a partido
+  Future<String?> _extractInviterIdFromData(NotificationModel notification) async {
+    try {
+      // Obtener el resourceId que contiene información del partido
+      if (notification.resourceId == null) {
+        debugPrint('DEBUG: _extractInviterIdFromData - El resourceId es nulo');
+        return null;
       }
+      
+      // Intentar obtener el inviter_id directamente de la base de datos
+      // Esto es una solución temporal hasta que se actualice la función SQL
+      return await _getInviterIdFromDatabase(notification.resourceId!);
+    } catch (e) {
+      debugPrint('DEBUG: _extractInviterIdFromData - Error al extraer inviter_id: $e');
+      return null;
     }
-    
-    // Si no se pueden extraer iniciales, mostrar un icono según el tipo
-    IconData iconData;
-    switch (notification.type) {
-      case NotificationType.friendRequest:
-        iconData = Icons.person_add;
-        break;
-      case NotificationType.friendAccepted:
-        iconData = Icons.people;
-        break;
-      case NotificationType.matchInvite:
-        iconData = Icons.sports_soccer;
-        break;
-      case NotificationType.systemNotice:
-        iconData = Icons.info;
-        break;
+  }
+  
+  /// Obtiene el ID del invitador desde la base de datos usando el ID del partido
+  Future<String?> _getInviterIdFromDatabase(String matchId) async {
+    try {
+      debugPrint('DEBUG: _getInviterIdFromDatabase - Buscando inviter_id para match: $matchId');
+      
+      // Consultar la tabla match_invitations para obtener el inviter_id
+      final result = await Supabase.instance.client
+          .from('match_invitations')
+          .select('inviter_id')
+          .eq('match_id', matchId)
+          .limit(1)
+          .maybeSingle();
+      
+      if (result != null && result['inviter_id'] != null) {
+        final String inviterId = result['inviter_id'];
+        debugPrint('DEBUG: _getInviterIdFromDatabase - inviter_id encontrado: $inviterId');
+        return inviterId;
+      } else {
+        debugPrint('DEBUG: _getInviterIdFromDatabase - No se encontró inviter_id en la base de datos');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('DEBUG: _getInviterIdFromDatabase - Error al consultar la base de datos: $e');
+      return null;
     }
-    
-    return Icon(iconData, color: Colors.black54, size: 24);
   }
 
   /// Formatea el tiempo de la notificación
