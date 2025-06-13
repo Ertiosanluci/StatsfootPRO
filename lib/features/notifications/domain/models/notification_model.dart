@@ -18,6 +18,7 @@ class NotificationModel {
   final String? resourceId; // Reference to related resource (e.g., friend request ID)
   final DateTime createdAt;
   final bool read;
+  final Map<String, dynamic>? data; // Datos adicionales de la notificación
 
   const NotificationModel({
     required this.id,
@@ -29,20 +30,26 @@ class NotificationModel {
     this.resourceId,
     required this.createdAt,
     this.read = false,
+    this.data,
   });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     // Determinar el tipo de notificación
     final notificationType = _typeFromString(json['type'] as String);
     
-    // Extraer resourceId según el tipo de notificación
-    String? resourceId;
-    if (notificationType == NotificationType.matchInvite && json['data'] != null) {
-      // Para invitaciones a partidos, el resourceId es el match_id en el campo data
-      final Map<String, dynamic> data = json['data'] is String 
+    // Procesar el campo data
+    Map<String, dynamic>? notificationData;
+    if (json['data'] != null) {
+      notificationData = json['data'] is String 
           ? Map<String, dynamic>.from(jsonDecode(json['data'] as String)) 
           : Map<String, dynamic>.from(json['data'] as Map);
-      resourceId = data['match_id']?.toString();
+    }
+    
+    // Extraer resourceId según el tipo de notificación
+    String? resourceId;
+    if (notificationType == NotificationType.matchInvite && notificationData != null) {
+      // Para invitaciones a partidos, el resourceId es el match_id en el campo data
+      resourceId = notificationData['match_id']?.toString();
     } else {
       // Para otros tipos, usar el campo resource_id directamente
       resourceId = json['resource_id'] as String?;
@@ -58,6 +65,7 @@ class NotificationModel {
       resourceId: resourceId,
       createdAt: DateTime.parse(json['created_at'] as String),
       read: json['read'] as bool? ?? false,
+      data: notificationData,
     );
   }
 
@@ -72,6 +80,7 @@ class NotificationModel {
       'resource_id': resourceId,
       'created_at': createdAt.toIso8601String(),
       'read': read,
+      'data': data,
     };
   }
 
@@ -151,6 +160,7 @@ class NotificationModel {
     String? resourceId,
     DateTime? createdAt,
     bool? read,
+    Map<String, dynamic>? data,
   }) {
     return NotificationModel(
       id: id ?? this.id,
@@ -161,6 +171,7 @@ class NotificationModel {
       message: message ?? this.message,
       resourceId: resourceId ?? this.resourceId,
       createdAt: createdAt ?? this.createdAt,
+      data: data ?? this.data,
       read: read ?? this.read,
     );
   }
