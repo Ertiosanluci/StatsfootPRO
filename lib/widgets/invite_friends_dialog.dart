@@ -206,12 +206,28 @@ debugPrint('\n');
       debugPrint('Enviando notificación a $friendName (ID: $friendId) en todos sus dispositivos');
       
       try {
+        // Obtener la URL de la imagen de perfil del invitador
+        String? inviterAvatarUrl;
+        try {
+          final inviterProfile = await _supabase
+              .from('profiles')
+              .select('avatar_url')
+              .eq('id', _supabase.auth.currentUser!.id)
+              .single();
+          
+          inviterAvatarUrl = inviterProfile['avatar_url'];
+          debugPrint('Avatar URL del invitador: $inviterAvatarUrl');
+        } catch (avatarError) {
+          debugPrint('Error al obtener avatar del invitador: $avatarError');
+        }
+        
         // Enviar notificación a todos los dispositivos del usuario
         await OneSignalService.sendTestNotification(
-          title: 'Invitación a partido de fútbol',
-          content: 'Has sido invitado a un partido de fútbol local. Pulsa para unirte y ver los detalles del evento.',
+          title: '$inviterName te invita a un partido',
+          content: '$inviterName te ha invitado a un partido de fútbol. ¡Únete y confirma tu asistencia!',
           additionalData: additionalData,
           userId: friendId, // Usar el ID del usuario para enviar a todos sus dispositivos
+          largeIcon: inviterAvatarUrl, // URL de la imagen de perfil del invitador
         );
         
         notificationSent = true;

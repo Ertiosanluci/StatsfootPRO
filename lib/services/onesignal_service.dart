@@ -384,6 +384,7 @@ class OneSignalService {
     String? externalUserId,
     String? playerIds,
     String? userId,
+    String? largeIcon, // URL de la imagen de perfil para mostrar en la notificación
   }) async {
     try {
       debugPrint('Enviando notificación usando la API REST de OneSignal');
@@ -400,6 +401,12 @@ class OneSignalService {
         'data': additionalData ?? {},
         'target_channel': 'push', // Parámetro requerido según la documentación
       };
+      
+      // Añadir la imagen de perfil si está disponible
+      if (largeIcon != null && largeIcon.isNotEmpty) {
+        debugPrint('Añadiendo imagen de perfil a la notificación: $largeIcon');
+        requestBody['large_icon'] = largeIcon;
+      }
       
       // Configurar los destinatarios de la notificación
       if (userId != null && userId.isNotEmpty) {

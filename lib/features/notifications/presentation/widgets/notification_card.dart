@@ -5,6 +5,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statsfoota/features/notifications/domain/models/notification_model.dart';
 import 'dart:convert';
 
+// Caché para avatares y nombres de usuarios
+final Map<String, String?> _avatarCache = {};
+final Map<String, String> _nameCache = {};
+
 /// Widget para mostrar una notificación con un diseño profesional
 class NotificationCard extends ConsumerWidget {
   final NotificationModel notification;
@@ -62,7 +66,19 @@ class NotificationCard extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      _buildMessageWidget(notification),
+                      // Usamos un FutureBuilder para mostrar el mensaje con el nombre del invitador
+                      FutureBuilder<String>(
+                        future: _buildNotificationMessage(notification),
+                        builder: (context, snapshot) {
+                          return Text(
+                            snapshot.data ?? notification.message,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          );
+                        },
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         _formatNotificationTime(notification.createdAt),
@@ -423,6 +439,8 @@ class NotificationCard extends ConsumerWidget {
     }
   }
   
+  // El método _buildMessageWidget ya no es necesario porque usamos FutureBuilder directamente en el árbol de widgets
+  
   /// Construye el mensaje de la notificación, incluyendo el nombre del invitador si está disponible
   Future<String> _buildNotificationMessage(NotificationModel notification) async {
     // Solo procesamos notificaciones de invitación a partidos
@@ -459,23 +477,27 @@ class NotificationCard extends ConsumerWidget {
           } else {
             // Consultar el nombre desde la base de datos
             final supabase = Supabase.instance.client;
-            final response = await supabase
+            try {
+              final response = await supabase
                 .from('profiles')
                 .select('username, full_name')
                 .eq('id', inviterId)
                 .maybeSingle();
                 
-            if (response != null) {
-              if (response['full_name'] != null && response['full_name'].toString().isNotEmpty) {
-                inviterName = response['full_name'];
-              } else if (response['username'] != null) {
-                inviterName = response['username'];
+              if (response != null) {
+                if (response['full_name'] != null && response['full_name'].toString().isNotEmpty) {
+                  inviterName = response['full_name'];
+                } else if (response['username'] != null) {
+                  inviterName = response['username'];
+                }
+                
+                if (inviterName.isNotEmpty) {
+                  _nameCache[inviterId] = inviterName;
+                  dev.log('DEBUG: _buildNotificationMessage - Nombre del invitador obtenido de la BD: $inviterName');
+                }
               }
-              
-              if (inviterName.isNotEmpty) {
-                _nameCache[inviterId] = inviterName;
-                dev.log('DEBUG: _buildNotificationMessage - Nombre del invitador obtenido de la BD: $inviterName');
-              }
+            } catch (e) {
+              dev.log('ERROR: _buildNotificationMessage - Error al consultar perfil: $e');
             }
           }
         }
