@@ -5,6 +5,7 @@ import 'package:statsfoota/features/notifications/join_match_screen.dart'; // Ac
 import 'package:statsfoota/password_reset_request_screen.dart'; // Nueva pantalla de solicitud de reset
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
+import 'package:statsfoota/services/onesignal_service.dart'; // Importar el servicio de OneSignal
 
 class LoginScreen extends StatefulWidget {
   // Añadir un parámetro opcional para el ID del partido para redirigir después del login
@@ -75,6 +76,34 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     _passwordController.dispose();
     super.dispose();
   }
+  
+  // Método para registrar el dispositivo del usuario en la tabla user_devices
+  Future<void> _registerUserDevice() async {
+    try {
+      debugPrint('Registrando dispositivo del usuario en user_devices...');
+      
+      // Inicializar OneSignal si aún no se ha hecho
+      await OneSignalService.initializeOneSignal();
+      
+      // Obtener el player ID actual
+      final playerId = await OneSignalService.getPlayerId();
+      
+      if (playerId != null) {
+        // Guardar el player ID en la tabla user_devices
+        await OneSignalService.savePlayerIdToSupabase(playerId);
+        
+        // Migrar tokens antiguos a la nueva tabla si es necesario
+        await OneSignalService.migrateTokensToDevices();
+        
+        debugPrint('Dispositivo registrado correctamente con player ID: $playerId');
+      } else {
+        debugPrint('No se pudo obtener el player ID de OneSignal');
+      }
+    } catch (e) {
+      debugPrint('Error al registrar el dispositivo: $e');
+      // No interrumpimos el flujo principal por un error en el registro del dispositivo
+    }
+  }
 
   Future<void> _signIn() async {
     // Validar el formulario primero
@@ -102,6 +131,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       } else {
         if (mounted) {
           _showSuccessSnackBar();
+          
+          // Registrar el dispositivo del usuario en la tabla user_devices
+          _registerUserDevice();
           
           // Esperar a que se muestre el SnackBar antes de navegar
           Future.delayed(Duration(seconds: 1), () {

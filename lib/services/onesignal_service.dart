@@ -85,7 +85,7 @@ class OneSignalService {
     }
   }
   
-  // Guardar el token del dispositivo (player ID) en Supabase
+  // Guardar el token del dispositivo (player ID) en Supabase usando la tabla user_devices
   static Future<void> savePlayerIdToSupabase(String playerId) async {
     try {
       if (_supabase.auth.currentUser == null) {
@@ -94,41 +94,75 @@ class OneSignalService {
       }
       
       final userId = _supabase.auth.currentUser!.id;
+      final deviceType = 'mobile'; // Podría determinarse dinámicamente si es necesario
       
       // Verificar si ya existe un registro para este usuario y este dispositivo
       final existingData = await _supabase
-          .from('user_push_tokens')
+          .from('user_devices')
           .select()
           .eq('user_id', userId)
-          .eq('player_id', playerId)
+          .eq('onesignal_player_id', playerId)
           .maybeSingle();
       
+      final now = DateTime.now().toIso8601String();
+      
       if (existingData != null) {
-        // Actualizar el registro existente (solo la fecha)
+        // Actualizar el registro existente (solo la fecha de último uso)
         await _supabase
-            .from('user_push_tokens')
+            .from('user_devices')
             .update({
-              'updated_at': DateTime.now().toIso8601String(),
+              'last_used_at': now,
             })
             .eq('id', existingData['id']);
-        debugPrint('Token de dispositivo actualizado para el usuario: $userId');
+        debugPrint('Dispositivo actualizado para el usuario: $userId');
       } else {
         // Crear un nuevo registro para este dispositivo
         await _supabase
-            .from('user_push_tokens')
+            .from('user_devices')
             .insert({
               'user_id': userId,
-              'player_id': playerId,
-              'created_at': DateTime.now().toIso8601String(),
-              'updated_at': DateTime.now().toIso8601String(),
+              'onesignal_player_id': playerId,
+              'device_type': deviceType,
+              'created_at': now,
+              'last_used_at': now,
             });
-        debugPrint('Nuevo token de dispositivo guardado para el usuario: $userId');
+        debugPrint('Nuevo dispositivo registrado para el usuario: $userId');
+      }
+      
+      // Para mantener compatibilidad con el código existente, también actualizamos la tabla user_push_tokens
+      try {
+        final existingToken = await _supabase
+            .from('user_push_tokens')
+            .select()
+            .eq('user_id', userId)
+            .eq('player_id', playerId)
+            .maybeSingle();
+            
+        if (existingToken != null) {
+          await _supabase
+              .from('user_push_tokens')
+              .update({
+                'updated_at': now,
+              })
+              .eq('id', existingToken['id']);
+        } else {
+          await _supabase
+              .from('user_push_tokens')
+              .insert({
+                'user_id': userId,
+                'player_id': playerId,
+                'created_at': now,
+                'updated_at': now,
+              });
+        }
+      } catch (tokenError) {
+        // Si hay un error con la tabla antigua, lo registramos pero no interrumpimos el flujo
+        debugPrint('Nota: Error al actualizar la tabla user_push_tokens (no crítico): $tokenError');
       }
     } catch (e) {
-      debugPrint('Error al guardar el token del dispositivo: $e');
-      // Si el error es porque la tabla no existe, mostramos un mensaje específico
-      if (e.toString().contains('relation "public.user_push_tokens" does not exist')) {
-        debugPrint('La tabla user_push_tokens no existe en la base de datos. Por favor, créala primero.');
+      debugPrint('Error al guardar el dispositivo: $e');
+      if (e.toString().contains('relation "public.user_devices" does not exist')) {
+        debugPrint('La tabla user_devices no existe en la base de datos. Por favor, créala primero.');
       }
     }
   }
@@ -136,30 +170,58 @@ class OneSignalService {
   // Obtener todos los player IDs de un usuario específico desde Supabase
   static Future<List<String>> getPlayerIdsByUserId(String userId) async {
     try {
-      debugPrint('Buscando player_ids para el usuario: $userId');
+      debugPrint('Buscando player_ids para el usuario: $userId en la tabla user_devices');
       
-      // Primero verificamos si la tabla existe y qué registros contiene
-      final allTokens = await _supabase
-          .from('user_push_tokens')
-          .select('*');
-       
-      debugPrint('Tokens disponibles en la tabla: ${allTokens.length}');
-      for (var token in allTokens) {
-        debugPrint('Token encontrado - user_id: ${token['user_id']}, player_id: ${token['player_id']}');
-      }
-      
-      // Ahora buscamos todos los tokens para este usuario
-      final data = await _supabase
-          .from('user_push_tokens')
-          .select('player_id')
+      // Intentar obtener los IDs de la nueva tabla user_devices
+      final devices = await _supabase
+          .from('user_devices')
+          .select('onesignal_player_id')
           .eq('user_id', userId.trim());
       
-      if (data.isNotEmpty) {
-        final playerIds = data.map((item) => item['player_id'] as String).toList();
-        debugPrint('Player IDs encontrados para $userId: $playerIds');
+      List<String> playerIds = [];
+      
+      if (devices.isNotEmpty) {
+        playerIds = devices
+            .map((item) => item['onesignal_player_id'] as String)
+            .where((id) => id.isNotEmpty) // Filtrar IDs vacíos
+            .toList();
+        
+        debugPrint('Encontrados ${playerIds.length} dispositivos para el usuario $userId en user_devices');
+        for (var playerId in playerIds) {
+          debugPrint('  - Player ID: $playerId');
+        }
+      } else {
+        debugPrint('No se encontraron dispositivos para el usuario $userId en user_devices');
+        
+        // Como fallback, intentar obtener de la tabla antigua
+        try {
+          final oldTokens = await _supabase
+              .from('user_push_tokens')
+              .select('player_id')
+              .eq('user_id', userId.trim());
+          
+          if (oldTokens.isNotEmpty) {
+            final oldPlayerIds = oldTokens
+                .map((item) => item['player_id'] as String)
+                .where((id) => id.isNotEmpty)
+                .toList();
+            
+            playerIds.addAll(oldPlayerIds);
+            debugPrint('Encontrados ${oldPlayerIds.length} tokens en la tabla antigua user_push_tokens');
+          }
+        } catch (fallbackError) {
+          debugPrint('Error al intentar obtener tokens de la tabla antigua: $fallbackError');
+        }
+      }
+      
+      // Eliminar duplicados si los hubiera
+      playerIds = playerIds.toSet().toList();
+      
+      if (playerIds.isNotEmpty) {
+        debugPrint('Total de Player IDs encontrados para $userId: ${playerIds.length}');
         return playerIds;
       } else {
-        debugPrint('No se encontró ningún registro para el usuario $userId');
+        debugPrint('No se encontró ningún dispositivo registrado para el usuario $userId');
         return [];
       }
     } catch (e) {
@@ -172,6 +234,66 @@ class OneSignalService {
   static Future<String?> getPlayerIdByUserId(String userId) async {
     final playerIds = await getPlayerIdsByUserId(userId);
     return playerIds.isNotEmpty ? playerIds.first : null;
+  }
+  
+  // Método para migrar tokens de la tabla antigua a la nueva
+  static Future<void> migrateTokensToDevices() async {
+    try {
+      if (_supabase.auth.currentUser == null) {
+        debugPrint('No se puede migrar tokens: Usuario no autenticado');
+        return;
+      }
+      
+      final userId = _supabase.auth.currentUser!.id;
+      debugPrint('Migrando tokens para el usuario: $userId');
+      
+      // Obtener todos los tokens del usuario en la tabla antigua
+      final oldTokens = await _supabase
+          .from('user_push_tokens')
+          .select('player_id')
+          .eq('user_id', userId);
+      
+      if (oldTokens.isEmpty) {
+        debugPrint('No hay tokens para migrar');
+        return;
+      }
+      
+      debugPrint('Encontrados ${oldTokens.length} tokens para migrar');
+      final now = DateTime.now().toIso8601String();
+      
+      // Migrar cada token a la nueva tabla
+      for (var token in oldTokens) {
+        final playerId = token['player_id'] as String;
+        
+        // Verificar si ya existe en la nueva tabla
+        final existingDevice = await _supabase
+            .from('user_devices')
+            .select()
+            .eq('user_id', userId)
+            .eq('onesignal_player_id', playerId)
+            .maybeSingle();
+        
+        if (existingDevice == null) {
+          // Crear nuevo registro en user_devices
+          await _supabase
+              .from('user_devices')
+              .insert({
+                'user_id': userId,
+                'onesignal_player_id': playerId,
+                'device_type': 'mobile', // Valor por defecto
+                'created_at': now,
+                'last_used_at': now,
+              });
+          debugPrint('Token migrado: $playerId');
+        } else {
+          debugPrint('Token ya existente en user_devices: $playerId');
+        }
+      }
+      
+      debugPrint('Migración completada con éxito');
+    } catch (e) {
+      debugPrint('Error durante la migración de tokens: $e');
+    }
   }
   
   // API Key para OneSignal REST API
