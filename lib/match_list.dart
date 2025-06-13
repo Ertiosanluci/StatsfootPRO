@@ -1940,7 +1940,7 @@ Hora: $formattedTime
     // Verificar si el usuario tiene un perfil, si no, crearlo
     final profileData = await supabase
         .from('profiles')
-        .select('id, username, full_name, avatar_url')
+        .select('id, username, avatar_url')
         .eq('id', currentUser.id)
         .maybeSingle();
 
@@ -1950,20 +1950,20 @@ Hora: $formattedTime
     if (profileData == null) {
       try {
         // Crear un perfil básico
+        final username = currentUser.email?.split('@')[0] ?? 'user_${currentUser.id.substring(0, 8)}';
         await supabase.from('profiles').insert({
           'id': currentUser.id,
-          'username': currentUser.email?.split('@')[0] ?? 'user_${currentUser.id.substring(0, 8)}',
+          'username': username,
           'created_at': DateTime.now().toIso8601String(),
         });
+        joinerName = username;
       } catch (profileError) {
         print('Error al crear perfil: $profileError');
         // Continuar aunque falle la creación del perfil
       }
     } else {
       // Obtener el nombre y avatar del usuario que se une
-      if (profileData['full_name'] != null && profileData['full_name'].toString().isNotEmpty) {
-        joinerName = profileData['full_name'];
-      } else if (profileData['username'] != null) {
+      if (profileData['username'] != null) {
         joinerName = profileData['username'];
       }
       joinerAvatarUrl = profileData['avatar_url'];
@@ -1998,18 +1998,19 @@ Hora: $formattedTime
         
         print('Notificación guardada en la base de datos');
         
-        // Obtener el token de OneSignal del creador del partido
-        final creatorProfile = await supabase
-            .from('profiles')
-            .select('onesignal_id')
-            .eq('id', creatorId)
-            .maybeSingle();
-            
-        if (creatorProfile != null && creatorProfile['onesignal_id'] != null) {
-          final String creatorOnesignalId = creatorProfile['onesignal_id'];
+        // Obtener el ID de OneSignal del creador para enviar notificación push
+      final creatorProfile = await supabase
+          .from('profiles')
+          .select('onesignal_id')
+          .eq('id', creatorId)
+          .maybeSingle();
           
+      if (creatorProfile != null && creatorProfile['onesignal_id'] != null) {
+        final String creatorOnesignalId = creatorProfile['onesignal_id'];
+        
+        try {
           // Enviar notificación push usando OneSignal
-          OneSignalService.sendTestNotification(
+          await OneSignalService.sendTestNotification(
             playerIds: creatorOnesignalId,
             title: 'Nuevo jugador en tu partido',
             content: '$joinerName se ha unido a tu partido "$matchName"',
@@ -2020,9 +2021,12 @@ Hora: $formattedTime
               'joiner_id': currentUser.id
             }
           );
-          
           print('Notificación push enviada al creador del partido');
+        } catch (notificationError) {
+          print('Error al enviar notificación push: $notificationError');
+          // Continuar aunque falle el envío de la notificación
         }
+      }    
       } catch (notificationError) {
         print('Error al enviar notificación: $notificationError');
         // Continuar aunque falle el envío de la notificación
