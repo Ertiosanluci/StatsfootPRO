@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:developer' as dev;
 import 'package:statsfoota/features/notifications/presentation/controllers/notification_controller.dart';
+// Importamos el servicio OneSignal directamente desde la ruta relativa
+import '../../../services/onesignal_service.dart';
 
 /// Pantalla para unirse a un partido desde una notificación de invitación
 class JoinMatchScreen extends ConsumerStatefulWidget {
@@ -137,6 +139,88 @@ class _JoinMatchScreenState extends ConsumerState<JoinMatchScreen> {
         'match_id': widget.matchId,
         'user_id': userId,
       });
+      
+      // Obtener información del partido y del creador para enviar la notificación
+      String creatorId = '';
+      String matchName = '';
+      
+      if (_matchDetails != null) {
+        creatorId = _matchDetails!['creador_id'] ?? '';
+        matchName = _matchDetails!['nombre'] ?? 'Partido de fútbol';
+      } else {
+        // Si no tenemos los detalles del partido, los obtenemos
+        try {
+          final matchResult = await _supabase
+              .from('matches')
+              .select('creador_id, nombre')
+              .eq('id', widget.matchId)
+              .single();
+          
+          creatorId = matchResult['creador_id'] ?? '';
+          matchName = matchResult['nombre'] ?? 'Partido de fútbol';
+        } catch (e) {
+          dev.log('Error al obtener detalles del partido: $e');
+        }
+      }
+      
+      // Obtener el nombre del usuario que se une al partido
+      String joinerName = 'Un jugador';
+      try {
+        final userProfile = await _supabase
+            .from('profiles')
+            .select('username, full_name')
+            .eq('id', userId)
+            .single();
+        
+        if (userProfile['full_name'] != null && userProfile['full_name'].toString().isNotEmpty) {
+          joinerName = userProfile['full_name'];
+        } else if (userProfile['username'] != null) {
+          joinerName = userProfile['username'];
+        }
+      } catch (e) {
+        dev.log('Error al obtener perfil del usuario: $e');
+      }
+      
+      // Enviar notificación al creador del partido si no es el mismo usuario que se une
+      if (creatorId.isNotEmpty && creatorId != userId) {
+        try {
+          // Obtener la URL de la imagen de perfil del usuario que se une
+          String? joinerAvatarUrl;
+          try {
+            final joinerProfile = await _supabase
+                .from('profiles')
+                .select('avatar_url')
+                .eq('id', userId)
+                .single();
+            
+            joinerAvatarUrl = joinerProfile['avatar_url'];
+          } catch (avatarError) {
+            dev.log('Error al obtener avatar del usuario: $avatarError');
+          }
+          
+          // Preparar datos adicionales para la notificación
+          final additionalData = {
+            'type': 'match_join',
+            'match_id': widget.matchId,
+            'match_name': matchName,
+            'joiner_id': userId,
+            'joiner_name': joinerName
+          };
+          
+          // Enviar notificación al creador
+          await OneSignalService.sendTestNotification(
+            title: 'Nuevo jugador en tu partido',
+            content: '$joinerName se ha unido a tu partido "$matchName"',
+            additionalData: additionalData,
+            userId: creatorId,
+            largeIcon: joinerAvatarUrl,
+          );
+          
+          dev.log('Notificación enviada al creador del partido: $creatorId');
+        } catch (notifError) {
+          dev.log('Error al enviar notificación al creador: $notifError');
+        }
+      }
 
       // Si la notificación viene de una notificación, marcarla como leída
       if (widget.fromNotification) {

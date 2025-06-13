@@ -1,18 +1,17 @@
+import 'dart:convert';
+import 'dart:developer' as dev;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
-import 'dart:developer' as dev;
-import 'dart:convert';
-
 import 'package:statsfoota/widgets/invite_friends_dialog.dart';
 import 'package:statsfoota/features/notifications/presentation/controllers/notification_controller.dart';
+import 'package:statsfoota/services/onesignal_service.dart';
 import 'create_match.dart';
 import 'match_details_screen.dart';
 import 'team_management_screen.dart';
-import 'utils/match_operations.dart';
 
 class MatchListScreen extends ConsumerStatefulWidget {
   final bool showAppBar;
@@ -392,6 +391,21 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> with SingleTi
             print('Error al cargar perfil del creador: $e');
           }
           
+          // Verificar si el usuario actual ya es participante de este partido
+          try {
+            final participantCheck = await supabase
+                .from('match_participants')
+                .select()
+                .eq('match_id', match['id'])
+                .eq('user_id', currentUser.id)
+                .maybeSingle();
+            
+            matchWithProfile['is_participant'] = participantCheck != null;
+          } catch (e) {
+            print('Error al verificar participación: $e');
+            matchWithProfile['is_participant'] = false;
+          }
+          
           matchWithProfile['isOrganizer'] = false;
           publicMatchesList.add(matchWithProfile);
         }
@@ -447,6 +461,21 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> with SingleTi
               }
             } catch (e) {
               print('Error al cargar perfil del creador: $e');
+            }
+            
+            // Verificar si el usuario actual ya es participante de este partido
+            try {
+              final participantCheck = await supabase
+                  .from('match_participants')
+                  .select()
+                  .eq('match_id', match['id'])
+                  .eq('user_id', currentUser.id)
+                  .maybeSingle();
+              
+              matchWithProfile['is_participant'] = participantCheck != null;
+            } catch (e) {
+              print('Error al verificar participación: $e');
+              matchWithProfile['is_participant'] = false;
             }
             
             matchWithProfile['isOrganizer'] = false;
@@ -1618,30 +1647,22 @@ Hora: $formattedTime
                                   color: Colors.red,
                                 ),
                             ]
-                          : match['publico'] == true // Verificamos si el partido es público
-                            ? [
+                          : [
+                              _buildActionButton(
+                                icon: Icons.article,
+                                label: 'Detalles',
+                                onPressed: () => _navigateToMatchJoinScreen(match['id'].toString()),
+                                color: Colors.blue,
+                              ),
+                              // Mostrar botón Unirse para partidos públicos o de amigos si el usuario no es participante
+                              if (!isPast && (match['publico'] == true || match['es_publico'] == true || _tabController.index == 1))
                                 _buildActionButton(
-                                  icon: Icons.article,
-                                  label: 'Detalles',
-                                  onPressed: () => _navigateToMatchJoinScreen(match['id'].toString()),
-                                  color: Colors.blue,
+                                  icon: Icons.person_add,
+                                  label: 'Unirse',
+                                  onPressed: () => _joinMatch(match['id'].toString()),
+                                  color: Colors.green,
                                 ),
-                                if (!isPast) // Solo si el partido no ha pasado
-                                  _buildActionButton(
-                                    icon: Icons.person_add,
-                                    label: 'Unirse',
-                                    onPressed: () => _joinMatch(match['id'].toString()),
-                                    color: Colors.green,
-                                  ),
-                              ]
-                            : [
-                                _buildActionButton(
-                                  icon: Icons.article,
-                                  label: 'Detalles',
-                                  onPressed: () => _navigateToMatchJoinScreen(match['id'].toString()),
-                                  color: Colors.blue,
-                                ),
-                              ],
+                            ],
                   ),
                 ),
               ],
@@ -1844,145 +1865,220 @@ Hora: $formattedTime
 
   // Método para que el usuario se una a un partido público
   Future<void> _joinMatch(String matchId) async {
-    try {
-      // Mostrar diálogo de carga
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return Dialog(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 20),
-                  Text('Uniéndote al partido...'),
-                ],
-              ),
+  try {
+    // Mostrar diálogo de carga
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 20),
+                Text('Uniéndote al partido...'),
+              ],
             ),
-          );
-        },
-      );
-
-      final currentUser = supabase.auth.currentUser;
-      if (currentUser == null) {
-        Navigator.of(context).pop(); // Cerrar diálogo
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Debes iniciar sesión para unirte a un partido'),
-            backgroundColor: Colors.red,
           ),
         );
-        return;
-      }
+      },
+    );
 
-      // Convertir a entero si es posible
-      int? matchIdInt;
-      try {
-        matchIdInt = int.parse(matchId);
-      } catch (e) {
-        print('Error al convertir ID: $e');
-      }
-      final matchIdValue = matchIdInt ?? matchId;
-
-      // Verificar si el usuario ya está unido al partido
-      final existingParticipant = await supabase
-          .from('match_participants')
-          .select()
-          .eq('match_id', matchIdValue)
-          .eq('user_id', currentUser.id)
-          .maybeSingle();
-
-      if (existingParticipant != null) {
-        Navigator.of(context).pop(); // Cerrar diálogo
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ya estás unido a este partido'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-        return;
-      }
-
-      // Verificar si el usuario tiene un perfil, si no, crearlo
-      final profileExists = await supabase
-          .from('profiles')
-          .select('id, username')
-          .eq('id', currentUser.id)
-          .maybeSingle();
-
-      if (profileExists == null) {
-        try {
-          // Crear un perfil básico
-          await supabase.from('profiles').insert({
-            'id': currentUser.id,
-            'username': currentUser.email?.split('@')[0] ?? 'user_${currentUser.id.substring(0, 8)}',
-            'created_at': DateTime.now().toIso8601String(),
-          });
-        } catch (profileError) {
-          print('Error al crear perfil: $profileError');
-          // Continuar aunque falle la creación del perfil
-        }
-      }
-
-      // Añadir usuario a match_participants
-      await supabase.from('match_participants').insert({
-        'match_id': matchIdValue,
-        'user_id': currentUser.id,
-        'equipo': null, // El equipo será asignado por el organizador
-        'es_organizador': false,
-        'joined_at': DateTime.now().toIso8601String(),
-      });      // Cerrar diálogo y mostrar mensaje de éxito
-      Navigator.of(context).pop();
+    final currentUser = supabase.auth.currentUser;
+    if (currentUser == null) {
+      Navigator.of(context).pop(); // Cerrar diálogo
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('¡Te has unido al partido correctamente!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      // Actualizar la caché de participantes para este partido
-      if (matchIdInt != null && _participantCountCache.containsKey(matchIdInt)) {
-        _participantCountCache[matchIdInt] = _participantCountCache[matchIdInt]! + 1;
-      }
-
-      // Refrescar la lista de partidos
-      _fetchMatches();
-
-    } catch (e) {
-      // Cerrar diálogo de carga
-      Navigator.of(context).pop();
-
-      // Mostrar mensaje de error con recomendaciones
-      String errorMessage = 'Error al unirse al partido: $e';
-      String? solutionMessage;
-
-      if (e.toString().contains("duplicate key")) {
-        errorMessage = 'Ya parece que estás unido a este partido.';
-        solutionMessage = 'Actualiza la lista para ver los cambios.';
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(errorMessage),
-              if (solutionMessage != null)
-                Text(
-                  solutionMessage,
-                  style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-                ),
-            ],
-          ),
+          content: Text('Debes iniciar sesión para unirte a un partido'),
           backgroundColor: Colors.red,
-          duration: Duration(seconds: 5),
         ),
-      );    }
+      );
+      return;
+    }
+
+    // Convertir a entero si es posible
+    int? matchIdInt;
+    try {
+      matchIdInt = int.parse(matchId);
+    } catch (e) {
+      print('Error al convertir ID: $e');
+    }
+    final matchIdValue = matchIdInt ?? matchId;
+
+    // Verificar si el usuario ya está unido al partido
+    final existingParticipant = await supabase
+        .from('match_participants')
+        .select()
+        .eq('match_id', matchIdValue)
+        .eq('user_id', currentUser.id)
+        .maybeSingle();
+
+    if (existingParticipant != null) {
+      Navigator.of(context).pop(); // Cerrar diálogo
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ya estás unido a este partido'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Obtener detalles del partido para la notificación
+    final matchDetails = await supabase
+        .from('matches')
+        .select('*')
+        .eq('id', matchIdValue)
+        .single();
+    
+    final String creatorId = matchDetails['creador_id'] ?? '';
+    final String matchName = matchDetails['nombre'] ?? 'Partido de fútbol';
+
+    // Verificar si el usuario tiene un perfil, si no, crearlo
+    final profileData = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .eq('id', currentUser.id)
+        .maybeSingle();
+
+    String joinerName = 'Un jugador';
+    String? joinerAvatarUrl;
+
+    if (profileData == null) {
+      try {
+        // Crear un perfil básico
+        await supabase.from('profiles').insert({
+          'id': currentUser.id,
+          'username': currentUser.email?.split('@')[0] ?? 'user_${currentUser.id.substring(0, 8)}',
+          'created_at': DateTime.now().toIso8601String(),
+        });
+      } catch (profileError) {
+        print('Error al crear perfil: $profileError');
+        // Continuar aunque falle la creación del perfil
+      }
+    } else {
+      // Obtener el nombre y avatar del usuario que se une
+      if (profileData['full_name'] != null && profileData['full_name'].toString().isNotEmpty) {
+        joinerName = profileData['full_name'];
+      } else if (profileData['username'] != null) {
+        joinerName = profileData['username'];
+      }
+      joinerAvatarUrl = profileData['avatar_url'];
+    }
+
+    // Añadir usuario a match_participants
+    await supabase.from('match_participants').insert({
+      'match_id': matchIdValue,
+      'user_id': currentUser.id,
+      'equipo': null, // El equipo será asignado por el organizador
+      'es_organizador': false,
+      'joined_at': DateTime.now().toIso8601String(),
+    });
+    
+    // Enviar notificación al creador del partido si no es el mismo usuario que se une
+    if (creatorId.isNotEmpty && creatorId != currentUser.id) {
+      try {
+        // Guardar la notificación en la base de datos
+        await supabase.from('notifications').insert({
+          'user_id': creatorId, // ID del creador del partido
+          'type': 'match_join',
+          'data': jsonEncode({
+            'match_id': matchIdValue,
+            'match_name': matchName,
+            'joiner_id': currentUser.id,
+            'joiner_name': joinerName,
+            'joiner_avatar': joinerAvatarUrl
+          }),
+          'read': false,
+          'created_at': DateTime.now().toIso8601String(),
+        });
+        
+        print('Notificación guardada en la base de datos');
+        
+        // Obtener el token de OneSignal del creador del partido
+        final creatorProfile = await supabase
+            .from('profiles')
+            .select('onesignal_id')
+            .eq('id', creatorId)
+            .maybeSingle();
+            
+        if (creatorProfile != null && creatorProfile['onesignal_id'] != null) {
+          final String creatorOnesignalId = creatorProfile['onesignal_id'];
+          
+          // Enviar notificación push usando OneSignal
+          OneSignalService.sendTestNotification(
+            playerIds: creatorOnesignalId,
+            title: 'Nuevo jugador en tu partido',
+            content: '$joinerName se ha unido a tu partido "$matchName"',
+            largeIcon: joinerAvatarUrl,
+            additionalData: {
+              'type': 'match_join',
+              'match_id': matchIdValue.toString(),
+              'joiner_id': currentUser.id
+            }
+          );
+          
+          print('Notificación push enviada al creador del partido');
+        }
+      } catch (notificationError) {
+        print('Error al enviar notificación: $notificationError');
+        // Continuar aunque falle el envío de la notificación
+      }
+    }
+    
+    // Cerrar diálogo y mostrar mensaje de éxito
+    Navigator.of(context).pop();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('¡Te has unido al partido correctamente!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    // Actualizar la caché de participantes para este partido
+    if (matchIdInt != null && _participantCountCache.containsKey(matchIdInt)) {
+      _participantCountCache[matchIdInt] = _participantCountCache[matchIdInt]! + 1;
+    }
+
+    // Refrescar la lista de partidos
+    _fetchMatches();
+
+  } catch (e) {
+    // Cerrar diálogo de carga
+    Navigator.of(context).pop();
+
+    // Mostrar mensaje de error con recomendaciones
+    String errorMessage = 'Error al unirse al partido: $e';
+    String? solutionMessage;
+
+    if (e.toString().contains("duplicate key")) {
+      errorMessage = 'Ya parece que estás unido a este partido.';
+      solutionMessage = 'Actualiza la lista para ver los cambios.';
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(errorMessage),
+            if (solutionMessage != null)
+              Text(
+                solutionMessage,
+                style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+              ),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        duration: Duration(seconds: 5),
+      ),
+    );
   }
+}
   
   // Método para que un usuario abandone un partido
   Future<void> _leaveMatch(Map<String, dynamic> match) async {
@@ -2004,7 +2100,8 @@ Hora: $formattedTime
             ),
           ],
         );
-      },    ) ?? false;
+      },
+    ) ?? false;
 
     if (!confirmLeave) return;
 
@@ -2032,9 +2129,7 @@ Hora: $formattedTime
     try {
       final currentUser = supabase.auth.currentUser;
       if (currentUser == null) {
-        if (Navigator.canPop(context)) {
-          Navigator.pop(context); // Cerrar diálogo
-        }
+        Navigator.of(context).pop(); // Cerrar diálogo
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Debes iniciar sesión para abandonar un partido'),
@@ -2066,9 +2161,7 @@ Hora: $formattedTime
           .maybeSingle();
           
       if (participante == null) {
-        if (Navigator.canPop(context)) {
-          Navigator.pop(context); // Cerrar diálogo
-        }
+        Navigator.of(context).pop(); // Cerrar diálogo
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('No estás registrado en este partido'),
@@ -2089,7 +2182,6 @@ Hora: $formattedTime
       
       // Actualizar la caché de participantes para este partido
       try {
-        matchIdInt = int.parse(matchId.toString());
         if (_participantCountCache.containsKey(matchIdInt)) {
           _participantCountCache[matchIdInt] = (_participantCountCache[matchIdInt]! - 1).clamp(0, double.infinity).toInt();
           print('Caché de participantes actualizada. Ahora hay ${_participantCountCache[matchIdInt]} participantes en el partido $matchIdInt');
@@ -2099,9 +2191,7 @@ Hora: $formattedTime
       }
       
       // Cerrar diálogo
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
+      Navigator.of(context).pop();
         // Mostrar mensaje de éxito
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -2126,10 +2216,8 @@ Hora: $formattedTime
     } catch (e) {
       print('Error en _leaveMatch: $e');
       
-      // Cerrar diálogo de carga de forma segura
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
+      // Cerrar diálogo de carga
+      Navigator.of(context).pop();
 
       // Mostrar mensaje de error
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2145,7 +2233,7 @@ Hora: $formattedTime
   // Método para que un organizador elimine un partido
   Future<void> _deleteMatch(Map<String, dynamic> match) async {
     // Mostrar diálogo de confirmación
-    bool confirmDelete = await showDialog(
+    bool confirmDelete = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
