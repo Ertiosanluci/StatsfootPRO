@@ -54,9 +54,32 @@ class _JoinMatchScreenState extends ConsumerState<JoinMatchScreen> {
       // Si no tenemos datos, los cargamos desde la base de datos
       final matchResult = await _supabase
           .from('matches')
-          .select('*, profiles:created_by(username)')
+          .select('*')
           .eq('id', widget.matchId)
           .single();
+          
+      // Obtener el nombre de usuario del creador por separado
+      if (matchResult['creador_id'] != null) {
+        try {
+          final creatorProfile = await _supabase
+              .from('profiles')
+              .select('username')
+              .eq('id', matchResult['creador_id'])
+              .maybeSingle();
+              
+          if (creatorProfile != null) {
+            // Añadir manualmente la información del creador al resultado
+            matchResult['profiles'] = creatorProfile;
+          }
+        } catch (e) {
+          debugPrint('Error al obtener el perfil del creador: $e');
+          // Si hay error, asignar un objeto vacío para evitar errores al acceder
+          matchResult['profiles'] = {'username': 'Usuario desconocido'};
+        }
+      } else {
+        // Si no hay creador_id, asignar un valor por defecto
+        matchResult['profiles'] = {'username': 'Usuario desconocido'};
+      }
 
       // Verificar si el usuario ya es participante
       final userId = _supabase.auth.currentUser!.id;
