@@ -8,6 +8,10 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'dart:math';
 import 'dart:ui' as ui;
+import 'dart:developer' as dev;
+
+// Importación local del servicio mejorado
+import 'services/match_service_improved.dart';
 
 class CreateMatchScreen extends StatefulWidget {
   @override
@@ -16,9 +20,12 @@ class CreateMatchScreen extends StatefulWidget {
 
 class _CreateMatchScreenState extends State<CreateMatchScreen> {
   final SupabaseClient supabase = Supabase.instance.client;
+  late final MatchServiceImproved _matchService;
   String _selectedFormat = '';
   bool _isPublic = false;
-  final TextEditingController _matchNameController = TextEditingController();
+  final _matchNameController = TextEditingController();
+  final _locationController = TextEditingController();
+  final _descriptionController = TextEditingController();
   late DateTime _selectedDate;
   late TimeOfDay _selectedTime;
   bool _isLoading = false;
@@ -31,6 +38,7 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
     super.initState();
     _selectedDate = DateTime.now();
     _selectedTime = TimeOfDay.now();
+    _matchService = MatchServiceImproved(supabase: supabase);
     
     // Inicializar localización para español
     initializeDateFormatting('es_ES', null).then((_) {
@@ -41,6 +49,8 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
   @override
   void dispose() {
     _matchNameController.dispose();
+    _locationController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -92,11 +102,6 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
     }
   }
 
-  // Generar un enlace único para el partido
-  String _generateMatchLink(int matchId) {
-    return "https://statsfootpro.netlify.app/match/$matchId";
-  }
-
   Future<void> _saveMatch() async {
     if (_selectedFormat.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -134,18 +139,6 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
         ),
       );
 
-      final currentUser = supabase.auth.currentUser;
-      if (currentUser == null) {
-        Navigator.pop(context); // Cerrar diálogo
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Debes iniciar sesión para crear un partido'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
       // Crear el objeto DateTime combinado
       final DateTime matchDateTime = DateTime(
         _selectedDate.year,
@@ -154,57 +147,34 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
         _selectedTime.hour,
         _selectedTime.minute,
       );
-
-      // Insertar el partido en la base de datos
-      final matchResponse = await supabase.from('matches').insert({
-        'creador_id': currentUser.id,
-        'nombre': _matchNameController.text.trim(),
-        'formato': _selectedFormat,
-        'fecha': matchDateTime.toIso8601String(),
-        'estado': 'pendiente',
-        'created_at': DateTime.now().toIso8601String(),
-        'publico': _isPublic,
-      }).select();
-
-      // Obtener el ID del partido recién creado
-      final int matchId = matchResponse[0]['id'];
-      _matchId = matchId;
-
-      // Generar y guardar enlace único para compartir
-      final String matchLink = _generateMatchLink(matchId);
-      _matchLink = matchLink;
       
-      await supabase.from('matches').update({
-        'enlace': matchLink
-      }).eq('id', matchId);
+      // Usar el servicio mejorado para crear el partido
+      final result = await _matchService.createMatch(
+        matchName: _matchNameController.text,
+        fecha: matchDateTime,
+        formato: _selectedFormat,
+        ubicacion: _locationController.text,
+        descripcion: _descriptionController.text,
+        isPublic: _isPublic,
+      );
       
-      // Registrar al creador como organizador en match_participants
-      try {
-        print('Intentando registrar organizador: matchId=$matchId, userId=${currentUser.id}');
-        
-        await supabase.from('match_participants').insert({
-          'match_id': matchId,
-          'user_id': currentUser.id,
-          'equipo': null,
-          'es_organizador': true,
-          'joined_at': DateTime.now().toIso8601String(),
-        });
-        
-        print('Organizador registrado correctamente');
-      } catch (e) {
-        print('Error al registrar organizador: $e');
-      }
-
-      setState(() {
-        _matchCreated = true;
-        _isLoading = false;
-      });
-
       // Cerrar el indicador de carga
       Navigator.pop(context);
-
       
-      
+      if (result != null && result['success'] == true) {
+        // Guardar información del partido creado
+        _matchId = result['match_id'];
+        _matchLink = result['match_link'];
+        
+        setState(() {
+          _matchCreated = true;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       // Cerrar el indicador de carga si hay error
       Navigator.pop(context);
@@ -259,7 +229,9 @@ ${_isPublic ? '🌐 Partido Público' : '🔒 Partido Privado'}
         ),
       );
     }
-  }  @override
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       // Usar un color de fondo azul para evitar franjas blancas
@@ -286,7 +258,7 @@ ${_isPublic ? '🌐 Partido Público' : '🔒 Partido Privado'}
       ),
     );
   }
-  
+
   Widget _buildCreateMatchContent() {
     return Padding(
       padding: EdgeInsets.all(16),
@@ -305,36 +277,44 @@ ${_isPublic ? '🌐 Partido Público' : '🔒 Partido Privado'}
 
   Widget _buildInfoCard() {
     return Card(
-      elevation: 8,
+      elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       color: Colors.blue.shade800,
       child: Padding(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(Icons.sports_soccer, color: Colors.white, size: 24),
-                SizedBox(width: 12),
-                Text(
-                  'Información del Partido',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
+            Text(
+              'Información del Partido',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
-            Divider(thickness: 1, height: 24, color: Colors.white.withOpacity(0.5)),
+            SizedBox(height: 16),
             _buildTextField(
               controller: _matchNameController,
-              label: 'Nombre del partido',
-              hint: 'Ej: Liga Barrial - J3',
-              icon: Icons.title,
+              label: 'Nombre del Partido',
+              hint: 'Ej. Partido Semanal',
+              icon: Icons.sports_soccer,
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 16),
+            _buildTextField(
+              controller: _locationController,
+              label: 'Ubicación',
+              hint: 'Ej. Polideportivo Municipal',
+              icon: Icons.location_on,
+            ),
+            SizedBox(height: 16),
+            _buildTextField(
+              controller: _descriptionController,
+              label: 'Descripción',
+              hint: 'Ej. Partido amistoso, traer agua',
+              icon: Icons.description,
+            ),
+            SizedBox(height: 16),
             _buildFormatDropdown(),
             SizedBox(height: 16),
             _buildVisibilitySwitch(),
@@ -695,6 +675,34 @@ ${_isPublic ? '🌐 Partido Público' : '🔒 Partido Privado'}
                         color: Colors.white.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
+                      child: Icon(Icons.location_on, color: Colors.white),
+                    ),
+                    title: Text('Ubicación',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                    subtitle: Text(_locationController.text.isNotEmpty ? _locationController.text : 'No especificada',
+                      style: TextStyle(color: Colors.white.withOpacity(0.9))),
+                  ),
+                  ListTile(
+                    leading: Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.description, color: Colors.white),
+                    ),
+                    title: Text('Descripción',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                    subtitle: Text(_descriptionController.text.isNotEmpty ? _descriptionController.text : 'Sin descripción',
+                      style: TextStyle(color: Colors.white.withOpacity(0.9))),
+                  ),
+                  ListTile(
+                    leading: Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       child: Icon(_isPublic ? Icons.public : Icons.lock,
                         color: Colors.white),
                     ),
@@ -770,7 +778,8 @@ ${_isPublic ? '🌐 Partido Público' : '🔒 Partido Privado'}
                 ],
               ),
             ),
-          ),          SizedBox(height: 16),
+          ),
+          SizedBox(height: 16),
           Card(
             elevation: 8,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),

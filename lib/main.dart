@@ -17,10 +17,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:app_links/app_links.dart'; // Cambiado de uni_links a app_links
 import 'dart:async';
+import 'dart:developer' as dev;
 // Importaciones del sistema de amigos
 import 'package:statsfoota/features/friends/presentation/screens/friends_main_screen.dart';
 import 'package:statsfoota/features/friends/presentation/screens/friend_requests_screen.dart';
 import 'package:statsfoota/features/friends/presentation/screens/people_screen.dart';
+
+// Importaciones para la inicialización de la aplicación
+import 'app_initializer.dart';
 
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
@@ -93,9 +97,18 @@ Future<void> main() async {
   // Inicializar OneSignal
   try {
     await OneSignalService.initializeOneSignal();
-    print('✅ OneSignal inicializado correctamente');
+    dev.log('✅ OneSignal inicializado correctamente');
   } catch (e) {
-    print('❌ Error al inicializar OneSignal: $e');
+    dev.log('❌ Error al inicializar OneSignal: $e');
+  }
+  
+  // Inicializar la aplicación y las funciones SQL
+  try {
+    final supabase = Supabase.instance.client;
+    await initializeApp(supabase);
+    dev.log('✅ Aplicación inicializada correctamente');
+  } catch (e) {
+    dev.log('❌ Error al inicializar la aplicación: $e');
   }
   
   runApp(
@@ -147,11 +160,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // Maneja los enlaces que llegan cuando la app está en segundo plano/cerrada
     final appLink = await _appLinks.getInitialAppLink();
     if (appLink != null) {
-      debugPrint('Enlace inicial: $appLink');
-      // Esperar brevemente para asegurar que el navegador esté listo
-      Future.delayed(Duration(milliseconds: 500), () {
+      dev.log('Enlace inicial: $appLink');
+      if (!_initialUriIsHandled) {
+        _initialUriIsHandled = true;
         _processIncomingUri(appLink);
-      });
+      }
     }
 
     // Escucha nuevos enlaces mientras la app está en ejecución

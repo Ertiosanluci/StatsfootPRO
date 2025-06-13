@@ -1396,6 +1396,7 @@ Hora: $formattedTime
                       border: Border.all(color: Colors.grey.shade300),
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
@@ -1507,6 +1508,55 @@ Hora: $formattedTime
                     ],
                   ),
                 ),
+                
+                SizedBox(height: 8),
+                
+                // Mostrar ubicación si existe
+                if (match['ubicacion'] != null && match['ubicacion'].toString().isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.location_on, size: 16, color: Colors.blue.shade700),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            match['ubicacion'],
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                // Mostrar descripción si existe
+                if (match['descripcion'] != null && match['descripcion'].toString().isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.description, size: 16, color: Colors.blue.shade700),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            match['descripcion'],
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade800,
+                              fontStyle: FontStyle.italic,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 
                 SizedBox(height: 8),
                   // Action buttons
