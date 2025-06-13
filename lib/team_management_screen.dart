@@ -1434,8 +1434,8 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
         ),
       );
       
-      // Volver a la pantalla anterior
-      Navigator.pop(context, true); // Regresamos con resultado para actualizar
+      // Actualizar los datos en lugar de volver a la pantalla anterior
+      await _loadParticipants(); // Recargar los datos para mostrar los cambios
     } catch (e) {
       // Cerrar el indicador de carga
       if (Navigator.canPop(context)) {

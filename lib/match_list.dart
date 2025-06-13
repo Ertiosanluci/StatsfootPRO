@@ -1578,12 +1578,14 @@ Hora: $formattedTime
                               onPressed: () => _navigateToMatchJoinScreen(match['id'].toString()),
                               color: Colors.blue,
                             ),
-                            _buildActionButton(
-                              icon: Icons.person_add,
-                              label: 'Invitar',
-                              onPressed: () => _showInviteFriendsDialog(match),
-                              color: Colors.teal,
-                            ),
+                            // Solo el creador puede invitar a amigos (no solo organizador)
+                            if (match['creador_id'] == supabase.auth.currentUser?.id)
+                              _buildActionButton(
+                                icon: Icons.person_add,
+                                label: 'Invitar',
+                                onPressed: () => _showInviteFriendsDialog(match),
+                                color: Colors.teal,
+                              ),
                             _buildActionButton(
                               icon: Icons.share,
                               label: 'Compartir',
