@@ -421,11 +421,11 @@ class _MVPResultsRevealScreenState extends State<MVPResultsRevealScreen> with Ti
     );
   }
   
-  /// Construye el botón triangular para revelar los resultados
+  /// Construye el botón rectangular redondeado para revelar los resultados
   Widget _buildRevealButton() {
-    // Dimensiones para un triángulo equilátero más grande
-    final double triangleHeight = 180.0;
-    final double triangleWidth = 160.0;
+    // Dimensiones para un botón rectangular redondeado según el croquis
+    final double buttonWidth = 200.0;
+    final double buttonHeight = 120.0;
     
     return AnimatedBuilder(
       animation: _revealAnimation,
@@ -437,65 +437,59 @@ class _MVPResultsRevealScreenState extends State<MVPResultsRevealScreen> with Ti
           opacity: opacity,
           child: Transform.scale(
             scale: scale,
-            child: GestureDetector(
-              onTap: _resultsRevealed ? null : _revealResults,
-              child: Container(
-                width: triangleWidth,
-                height: triangleHeight,
-                child: Stack(
-                  children: [
-                    // Sombra para dar profundidad
-                    Positioned(
-                      left: 3,
-                      top: 3,
-                      child: ClipPath(
-                        clipper: TriangleClipper(
-                          position: TrianglePosition.revealButton,
-                          size: triangleWidth,
-                        ),
-                        child: Container(
-                          width: triangleWidth,
-                          height: triangleHeight,
-                          color: Colors.black.withOpacity(0.3),
-                        ),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0.95, end: 1.0),
+              duration: const Duration(seconds: 1),
+              curve: Curves.easeInOut,
+              builder: (context, value, child) {
+                return Transform.scale(
+                  scale: value,
+                  child: child,
+                );
+              },
+              child: GestureDetector(
+                onTap: _resultsRevealed ? null : _revealResults,
+                child: Container(
+                  width: buttonWidth,
+                  height: buttonHeight,
+                  decoration: BoxDecoration(
+                    color: Colors.amber,
+                    borderRadius: BorderRadius.circular(25),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
+                    ],
+                    border: Border.all(
+                      color: Colors.amber.shade700,
+                      width: 2,
                     ),
-                    // Triángulo principal
-                    ClipPath(
-                      clipper: TriangleClipper(
-                        position: TrianglePosition.revealButton,
-                        size: triangleWidth,
-                      ),
-                      child: Container(
-                        color: const Color(0xFFF05366), // Color rojo/rosa como en la imagen
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 10.0),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Icon(
-                                  Icons.emoji_events,
-                                  color: Colors.white,
-                                  size: 45,
-                                ),
-                                SizedBox(height: 10),
-                                Text(
-                                  "REVELAR\nRESULTADOS",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.emoji_events,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "revelar\nresultados",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            letterSpacing: 1.2,
                           ),
+                          textAlign: TextAlign.center,
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
