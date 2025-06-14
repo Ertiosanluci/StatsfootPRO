@@ -6,6 +6,7 @@ class FloatingVotingTimerWidget extends StatefulWidget {  final Map<String, dyna
   final VoidCallback onVoteButtonPressed;
   final VoidCallback? onFinishVotingPressed; // Callback para finalizar votación
   final VoidCallback? onResetVotingPressed; // Callback para rehacer votación
+  final VoidCallback? onViewResultsPressed; // Callback para ver resultados
   
   const FloatingVotingTimerWidget({
     Key? key,
@@ -13,6 +14,7 @@ class FloatingVotingTimerWidget extends StatefulWidget {  final Map<String, dyna
     required this.onVoteButtonPressed,
     this.onFinishVotingPressed,
     this.onResetVotingPressed,
+    this.onViewResultsPressed,
   }) : super(key: key);
   
   @override
@@ -20,44 +22,85 @@ class FloatingVotingTimerWidget extends StatefulWidget {  final Map<String, dyna
 }
 
 class _FloatingVotingTimerWidgetState extends State<FloatingVotingTimerWidget> {
-  late DateTime _endTime;
+  DateTime? _endTime;
   Duration _timeRemaining = Duration.zero;
-  late Timer _timer;
+  Timer? _timer;
   
   // Variables para gestionar la posición
   Offset _position = Offset(20, 100); // Posición inicial
   bool _isDragging = false;
+  bool _isVotingActive = false;
   
   @override
   void initState() {
     super.initState();
-    _endTime = DateTime.parse(widget.votingData['voting_ends_at']);
-    _updateTimeRemaining();
-    _timer = Timer.periodic(Duration(seconds: 1), (_) => _updateTimeRemaining());
+    _initializeVotingData();
+  }
+  
+  void _initializeVotingData() {
+    // Verificar si hay datos de votación válidos
+    if (widget.votingData.containsKey('voting_ends_at')) {
+      try {
+        _endTime = DateTime.parse(widget.votingData['voting_ends_at']);
+        final String status = widget.votingData['status'] as String? ?? 'active';
+        _isVotingActive = status == 'active';
+        
+        _updateTimeRemaining();
+        // Solo iniciar el temporizador si la votación está activa
+        if (_isVotingActive) {
+          _timer = Timer.periodic(const Duration(seconds: 1), (_) => _updateTimeRemaining());
+        }
+      } catch (e) {
+        print('Error al analizar datos de votación: $e');
+        _endTime = DateTime.now();
+        _timeRemaining = Duration.zero;
+      }
+    } else {
+      _endTime = DateTime.now();
+      _timeRemaining = Duration.zero;
+    }
   }
   
   @override
   void dispose() {
-    _timer.cancel();
+    _timer?.cancel();
+    _timer = null;
     super.dispose();
   }
   
+  @override
+  void didUpdateWidget(FloatingVotingTimerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // Si los datos de votación cambian, reinicializar
+    if (oldWidget.votingData != widget.votingData) {
+      _timer?.cancel();
+      _timer = null;
+      _initializeVotingData();
+    }
+  }
+  
   void _updateTimeRemaining() {
+    if (_endTime == null) return;
+    
     final now = DateTime.now();
-    if (_endTime.isAfter(now)) {
+    if (_endTime!.isAfter(now)) {
       setState(() {
-        _timeRemaining = _endTime.difference(now);
+        _timeRemaining = _endTime!.difference(now);
       });
     } else {
       setState(() {
         _timeRemaining = Duration.zero;
+        _isVotingActive = false;
       });
-      _timer.cancel();
+      _timer?.cancel();
+      _timer = null;
     }
   }
   
   String _formatTimeRemaining() {
-    if (_timeRemaining.inSeconds <= 0) {
+    // Si la votación no está activa o no hay end time
+    if (!_isVotingActive || _endTime == null || _timeRemaining.inSeconds <= 0) {
       return "¡Finalizada!";
     }
     
@@ -153,9 +196,9 @@ class _FloatingVotingTimerWidgetState extends State<FloatingVotingTimerWidget> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    "Votación en curso",
-                    style: TextStyle(
+                  Text(
+                    _isVotingActive ? "Votación en curso" : "Votación finalizada",
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 10,
@@ -176,12 +219,12 @@ class _FloatingVotingTimerWidgetState extends State<FloatingVotingTimerWidget> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Botón para votar
+                  // Botón para votar (siempre activo)
                   SizedBox(
                     height: 28,
                     width: 40,
                     child: ElevatedButton(
-                      onPressed: _timeRemaining.inSeconds > 0 ? widget.onVoteButtonPressed : null,
+                      onPressed: widget.onVoteButtonPressed, // Siempre activo
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.amber,
                         foregroundColor: Colors.black,
@@ -227,7 +270,7 @@ class _FloatingVotingTimerWidgetState extends State<FloatingVotingTimerWidget> {
                       height: 28,
                       width: 48,
                       child: ElevatedButton(
-                        onPressed: _timeRemaining.inSeconds > 0 ? widget.onResetVotingPressed : null,
+                        onPressed: widget.onResetVotingPressed, // Siempre activo
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange,
                           foregroundColor: Colors.white,
@@ -240,6 +283,30 @@ class _FloatingVotingTimerWidgetState extends State<FloatingVotingTimerWidget> {
                         child: const Text(
                           "Rehacer",
                           style: TextStyle(fontSize: 9),
+                        ),
+                      ),
+                    ),
+                  ],
+                  // Botón de ver resultados (aparece solo cuando la votación ha terminado)
+                  if (!_isVotingActive && widget.onViewResultsPressed != null) ...[  
+                    const SizedBox(width: 4),
+                    SizedBox(
+                      height: 28,
+                      width: 63,
+                      child: ElevatedButton(
+                        onPressed: widget.onViewResultsPressed,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        child: const Text(
+                          "Ver Resultados",
+                          style: TextStyle(fontSize: 8),
                         ),
                       ),
                     ),

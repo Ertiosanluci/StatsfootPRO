@@ -1272,7 +1272,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                       ),
                     ),
                     
-                    // Mostrar los mejores jugadores de MVP si hay votación activa
+                    // Mostrar los mejores jugadores de MVP si hay votación activa y hay resultados
                     if (_activeVoting != null)
                       FutureBuilder<List<Map<String, dynamic>>>(
                         future: _mvpVotingService.getTopVotedPlayers(_matchData['id']),
@@ -1282,28 +1282,48 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                               topPlayers: const [],
                               isLoading: true,
                             );
-                          } else if (snapshot.hasError) {
-                            return const SizedBox.shrink(); // No mostrar nada en caso de error
-                          } else if (snapshot.hasData) {
+                          } else if (snapshot.hasError || !snapshot.hasData) {
+                            return const SizedBox.shrink(); // No mostrar nada en caso de error o sin datos
+                          } else if (snapshot.data!.isNotEmpty) {
+                            // Solo mostrar si hay jugadores con votos
                             return TopMVPPlayersWidget(
                               topPlayers: snapshot.data!,
                               isLoading: false,
                             );
                           } else {
-                            return const SizedBox.shrink();
+                            return const SizedBox.shrink(); // No mostrar nada si no hay resultados
                           }
                         },
                       ),
                   ],
                 ),
                 
-                // Widget flotante de votación (solo si hay votación activa)
-                if (_activeVoting != null)
-                  FloatingVotingTimerWidget(
-                    votingData: _activeVoting!,
-                    onVoteButtonPressed: _showMVPVotingDialog,
-                    onFinishVotingPressed: isCreator ? _finishMVPVotingManually : null,
-                    onResetVotingPressed: isCreator ? _rehacerMVPVotacion : null,
+                // Widget flotante de votación (si hay partido finalizado y votación activa o finalizada)
+                if (isPartidoFinalizado && !_isLoading)
+                  // Usar Builder para asegurar que el widget se reconstruya cuando los datos cambian
+                  Builder(
+                    builder: (context) => FloatingVotingTimerWidget(
+                      key: ValueKey<String>('voting_widget_${_activeVoting != null ? 'active' : 'inactive'}'),
+                      votingData: _activeVoting ?? {
+                        'voting_ends_at': DateTime.now().toIso8601String(),
+                        'status': 'completed'
+                      },
+                      onVoteButtonPressed: _activeVoting != null ? _showMVPVotingDialog : () {
+                        // Si no hay votación activa, permitir iniciarla al hacer clic en votar
+                        if (isCreator) {
+                          _showStartVotingDialog();
+                        } else {
+                          Fluttertoast.showToast(
+                            msg: "No hay votación activa en este momento",
+                            toastLength: Toast.LENGTH_SHORT,
+                            backgroundColor: Colors.orange,
+                          );
+                        }
+                      },
+                      onFinishVotingPressed: isCreator && _activeVoting != null ? _finishMVPVotingManually : null,
+                      onResetVotingPressed: isCreator ? _rehacerMVPVotacion : null,
+                      onViewResultsPressed: _navigateToMVPResultsReveal,
+                    ),
                   ),
                 
                 // Botón flotante para abandonar el partido (solo para no creadores)
