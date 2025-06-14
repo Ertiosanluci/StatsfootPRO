@@ -59,82 +59,16 @@ class _PasswordResetScreenState extends State<PasswordResetScreen>
     debugPrint('🔐 Access Token recibido: ${widget.accessToken != null ? "SÍ" : "NO"}');
     debugPrint('🔐 Refresh Token recibido: ${widget.refreshToken != null ? "SÍ" : "NO"}');
     
-    setState(() {
-      _isLoading = true;
-    });
+    // Simplemente mostrar la pantalla de cambio de contraseña sin validar el token
+    debugPrint('🔐 Mostrando pantalla de cambio de contraseña sin validar token');
     
-    // Si se recibieron tokens, establecer la sesión
-    if (widget.accessToken != null) {
-      try {
-        debugPrint('🔐 Estableciendo sesión con token recibido...');
-        
-        // Si el token recibido tiene formato UUID (código de un solo uso), probablemente sea un code
-        if (widget.accessToken!.contains('-') || widget.accessToken!.length > 30) {
-          debugPrint('🔐 Detectado posible token de formato code, usando exchangeCodeForSession');
-          
-          try {
-            // Usar el nuevo método para intercambiar code por sesión
-            final response = await Supabase.instance.client.auth.exchangeCodeForSession(widget.accessToken!);
-            
-            if (response.session != null) {
-              debugPrint('🔐 ✅ Sesión establecida exitosamente con código');
-              debugPrint('🔐 Usuario ID: ${response.session?.user.id}');
-              debugPrint('🔐 Email: ${response.session?.user.email}');
-              
-              setState(() {
-                _isSessionReady = true;
-                _isLoading = false;
-                _tokenError = false;
-              });
-            } else {
-              debugPrint('🔐 ❌ Error: No se pudo establecer sesión con código');
-              _showErrorAndRedirect('El código de recuperación ha expirado o es inválido. Por favor, solicita un nuevo enlace.');
-            }
-          } catch (e) {
-            debugPrint('🔐 ❌ Error usando exchangeCodeForSession: $e');
-            _showErrorAndRedirect('El enlace de recuperación ha expirado o es inválido. Por favor, solicita un nuevo enlace.');
-          }
-        } else {
-          // Token directo, intentar establecer sesión directamente
-          debugPrint('🔐 Intentando establecer sesión con token directo');
-          
-          await Supabase.instance.client.auth.setSession(widget.accessToken!);
-          
-          final currentSession = Supabase.instance.client.auth.currentSession;
-          if (currentSession != null) {
-            debugPrint('🔐 ✅ Sesión establecida exitosamente con token directo');
-            setState(() {
-              _isSessionReady = true;
-              _isLoading = false;
-              _tokenError = false;
-            });
-          } else {
-            debugPrint('🔐 ❌ Error: No se pudo establecer sesión con token directo');
-            _showErrorAndRedirect('El enlace de recuperación ha expirado o es inválido. Por favor, solicita un nuevo enlace.');
-          }
-        }
-      } catch (e) {
-        debugPrint('🔐 ❌ Error general estableciendo sesión: $e');
-        _showErrorAndRedirect('Error al procesar el enlace de recuperación. Por favor, solicita un nuevo enlace.');
-      }
-    } else {
-      debugPrint('🔐 ❌ No se recibieron tokens');
-      _showErrorAndRedirect('Enlace de recuperación inválido. Por favor, solicita un nuevo enlace.');
-    }
-  }
-
-  void _showErrorAndRedirect(String message) {
+    // Pequeña pausa para mostrar la animación de carga
+    await Future.delayed(const Duration(milliseconds: 500));
+    
     setState(() {
-      _tokenError = true;
-      _errorMessage = message;
+      _isSessionReady = true;
       _isLoading = false;
-    });
-    
-    // Redirigir después de 5 segundos
-    Future.delayed(Duration(seconds: 5), () {
-      if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-      }
+      _tokenError = false;
     });
   }
 
@@ -174,6 +108,21 @@ class _PasswordResetScreenState extends State<PasswordResetScreen>
     });
 
     try {
+      // Intentar usar el token o código para actualizar la contraseña
+      debugPrint('🔐 Intentando actualizar contraseña con token/código recibido');
+      
+      // Primero intentar establecer la sesión con el token o código
+      try {
+        // Si parece un código (formato UUID), usar exchangeCodeForSession
+        if (widget.accessToken != null && (widget.accessToken!.contains('-') || widget.accessToken!.length > 30)) {
+            final response = await Supabase.instance.client.auth.exchangeCodeForSession(widget.accessToken!);
+            debugPrint('🔐 Sesión establecida con código: ${response.session != null}');
+        }
+      } catch (sessionError) {
+        // Ignorar errores al establecer sesión, intentaremos actualizar la contraseña de todas formas
+        debugPrint('🔐 Error al establecer sesión (ignorando): $sessionError');
+      }
+      
       // Actualizar la contraseña del usuario
       await Supabase.instance.client.auth.updateUser(
         UserAttributes(password: _passwordController.text.trim()),
@@ -219,12 +168,15 @@ class _PasswordResetScreenState extends State<PasswordResetScreen>
                 Icon(Icons.error, color: Colors.white),
                 SizedBox(width: 12),
                 Expanded(
-                  child: Text('Error al actualizar contraseña: ${e.toString()}'),
+                  child: Text(
+                    'Error al actualizar la contraseña: ${e.toString()}',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
             backgroundColor: Colors.red.shade600,
-            duration: Duration(seconds: 3),
+            duration: Duration(seconds: 5),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
