@@ -1142,62 +1142,86 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
           unselectedLabelColor: Colors.white70,
         ),
         actions: [
-          // Mostrar botón de votación para usuarios (si hay votación activa)
-          if (isPartidoFinalizado && _activeVoting != null && !isReadOnly)
+        // Botón de eliminar partido (solo para el creador y si no está finalizado)
+        if (!isReadOnly && !_isLoading && !isPartidoFinalizado)
+          IconButton(
+            icon: const Icon(
+              Icons.delete,
+              color: Colors.white,
+              size: 26,
+            ),
+            tooltip: 'Eliminar partido',
+            onPressed: _showDeleteMatchDialog,
+          ),
+            
+        // Botón para iniciar votación (solo para el creador y si el partido está finalizado y no hay votación activa)
+        if (isPartidoFinalizado && _activeVoting == null && !isReadOnly)
+          IconButton(
+            icon: const Icon(
+              Icons.emoji_events_outlined,
+              color: Colors.amber,
+              size: 26,
+            ),
+            tooltip: 'Iniciar votación MVP',
+            onPressed: _showStartVotingDialog,
+          ),
+
+        // Mostrar botón de votación para usuarios (si hay votación activa)
+        if (isPartidoFinalizado && _activeVoting != null && !isReadOnly)
+          IconButton(
+            icon: const Icon(
+              Icons.how_to_vote,
+              color: Colors.white,
+              size: 26,
+            ),
+            tooltip: 'Votar por MVP',
+            onPressed: _showMVPVotingDialog,
+          ),
+        
+        // Botón para ver historial de votaciones (solo visible si partido finalizado)
+        if (isPartidoFinalizado)
+          IconButton(
+            icon: const Icon(
+              Icons.history,
+              color: Colors.white70,
+              size: 24,
+            ),
+            tooltip: 'Historial de votaciones',
+            onPressed: _navigateToVotingHistory,
+          ),
+        // Mostrar opciones para el creador del partido
+        if (!isReadOnly && !_isLoading) ...[
+          if (!isPartidoFinalizado)
             IconButton(
               icon: const Icon(
-                Icons.how_to_vote,
+                Icons.sports_score,
                 color: Colors.white,
                 size: 26,
               ),
-              tooltip: 'Votar por MVP',
-              onPressed: _showMVPVotingDialog,
+              tooltip: 'Editar estadísticas',
+              onPressed: () {
+                Fluttertoast.showToast(
+                  msg: "Toca en un jugador para editar sus estadísticas",
+                  toastLength: Toast.LENGTH_LONG,
+                  gravity: ToastGravity.CENTER,
+                  backgroundColor: Colors.blue.shade700,
+                  textColor: Colors.white,
+                  fontSize: 16.0
+                );
+              },
             ),
-          
-          // Botón para ver historial de votaciones (solo visible si partido finalizado)
-          if (isPartidoFinalizado)
+          if (!isPartidoFinalizado)
             IconButton(
               icon: const Icon(
-                Icons.history,
-                color: Colors.white70,
-                size: 24,
+                Icons.stop_circle_outlined,
+                color: Colors.orange,
+                size: 26,
               ),
-              tooltip: 'Historial de votaciones',
-              onPressed: _navigateToVotingHistory,
+              tooltip: 'Terminar partido',
+              onPressed: _showFinalizarPartidoDialog,
             ),
-          // Mostrar opciones para el creador del partido
-          if (!isReadOnly && !_isLoading) ...[
-            if (!isPartidoFinalizado)
-              IconButton(
-                icon: const Icon(
-                  Icons.sports_score,
-                  color: Colors.white,
-                  size: 26,
-                ),
-                tooltip: 'Editar estadísticas',
-                onPressed: () {
-                  Fluttertoast.showToast(
-                    msg: "Toca en un jugador para editar sus estadísticas",
-                    toastLength: Toast.LENGTH_LONG,
-                    gravity: ToastGravity.CENTER,
-                    backgroundColor: Colors.blue.shade700,
-                    textColor: Colors.white,
-                    fontSize: 16.0
-                  );
-                },
-              ),
-            if (!isPartidoFinalizado)
-              IconButton(
-                icon: const Icon(
-                  Icons.flag_outlined,
-                  color: Colors.white,
-                  size: 26,
-                ),
-                tooltip: 'Finalizar partido',
-                onPressed: _showFinalizarPartidoDialog,
-              ),
-          ],
         ],
+      ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -1282,16 +1306,16 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
                     onResetVotingPressed: isCreator ? _rehacerMVPVotacion : null,
                   ),
                 
-                // Botón flotante para abandonar o eliminar el partido
-                if (!isPartidoFinalizado)
+                // Botón flotante para abandonar el partido (solo para no creadores)
+                if (!isPartidoFinalizado && !isCreator)
                   Positioned(
                     right: 16,
                     bottom: 16,
                     child: FloatingActionButton.extended(
-                      onPressed: isCreator ? _showDeleteMatchDialog : _showLeaveMatchDialog,
-                      backgroundColor: isCreator ? Colors.red : Colors.orange,
-                      icon: Icon(isCreator ? Icons.delete : Icons.exit_to_app),
-                      label: Text(isCreator ? 'Eliminar partido' : 'Abandonar partido'),
+                      onPressed: _showLeaveMatchDialog,
+                      backgroundColor: Colors.orange,
+                      icon: Icon(Icons.exit_to_app),
+                      label: Text('Abandonar partido'),
                     ),
                   ),
               ],

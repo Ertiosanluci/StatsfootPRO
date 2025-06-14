@@ -159,7 +159,7 @@ class _MatchFinishDialogState extends State<MatchFinishDialog> {
             
             // MVP Equipo Claro - Selector
             Container(
-              height: 100,
+              height: 120,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: widget.teamClaro.length,
@@ -191,6 +191,7 @@ class _MatchFinishDialogState extends State<MatchFinishDialog> {
                         ),
                       ),
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           // Avatar
@@ -216,15 +217,17 @@ class _MatchFinishDialogState extends State<MatchFinishDialog> {
                                   ),
                           ),
                           SizedBox(height: 5),
-                          Text(
-                            player['nombre'] ?? 'Jugador',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
+                          Flexible(
+                            child: Text(
+                              player['nombre'] ?? 'Jugador',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
                           ),
                           
                           if (isSelected)
@@ -265,7 +268,7 @@ class _MatchFinishDialogState extends State<MatchFinishDialog> {
             
             // MVP Equipo Oscuro - Selector
             Container(
-              height: 100,
+              height: 120,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: widget.teamOscuro.length,
@@ -322,15 +325,17 @@ class _MatchFinishDialogState extends State<MatchFinishDialog> {
                                   ),
                           ),
                           SizedBox(height: 5),
-                          Text(
-                            player['nombre'] ?? 'Jugador',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
+                          Flexible(
+                            child: Text(
+                              player['nombre'] ?? 'Jugador',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
                           ),
                           
                           if (isSelected)
@@ -379,7 +384,7 @@ class _MatchFinishDialogState extends State<MatchFinishDialog> {
                 TextButton(
                   child: Text(
                     'Cancelar',
-                    style: TextStyle(color: Colors.white70),
+                    style: TextStyle(color: Colors.white),
                   ),
                   onPressed: () => Navigator.pop(context),
                 ),
@@ -390,9 +395,13 @@ class _MatchFinishDialogState extends State<MatchFinishDialog> {
                     color: Colors.white,
                     size: 18,
                   ),
-                  label: Text('Finalizar'),
+                  label: Text(
+                    'Finalizar',
+                    style: TextStyle(color: Colors.white),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green.shade600,
+                    foregroundColor: Colors.white,
                   ),
                   onPressed: () {
                     // Llamar al callback para finalizar el partido

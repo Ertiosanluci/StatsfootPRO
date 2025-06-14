@@ -147,7 +147,8 @@ class _PlayerStatsDialogState extends State<PlayerStatsDialog> {
                 const SizedBox(width: 16),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: widget.isTeamClaro ? Colors.blue.shade700 : Colors.red.shade700,
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   child: const Text('Guardar'),
