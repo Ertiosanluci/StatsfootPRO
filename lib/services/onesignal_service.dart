@@ -385,6 +385,7 @@ class OneSignalService {
     String? playerIds,
     String? userId,
     String? largeIcon, // URL de la imagen de perfil para mostrar en la notificación
+    String? subtitle, // Subtítulo para la notificación
   }) async {
     try {
       debugPrint('Enviando notificación usando la API REST de OneSignal');
@@ -401,6 +402,12 @@ class OneSignalService {
         'data': additionalData ?? {},
         'target_channel': 'push', // Parámetro requerido según la documentación
       };
+      
+      // Añadir subtítulo si está disponible (útil para mostrar el nombre del jugador)
+      if (subtitle != null && subtitle.isNotEmpty) {
+        requestBody['subtitle'] = {'en': subtitle};
+        debugPrint('Añadiendo subtítulo a la notificación: $subtitle');
+      }
       
       // Añadir la imagen de perfil si está disponible
       if (largeIcon != null && largeIcon.isNotEmpty) {

@@ -5,6 +5,7 @@ import 'dart:developer' as dev;
 import 'package:statsfoota/features/notifications/presentation/controllers/notification_controller.dart';
 // Importamos el servicio OneSignal directamente desde la ruta relativa
 import '../../../services/onesignal_service.dart';
+import '../../services/onesignal_service.dart';
 
 /// Pantalla para unirse a un partido desde una notificación de invitación
 class JoinMatchScreen extends ConsumerStatefulWidget {
@@ -227,7 +228,8 @@ class _JoinMatchScreenState extends ConsumerState<JoinMatchScreen> {
           // Enviar notificación al creador
           await OneSignalService.sendTestNotification(
             title: 'Nuevo jugador en tu partido',
-            content: '$joinerName se ha unido a tu partido "$matchName"',
+            content: 'Se ha unido a tu partido "$matchName"',
+            subtitle: joinerName, // Añadir el nombre del jugador como subtítulo para mayor visibilidad
             additionalData: additionalData,
             userId: creatorId,
             largeIcon: joinerAvatarUrl,
