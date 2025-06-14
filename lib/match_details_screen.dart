@@ -1182,11 +1182,11 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
         if (isPartidoFinalizado)
           IconButton(
             icon: const Icon(
-              Icons.emoji_events_outlined,
+              Icons.how_to_reg_outlined,
               color: Colors.amber,
               size: 26,
             ),
-            tooltip: 'Ver MVPs del partido',
+            tooltip: 'Historial de votaciones MVP',
             onPressed: _navigateToVotingHistory,
           ),
         // Mostrar opciones para el creador del partido
