@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:statsfoota/register.dart';
-import 'package:statsfoota/resetpasswordscreen.dart';
 import 'package:statsfoota/features/notifications/join_match_screen.dart'; // Actualizado path
 import 'package:statsfoota/password_reset_request_screen.dart'; // Nueva pantalla de solicitud de reset
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -407,7 +406,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             onPressed: () {
                               Navigator.push(
                                 context, 
-                                MaterialPageRoute(builder: (context) => ResetPasswordScreen())
+                                MaterialPageRoute(builder: (context) => PasswordResetRequestScreen())
                               );
                             },
                             style: TextButton.styleFrom(
