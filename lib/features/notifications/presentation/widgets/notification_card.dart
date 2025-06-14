@@ -101,14 +101,14 @@ class NotificationCard extends ConsumerWidget {
                 child: Row(
                   children: [
                     _buildActionButton(
-                      label: 'Aceptar',
-                      color: Colors.green,
+                      label: 'Ver detalles',
+                      color: Colors.blue,
                       onPressed: onAccept!,
                     ),
                     const SizedBox(width: 12),
                     _buildActionButton(
-                      label: 'Rechazar',
-                      color: Colors.red,
+                      label: 'Descartar',
+                      color: Colors.grey,
                       onPressed: onReject!,
                     ),
                   ],

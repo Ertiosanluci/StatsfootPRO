@@ -2,13 +2,13 @@ import 'dart:developer' as dev;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-
-// Importaciones absolutas para usar las clases existentes
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:developer' as dev;
 import 'package:statsfoota/features/notifications/domain/models/notification_model.dart';
 import 'package:statsfoota/features/notifications/presentation/controllers/notification_controller.dart' show notificationControllerProvider;
 import 'package:statsfoota/features/friends/presentation/controllers/friend_controller.dart' show friendControllerProvider;
+import 'package:statsfoota/features/notifications/join_match_screen.dart'; 
 
 /// Widget para manejar las invitaciones a partidos y solicitudes de amistad
 class MatchInvitationHandler extends ConsumerWidget {
@@ -133,8 +133,8 @@ class MatchInvitationHandler extends ConsumerWidget {
     }
   }
 
-  /// Maneja la respuesta a una invitación a un partido (aceptar o rechazar)
-  Future<void> _handleMatchInvitationResponse(BuildContext context, WidgetRef ref, NotificationModel notification, bool accept) async {
+  /// Maneja la respuesta a una invitación a un partido (ver detalles o descartar)
+  Future<void> _handleMatchInvitationResponse(BuildContext context, WidgetRef ref, NotificationModel notification, bool viewDetails) async {
     final supabase = Supabase.instance.client;
     final userId = supabase.auth.currentUser?.id;
     
@@ -144,48 +144,61 @@ class MatchInvitationHandler extends ConsumerWidget {
       return;
     }
 
-    // Verificar si hay un ID de partido en la notificación
-    if (notification.resourceId == null) {
+    // Extraer el ID del partido de los datos de la notificación
+    int? matchId;
+    try {
+      if (notification.data != null && notification.data is Map) {
+        final data = notification.data as Map;
+        if (data.containsKey('match_id')) {
+          matchId = data['match_id'] as int?;
+        }
+      }
+    } catch (e) {
+      dev.log('Error al extraer match_id de los datos: $e');
+    }
+    
+    // Si no hay match_id en los datos, intentar usar resourceId
+    if (matchId == null && notification.resourceId != null) {
+      try {
+        matchId = int.parse(notification.resourceId!);
+      } catch (e) {
+        dev.log('Error al convertir resourceId a int: $e');
+      }
+    }
+    
+    if (matchId == null) {
       _showToast("Este partido ya no está disponible.");
       _removeNotificationFromFeed(ref, notification.id);
       return;
     }
-
-    final String matchId = notification.resourceId!;
     
     try {
-      if (accept) {
-        // Aceptar invitación al partido
-        await supabase
-            .from('match_players')
-            .insert({
-              'match_id': matchId,
-              'player_id': userId,
-              'status': 'accepted',
-            });
-            
-        _showToast("Has aceptado unirte al partido");
-      } else {
-        // Rechazar invitación al partido
-        await supabase
-            .from('match_players')
-            .insert({
-              'match_id': matchId,
-              'player_id': userId,
-              'status': 'rejected',
-            });
-            
-        _showToast("Has rechazado la invitación al partido");
-      }
-
-      // Marcar la notificación como leída
+      // Marcar la notificación como leída en ambos casos
       await supabase
           .from('notifications')
           .update({'read': true})
           .match({'id': notification.id});
 
-      // Actualizar el estado local
-      _removeNotificationFromFeed(ref, notification.id);
+      // Actualizar el estado local de notificaciones
+      ref.read(notificationControllerProvider.notifier).markAsRead(notification.id);
+      
+      if (viewDetails) {
+        // Navegar a la pantalla de detalles del partido
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => JoinMatchScreen(
+              matchId: matchId!,
+              fromNotification: true,
+            ),
+          ),
+        );
+        
+        _showToast("Cargando detalles del partido...");
+      } else {
+        // Solo descartar la notificación
+        _showToast("Notificación descartada");
+        _removeNotificationFromFeed(ref, notification.id);
+      }
     } catch (e) {
       dev.log('Error al procesar invitación a partido: $e');
       _showToast("Este partido ya no está disponible.");

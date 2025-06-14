@@ -117,6 +117,7 @@ class _JoinMatchScreenState extends ConsumerState<JoinMatchScreen> {
 
     try {
       final userId = _supabase.auth.currentUser!.id;
+      dev.log('Intentando unir al usuario $userId al partido ${widget.matchId}');
 
       // Verificar si ya existe una invitación
       final invitationResult = await _supabase
@@ -128,17 +129,33 @@ class _JoinMatchScreenState extends ConsumerState<JoinMatchScreen> {
 
       // Si existe una invitación, actualizarla a 'accepted'
       if (invitationResult != null) {
+        dev.log('Invitación encontrada, actualizando estado a accepted');
         await _supabase
             .from('match_invitations')
             .update({'status': 'accepted'})
             .eq('id', invitationResult['id']);
+      } else {
+        dev.log('No se encontró invitación previa para este partido');
       }
 
-      // Añadir al usuario como participante
-      await _supabase.from('match_participants').insert({
-        'match_id': widget.matchId,
-        'user_id': userId,
-      });
+      // Verificar si el usuario ya es participante para evitar duplicados
+      final participantCheck = await _supabase
+          .from('match_participants')
+          .select()
+          .eq('match_id', widget.matchId)
+          .eq('user_id', userId)
+          .maybeSingle();
+      
+      if (participantCheck == null) {
+        // Añadir al usuario como participante si no existe
+        dev.log('Añadiendo al usuario como participante del partido');
+        await _supabase.from('match_participants').insert({
+          'match_id': widget.matchId,
+          'user_id': userId,
+        });
+      } else {
+        dev.log('El usuario ya es participante de este partido');
+      }
       
       // Obtener información del partido y del creador para enviar la notificación
       String creatorId = '';

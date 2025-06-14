@@ -359,6 +359,7 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> with SingleTi
               
               // Marcar como no organizador
               matchData['isOrganizer'] = false;
+              matchData['is_participant'] = true;
               
               // Añadir a la lista de partidos del usuario
               userMatches.add(matchData);
