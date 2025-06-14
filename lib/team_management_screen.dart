@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:ui' as ui;
+import 'dart:developer' as dev;
+import 'dart:math' show Random;
+import 'dart:async';
+import 'dart:convert';
 
 class TeamManagementScreen extends StatefulWidget {
   final Map<String, dynamic> match;
@@ -12,6 +16,80 @@ class TeamManagementScreen extends StatefulWidget {
 }
 
 class _TeamManagementScreenState extends State<TeamManagementScreen> with SingleTickerProviderStateMixin {
+  // Método para obtener las posiciones de formación según el número de jugadores
+  List<List<double>> _getFormationPositions(int totalPlayers) {
+    // Posiciones relativas para diferentes formaciones (x, y) donde x e y están entre 0 y 1
+    switch (totalPlayers) {
+      case 1:
+        return [[0.5, 0.5]]; // Un solo jugador en el centro
+      case 2:
+        return [
+          [0.3, 0.5], // Dos jugadores en línea horizontal
+          [0.7, 0.5],
+        ];
+      case 3:
+        return [
+          [0.5, 0.3], // Formación triangular
+          [0.3, 0.7],
+          [0.7, 0.7],
+        ];
+      case 4:
+        return [
+          [0.3, 0.3], // Formación en diamante
+          [0.7, 0.3],
+          [0.3, 0.7],
+          [0.7, 0.7],
+        ];
+      case 5:
+        return [
+          [0.5, 0.2], // Formación 2-1-2
+          [0.2, 0.4],
+          [0.8, 0.4],
+          [0.3, 0.7],
+          [0.7, 0.7],
+        ];
+      case 6:
+        return [
+          [0.3, 0.2], // Formación 2-2-2
+          [0.7, 0.2],
+          [0.2, 0.5],
+          [0.8, 0.5],
+          [0.3, 0.8],
+          [0.7, 0.8],
+        ];
+      case 7:
+        return [
+          [0.5, 0.15], // Formación 2-3-2
+          [0.2, 0.3],
+          [0.8, 0.3],
+          [0.2, 0.6],
+          [0.5, 0.6],
+          [0.8, 0.6],
+          [0.5, 0.85],
+        ];
+      default:
+        // Para 8 o más jugadores, crear una distribución uniforme
+        List<List<double>> positions = [];
+        int rows = (totalPlayers / 3).ceil(); // Aproximadamente 3 jugadores por fila
+        int remaining = totalPlayers;
+        
+        for (int row = 0; row < rows; row++) {
+          int playersInRow = (remaining / (rows - row)).ceil();
+          remaining -= playersInRow;
+          
+          for (int i = 0; i < playersInRow; i++) {
+            double x = (i + 1) / (playersInRow + 1);
+            double y = (row + 1) / (rows + 1);
+            positions.add([x, y]);
+          }
+        }
+        
+        return positions;
+    }
+  }
+  
+  // Método para verificar si una posición está ocupada por un jugador
+  // Implementación movida a la línea 1391
   final SupabaseClient supabase = Supabase.instance.client;
   bool _isLoading = true;
   List<Map<String, dynamic>> _participants = [];
@@ -226,102 +304,6 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
       return Offset(positions[index][0], isTeamA ? positions[index][1] : 1.0 - positions[index][1]);
     }
     return Offset(0.5, isTeamA ? 0.3 : 0.7); // Posición por defecto
-  }
-  
-  // Obtener posiciones predeterminadas basadas en la formación
-  List<List<double>> _getFormationPositions(int totalPlayers) {
-    // Posiciones relativas (x, y) donde x e y están entre 0 y 1
-    switch (totalPlayers) {
-      case 5:
-        return [
-          [0.5, 0.15],   // Delantero
-          [0.2, 0.3],    // Mediocampista izquierdo
-          [0.5, 0.4],    // Mediocampista central
-          [0.8, 0.3],    // Mediocampista derecho
-          [0.5, 0.7],    // Defensa / Portero
-        ];
-      case 6:
-        return [
-          [0.5, 0.15],   // Delantero
-          [0.2, 0.3],    // Mediocampista izquierdo
-          [0.5, 0.3],    // Mediocampista central
-          [0.8, 0.3],    // Mediocampista derecho
-          [0.3, 0.6],    // Defensa izquierdo
-          [0.7, 0.6],    // Defensa derecho
-        ];
-      case 7:
-        return [
-          [0.5, 0.15],   // Delantero
-          [0.2, 0.25],   // Extremo izquierdo
-          [0.5, 0.3],    // Mediocampista central
-          [0.8, 0.25],   // Extremo derecho
-          [0.3, 0.5],    // Mediocampista defensivo izquierdo
-          [0.7, 0.5],    // Mediocampista defensivo derecho
-          [0.5, 0.7],    // Defensa central / Portero
-        ];
-      case 8:
-        return [
-          [0.3, 0.15],   // Delantero izquierdo
-          [0.7, 0.15],   // Delantero derecho
-          [0.2, 0.3],    // Extremo izquierdo
-          [0.5, 0.3],    // Mediocampista central
-          [0.8, 0.3],    // Extremo derecho
-          [0.3, 0.5],    // Mediocampista defensivo
-          [0.7, 0.5],    // Defensa central
-          [0.5, 0.7],    // Portero
-        ];
-      case 9:
-        return [
-          [0.3, 0.15],   // Delantero izquierdo
-          [0.5, 0.15],   // Delantero central
-          [0.7, 0.15],   // Delantero derecho
-          [0.2, 0.35],   // Mediocampista izquierdo
-          [0.5, 0.35],   // Mediocampista central
-          [0.8, 0.35],   // Mediocampista derecho
-          [0.2, 0.55],   // Defensa izquierdo
-          [0.8, 0.55],   // Defensa derecho
-          [0.5, 0.7],    // Portero
-        ];
-      case 10:
-        return [
-          [0.3, 0.15],   // Delantero izquierdo
-          [0.7, 0.15],   // Delantero derecho
-          [0.15, 0.3],   // Extremo izquierdo
-          [0.38, 0.25],  // Mediocampista izquierdo
-          [0.62, 0.25],  // Mediocampista derecho
-          [0.85, 0.3],   // Extremo derecho
-          [0.3, 0.5],    // Mediocampista defensivo izquierdo
-          [0.7, 0.5],    // Mediocampista defensivo derecho
-          [0.5, 0.6],    // Defensa central
-          [0.5, 0.75],   // Portero
-        ];
-      case 11:
-        return [
-          [0.5, 0.15],   // Delantero centro
-          [0.25, 0.2],   // Delantero izquierdo
-          [0.75, 0.2],   // Delantero derecho
-          [0.15, 0.35],  // Extremo izquierdo
-          [0.5, 0.35],   // Mediocampista central
-          [0.85, 0.35],  // Extremo derecho
-          [0.25, 0.5],   // Mediocampista defensivo izquierdo
-          [0.75, 0.5],   // Mediocampista defensivo derecho
-          [0.25, 0.65],  // Defensa izquierdo
-          [0.75, 0.65],  // Defensa derecho
-          [0.5, 0.75],   // Portero
-        ];
-      default:
-        // Para otros formatos que no estén definidos explícitamente
-        return List.generate(totalPlayers, (index) {
-          double y = 0.15 + (0.6 * index / (totalPlayers - 1));
-          double x = 0.5;
-          if (index % 2 == 1) {
-            x = 0.3 + (0.4 * (index / totalPlayers));
-          } else if (index % 2 == 0 && index > 0) {
-            x = 0.7 - (0.4 * (index / totalPlayers));
-          }
-          return [x, y];
-        });
-    }
   }
   
   Future<void> _assignToTeam(Map<String, dynamic> participant, String? team) async {
@@ -680,8 +662,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
                         ),
                       ),
                       
-                      // Marcador de goles en la parte superior
-                      _buildScoreBoard(fieldWidth),
+                      // Marcador de goles eliminado
                       
                       // Detector de toques para campo completo
                       Positioned.fill(
@@ -1334,150 +1315,14 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
     }
   }
   
-  // Método para actualizar el marcador en la base de datos
-  Future<void> _updateMatchScore() async {
-    try {
-      await supabase
-          .from('matches')
-          .update({
-            'resultado_claro': _resultadoClaro,
-            'resultado_oscuro': _resultadoOscuro,
-          })
-          .eq('id', widget.match['id']);
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Marcador actualizado'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 1),
-        ),
-      );
-    } catch (e) {
-      print('Error al actualizar el marcador en matches: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al actualizar el marcador: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
+  // Método para actualizar el marcador eliminado
 
   // Construir el marcador de goles en la parte superior del campo
-  Widget _buildScoreBoard(double fieldWidth) {
-    return Positioned(
-      top: 10,
-      left: fieldWidth / 2 - 80,
-      child: Container(
-        width: 160,
-        padding: EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.black.withOpacity(0.7), Colors.black.withOpacity(0.8)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 8,
-              offset: Offset(0, 3),
-            ),
-          ],
-          border: Border.all(
-            color: Colors.white.withOpacity(0.3),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Equipo Claro
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _resultadoClaro++;
-                  _updateMatchScore();
-                });
-              },
-              onLongPress: () {
-                if (_resultadoClaro > 0) {
-                  setState(() {
-                    _resultadoClaro--;
-                    _updateMatchScore();
-                  });
-                }
-              },
-              child: Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  "$_resultadoClaro",
-                  style: TextStyle(
-                    color: Colors.blue.shade200,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                ),
-              ),
-            ),
-            
-            // Separador
-            Container(
-              margin: EdgeInsets.symmetric(horizontal: 8),
-              child: Text(
-                "-",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 22,
-                ),
-              ),
-            ),
-            
-            // Equipo Oscuro
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _resultadoOscuro++;
-                  _updateMatchScore();
-                });
-              },
-              onLongPress: () {
-                if (_resultadoOscuro > 0) {
-                  setState(() {
-                    _resultadoOscuro--;
-                    _updateMatchScore();
-                  });
-                }
-              },
-              child: Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  "$_resultadoOscuro",
-                  style: TextStyle(
-                    color: Colors.red.shade200,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Método eliminado: ya no se muestra el marcador en el campo
 
   // Función para construir posiciones vacías en el campo
+  // Función para construir posiciones vacías en el campo
+  
   List<Widget> _buildEmptyPositions(int count, bool isTeamA, double fieldWidth, double fieldHeight) {
     List<Widget> positions = [];
     List<List<double>> formationPositions = _getFormationPositions(count);
@@ -2694,6 +2539,13 @@ ALTER TABLE matches ADD COLUMN mvp_team_oscuro UUID;
   // Método auxiliar para actualizar el equipo de un jugador en la base de datos
   Future<void> _updatePlayerTeam(String participantId, String team) async {
     try {
+      // Verificar si el participantId es válido antes de continuar
+      if (participantId.isEmpty) {
+        print('ID de participante no válido');
+        return;
+      }
+      
+      // Actualizar el equipo del jugador
       await supabase
         .from('match_participants')
         .update({'equipo': team})
@@ -2705,6 +2557,12 @@ ALTER TABLE matches ADD COLUMN mvp_team_oscuro UUID;
         .select('*, profiles:user_id(nombre, avatar_url)')
         .eq('id', participantId)
         .single();
+      
+      // Verificar si la respuesta es válida
+      if (response == null) {
+        print('No se pudo obtener información del jugador');
+        return;
+      }
       
       Map<String, dynamic> player = response;
       if (player['profiles'] != null) {
@@ -2913,12 +2771,19 @@ ALTER TABLE matches ADD COLUMN mvp_team_oscuro UUID;
   );
     } catch (e) {
       print('Error al actualizar equipo del jugador: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al actualizar el equipo del jugador'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // Solo mostrar el error si la vista está montada y visible
+      if (context.mounted) {
+        // Usar un Future.delayed para evitar que el error aparezca inmediatamente al entrar
+        // Solo mostrar errores que no sean de inicialización
+        if (!e.toString().contains('NoSuchMethodError')) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al actualizar el equipo del jugador'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
   
