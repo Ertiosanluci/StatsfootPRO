@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:developer' as dev;
+import 'package:intl/intl.dart';
 import 'package:statsfoota/features/notifications/presentation/controllers/notification_controller.dart';
 // Importamos el servicio OneSignal directamente desde la ruta relativa
 import '../../../services/onesignal_service.dart';
@@ -32,6 +33,37 @@ class _JoinMatchScreenState extends ConsumerState<JoinMatchScreen> {
   Map<String, dynamic>? _matchDetails;
   bool _isJoining = false;
   bool _hasJoined = false;
+
+  /// Formatea una fecha en el formato dd/MM/yyyy HH:mm
+  String _formatDateTime(String? dateTimeString) {
+    if (dateTimeString == null || dateTimeString.isEmpty) {
+      return 'Fecha no especificada';
+    }
+    
+    try {
+      // Intentar parsear la fecha desde diferentes formatos posibles
+      DateTime dateTime;
+      
+      // Si la fecha ya incluye información de zona horaria
+      if (dateTimeString.contains('T') && (dateTimeString.contains('+') || dateTimeString.contains('Z'))) {
+        dateTime = DateTime.parse(dateTimeString);
+      } else if (dateTimeString.contains('T')) {
+        // Formato ISO sin zona horaria
+        dateTime = DateTime.parse(dateTimeString);
+      } else {
+        // Intentar otros formatos comunes
+        dateTime = DateTime.parse(dateTimeString);
+      }
+      
+      // Formatear en el formato solicitado: dd/MM/yyyy HH:mm
+      final formatter = DateFormat('dd/MM/yyyy HH:mm');
+      return formatter.format(dateTime);
+    } catch (e) {
+      dev.log('Error al formatear fecha: $dateTimeString - Error: $e');
+      // Si hay error en el parseo, devolver la fecha original
+      return dateTimeString;
+    }
+  }
 
   @override
   void initState() {
@@ -488,7 +520,7 @@ class _JoinMatchScreenState extends ConsumerState<JoinMatchScreen> {
 
   Widget _buildMatchDetailsView() {
     final matchName = _matchDetails!['nombre'] ?? 'Partido sin nombre';
-    final matchDate = _matchDetails!['fecha'] ?? 'Fecha no especificada';
+    final matchDate = _formatDateTime(_matchDetails!['fecha']);
     final matchFormat = _matchDetails!['formato'] ?? 'Formato no especificado';
     final matchLocation = _matchDetails!['ubicacion'] ?? 'Ubicación no especificada';
     final matchCreator = _matchDetails!['profiles']?['username'] ?? 'Usuario desconocido';
