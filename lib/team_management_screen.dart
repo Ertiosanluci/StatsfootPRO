@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 class TeamManagementScreen extends StatefulWidget {
@@ -432,12 +431,23 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
           fontSize: 22,
           fontWeight: FontWeight.bold,
         ),
+        // Cambiar el color de la flecha de navegación a blanco
+        iconTheme: IconThemeData(
+          color: Colors.white, // Flecha de navegación blanca
+        ),
         actions: [
+          // Botón de actualizar
           IconButton(
             onPressed: _loadParticipants,
             icon: Icon(Icons.refresh, color: Colors.white),
             tooltip: 'Actualizar',
-          )
+          ),
+          // Botón de guardar movido a la barra superior
+          IconButton(
+            onPressed: _saveAndExit,
+            icon: Icon(Icons.save, color: Colors.white),
+            tooltip: 'Guardar',
+          ),
         ],
       ),
       body: _isLoading
@@ -475,29 +485,9 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
                 ],
               ),
             ),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          // Botón para unirse al partido
-          FloatingActionButton.extended(
-            onPressed: _joinMatch,
-            icon: Icon(Icons.person_add),
-            label: Text('Unirme al partido'),
-            backgroundColor: Colors.purple.shade600,
-            heroTag: 'join',
-          ),
-          SizedBox(height: 16),
-          // Botón de guardar
-          FloatingActionButton.extended(
-            onPressed: _saveAndExit,
-            icon: Icon(Icons.save),
-            label: Text('Guardar'),
-            backgroundColor: Colors.green.shade600,
-            heroTag: 'save',
-          ),
-        ],
-      ),
+      // Se eliminó el floatingActionButton ya que el botón de guardar se movió a la barra superior
+      // y el botón "Unirme al partido" fue eliminado según los requisitos
+
     );
   }
   
@@ -977,7 +967,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
                 _draggingPlayerId = null;
               });
             },
-            onTap: () => _showPlayerActionsDialog(player),
+            onTap: () => _updatePlayerTeam(player['id'], player['equipo']),
             child: _buildPlayerAvatar(player, isTeamA),
           ),
         ),
@@ -1040,8 +1030,8 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
             shape: BoxShape.circle,
             gradient: LinearGradient(
               colors: isTeamA 
-                  ? [Colors.blue.shade600, Colors.blue.shade900] 
-                  : [Colors.red.shade600, Colors.red.shade900],
+                  ? [Colors.blue.withOpacity(0.2), Colors.blue.withOpacity(0.4)] 
+                  : [Colors.red.withOpacity(0.2), Colors.red.withOpacity(0.4)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -1274,137 +1264,6 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
     );
   }
   
-  void _showPlayerOptions(Map<String, dynamic> player) {
-    showModalBottomSheet(
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => Container(
-        padding: EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundImage: player['avatar_url'] != null
-                      ? NetworkImage(player['avatar_url'])
-                      : null,
-                  backgroundColor: player['equipo'] == 'claro'
-                      ? Colors.blue.shade100
-                      : Colors.red.shade100,
-                  child: player['avatar_url'] == null
-                      ? Icon(
-                          Icons.person,
-                          color: player['equipo'] == 'claro'
-                              ? Colors.blue.shade800
-                              : Colors.red.shade800,
-                        )
-                      : null,
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        player['nombre'] ?? 'Usuario',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      // Eliminamos la visualización del correo electrónico
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 20),
-            Divider(),
-            SizedBox(height: 10),
-            if (player['equipo'] == 'claro') ...[
-              _buildOptionButton(
-                icon: Icons.swap_horiz,
-                text: 'Mover a Equipo Oscuro',
-                color: Colors.red.shade700,
-                onTap: () {
-                  Navigator.pop(context);
-                  _assignToTeam(player, 'oscuro');
-                },
-              ),
-              SizedBox(height: 10),
-              _buildOptionButton(
-                icon: Icons.person_remove,
-                text: 'Quitar del equipo',
-                color: Colors.grey.shade700,
-                onTap: () {
-                  Navigator.pop(context);
-                  _assignToTeam(player, null);
-                },
-              ),
-            ] else if (player['equipo'] == 'oscuro') ...[
-              _buildOptionButton(
-                icon: Icons.swap_horiz,
-                text: 'Mover a Equipo Claro',
-                color: Colors.blue.shade700,
-                onTap: () {
-                  Navigator.pop(context);
-                  _assignToTeam(player, 'claro');
-                },
-              ),
-              SizedBox(height: 10),
-              _buildOptionButton(
-                icon: Icons.person_remove,
-                text: 'Quitar del equipo',
-                color: Colors.grey.shade700,
-                onTap: () {
-                  Navigator.pop(context);
-                  _assignToTeam(player, null);
-                },
-              ),
-            ],
-            SizedBox(height: 10),
-          ],
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildOptionButton({
-    required IconData icon,
-    required String text,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: color),
-            SizedBox(width: 12),
-            Text(
-              text,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-  
   void _saveAndExit() async {
     // Mostrar indicador de carga
     showDialog(
@@ -1629,7 +1488,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
       double posX = formationPositions[i][0] * fieldWidth;
       double posY = isTeamA 
           ? formationPositions[i][1] * fieldHeight
-          : (1 - formationPositions[i][1]) * fieldHeight;
+          : (1.0 - formationPositions[i][1]) * fieldHeight;
       
       positions.add(
         Positioned(
@@ -2839,166 +2698,234 @@ ALTER TABLE matches ADD COLUMN mvp_team_oscuro UUID;
         .from('match_participants')
         .update({'equipo': team})
         .eq('id', participantId);
-    } catch (e) {
-      print('Error al actualizar equipo del jugador $participantId: $e');
-    }
-  }
-  void _showPlayerActionsDialog(Map<String, dynamic> player) {
-    final bool isCreator = widget.match['creador_id'] == supabase.auth.currentUser?.id;
-    
-    if (!isCreator) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Solo el organizador puede gestionar a los participantes'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
+      
+      // Buscar el jugador actualizado para mostrar opciones
+      final response = await supabase
+        .from('match_participants')
+        .select('*, profiles:user_id(nombre, avatar_url)')
+        .eq('id', participantId)
+        .single();
+      
+      Map<String, dynamic> player = response;
+      if (player['profiles'] != null) {
+        player['nombre'] = player['profiles']['nombre'];
+        player['avatar_url'] = player['profiles']['avatar_url'];
+      }
+      
+      // Determinar el equipo y colores
+      String teamText = player['equipo'] == 'claro' ? 'Equipo Claro' : 'Equipo Oscuro';
+      Color teamColor = player['equipo'] == 'claro' ? Colors.blue.shade700 : Colors.red.shade700;
+      
+      // Determinar el equipo contrario
+      String oppositeTeam = player['equipo'] == 'claro' ? 'oscuro' : 'claro';
+      String oppositeTeamText = oppositeTeam == 'claro' ? 'Equipo Claro' : 'Equipo Oscuro';
+      Color oppositeTeamColor = oppositeTeam == 'claro' ? Colors.blue.shade700 : Colors.red.shade700;
+      
+      // Verificar si el equipo contrario está lleno
+      bool isOppositeTeamFull = false;
+      int oppositeTeamSize = 0;
+      int oppositeTeamLimit = 0;
+      
+      if (oppositeTeam == 'claro') {
+        oppositeTeamSize = _teamClaro.length;
+        oppositeTeamLimit = int.tryParse(widget.match['formato']?.split('v')[0] ?? '5') ?? 5;
+      } else {
+        oppositeTeamSize = _teamOscuro.length;
+        oppositeTeamLimit = int.tryParse(widget.match['formato']?.split('v')[1] ?? '5') ?? 5;
+      }
+      
+      isOppositeTeamFull = oppositeTeamSize >= oppositeTeamLimit;
 
-    String teamText = player['equipo'] == 'claro' 
-        ? 'Equipo Claro' 
-        : player['equipo'] == 'oscuro' 
-            ? 'Equipo Oscuro' 
-            : 'Sin asignar';
-    
-    Color teamColor = player['equipo'] == 'claro'
-        ? Colors.blue.shade700
-        : player['equipo'] == 'oscuro'
-            ? Colors.red.shade700
-            : Colors.grey.shade700;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundImage: player['avatar_url'] != null ? NetworkImage(player['avatar_url']) : null,
-              child: player['avatar_url'] == null 
-                ? Text(
-                    (player['nombre'] ?? 'U')[0].toUpperCase(),
-                    style: TextStyle(fontWeight: FontWeight.bold)
-                  ) 
-                : null,
-            ),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Opciones para ${player['nombre']}',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundImage: player['avatar_url'] != null ? NetworkImage(player['avatar_url']) : null,
+                child: player['avatar_url'] == null 
+                  ? Text(
+                      (player['nombre'] ?? 'U')[0].toUpperCase(),
+                      style: TextStyle(fontWeight: FontWeight.bold)
+                    ) 
+                  : null,
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Opciones para ${player['nombre']}',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Información del jugador
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.person, color: teamColor),
-                      SizedBox(width: 10),
-                      Text(
-                        player['nombre'],
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(
-                        player['equipo'] == 'claro'
-                            ? Icons.brightness_5_outlined
-                            : player['equipo'] == 'oscuro'
-                                ? Icons.brightness_2_outlined
-                                : Icons.person_outline,
-                        color: teamColor,
-                        size: 20,
-                      ),
-                      SizedBox(width: 10),
-                      Text(
-                        teamText,
-                        style: TextStyle(
-                          color: teamColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (player['es_organizador'] == true) ...[
-                    SizedBox(height: 8),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Información del jugador
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Row(
                       children: [
-                        Icon(Icons.star, color: Colors.amber, size: 20),
+                        Icon(Icons.person, color: teamColor),
                         SizedBox(width: 10),
                         Text(
-                          'Organizador',
+                          player['nombre'],
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Colors.amber.shade700,
+                            fontSize: 16,
                           ),
                         ),
                       ],
                     ),
-                  ],
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          player['equipo'] == 'claro'
+                              ? Icons.brightness_5_outlined
+                              : player['equipo'] == 'oscuro'
+                                  ? Icons.brightness_2_outlined
+                                  : Icons.person_outline,
+                          color: teamColor,
+                          size: 20,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          teamText,
+                          style: TextStyle(
+                            color: teamColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (player['es_organizador'] == true) ...[
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.star, color: Colors.amber, size: 20),
+                      SizedBox(width: 10),
+                      Text(
+                        'Organizador',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
-              ),
+              ],
             ),
-            SizedBox(height: 20),
-            // Acciones disponibles
+          ),
+          SizedBox(height: 20),
+          // Nuevas opciones según los requisitos
+          if (player['equipo'] == 'claro' || player['equipo'] == 'oscuro') ...[
+            // Opción: Quitar del equipo
             Container(
+              margin: EdgeInsets.only(bottom: 10),
               decoration: BoxDecoration(
-                color: Colors.red.shade50,
+                color: Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: ListTile(
-                leading: Icon(Icons.delete_forever, color: Colors.red),
-                title: Text('Expulsar jugador'),
-                subtitle: Text('Eliminar al jugador del partido'),
+                leading: Icon(Icons.person_remove, color: Colors.grey.shade700),
+                title: Text('Quitar del equipo'),
+                subtitle: Text('El jugador quedará sin equipo'),
                 tileColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
                 onTap: () {
                   Navigator.of(context).pop();
-                  _confirmRemovePlayer(player);
+                  _assignToTeam(player, null);
                 },
               ),
             ),
+            
+            // Opción: Cambiar al equipo contrario (solo si el otro equipo no está lleno)
+            if (!isOppositeTeamFull)
+              Container(
+                margin: EdgeInsets.only(bottom: 10),
+                decoration: BoxDecoration(
+                  color: oppositeTeamColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: ListTile(
+                  leading: Icon(Icons.swap_horiz, color: oppositeTeamColor),
+                  title: Text('Cambiar al $oppositeTeamText'),
+                  subtitle: Text('Mover al jugador al equipo contrario'),
+                  tileColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _assignToTeam(player, oppositeTeam);
+                  },
+                ),
+              ),
+            
+            // Opción: Expulsar del partido (solo si no es organizador)
+            if (player['es_organizador'] != true)
+              Container(
+                margin: EdgeInsets.only(bottom: 10),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: ListTile(
+                  leading: Icon(Icons.person_off, color: Colors.red),
+                  title: Text('Expulsar del partido'),
+                  subtitle: Text('El jugador será eliminado completamente'),
+                  tileColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _showExpelConfirmation(player);
+                  },
+                ),
+              ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancelar'),
-          ),
         ],
       ),
-    );
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('Cerrar'),
+        ),
+      ],
+    ),
+  );
+    } catch (e) {
+      print('Error al actualizar equipo del jugador: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al actualizar el equipo del jugador'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
-  // Mostrar diálogo de confirmación para expulsar a un jugador
-  void _confirmRemovePlayer(Map<String, dynamic> player) {
-    final bool isOrganizer = player['es_organizador'] == true;
-    
-    if (isOrganizer) {
+  
+  // Método para mostrar confirmación de expulsión
+  void _showExpelConfirmation(Map<String, dynamic> player) {
+    // Verificar si es organizador
+    if (player['es_organizador'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('No puedes expulsar al organizador del partido'),
