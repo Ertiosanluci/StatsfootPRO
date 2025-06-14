@@ -290,23 +290,21 @@ class _FloatingVotingTimerWidgetState extends State<FloatingVotingTimerWidget> {
                   // Botón de ver resultados (aparece solo cuando la votación ha terminado)
                   if (!_isVotingActive && widget.onViewResultsPressed != null) ...[  
                     const SizedBox(width: 4),
-                    SizedBox(
-                      height: 28,
-                      width: 63,
-                      child: ElevatedButton(
-                        onPressed: widget.onViewResultsPressed,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          visualDensity: VisualDensity.compact,
+                    // Usando un enfoque simple pero estético
+                    InkWell(
+                      onTap: widget.onViewResultsPressed, 
+                      child: Container(
+                        height: 28,
+                        width: 70,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFB300),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text(
-                          "Ver Resultados",
-                          style: TextStyle(fontSize: 8),
+                        child: const Center(
+                          child: Text(
+                            "Ver MVPs",
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
                         ),
                       ),
                     ),
