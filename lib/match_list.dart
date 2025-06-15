@@ -264,7 +264,166 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> with SingleTi
   }
 
   Future<void> _fetchMatches() async {
-    try {
+  try {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+      _participantCountCache.clear();
+    });
+
+    final currentUser = supabase.auth.currentUser;
+    if (currentUser == null) {
+      setState(() {
+        _isLoading = false;
+        _error = 'Debes iniciar sesión para ver tus partidos';
+      });
+      return;
+    }
+
+    // 1. Cargar partidos organizados por el usuario actual
+    final organizedMatches = await supabase
+        .from('matches')
+        .select('*')
+        .eq('creador_id', currentUser.id)
+        .order('fecha', ascending: false);
+
+    // 2. Obtener IDs de partidos donde el usuario participa (pero no organiza)
+    final participantRows = await supabase
+        .from('match_participants')
+        .select('match_id')
+        .eq('user_id', currentUser.id)
+        .eq('es_organizador', false);
+
+    final participantMatchIds =
+        participantRows.map<int>((row) => row['match_id'] as int).toList();
+
+    // 3. Cargar los partidos donde participa el usuario
+    List<Map<String, dynamic>> participantMatches = [];
+    if (participantMatchIds.isNotEmpty) {
+      participantMatches = await supabase
+          .from('matches')
+          .select('*')
+          .filter('id', 'in', '(${participantMatchIds.join(',')})');
+    }
+
+    // 4. Cargar partidos públicos (creados por otros usuarios)
+    final publicMatches = await supabase
+        .from('matches')
+        .select('*')
+        .eq('publico', true)
+        .neq('creador_id', currentUser.id)
+        .order('fecha', ascending: false);
+
+    // 5. Obtener lista de amigos
+    final friends1 = await supabase
+        .from('friends')
+        .select('user_id_2')
+        .eq('user_id_1', currentUser.id)
+        .eq('status', 'accepted');
+
+    final friends2 = await supabase
+        .from('friends')
+        .select('user_id_1')
+        .eq('user_id_2', currentUser.id)
+        .eq('status', 'accepted');
+
+    final friendIds = <String>{
+      ...friends1.map<String>((f) => f['user_id_2'] as String),
+      ...friends2.map<String>((f) => f['user_id_1'] as String),
+    };
+
+    // 6. Cargar partidos privados de amigos
+    List<Map<String, dynamic>> friendMatches = [];
+    if (friendIds.isNotEmpty) {
+      friendMatches = await supabase
+          .from('matches')
+          .select('*')
+          .eq('publico', false)
+          .filter('creador_id', 'in', '(${friendIds.join(',')})')
+          .order('fecha', ascending: false);
+    }
+
+    // 7. Unificar todos los partidos para operaciones de lote posteriores
+    final allMatches = [
+      ...organizedMatches,
+      ...participantMatches,
+      ...publicMatches,
+      ...friendMatches,
+    ];
+
+    // 8. Cargar perfiles de creadores en una sola consulta
+    final creatorIds = allMatches.map<String>((m) => m['creador_id'] as String).toSet();
+    final profiles = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .filter('id', 'in', '(${creatorIds.join(',')})');
+    final profileMap = {
+      for (final p in profiles) p['id']: p,
+    };
+
+    // 9. Crear un set de matchIds en los que el usuario participa
+    final participantMatchIdSet = participantMatchIds.toSet();
+
+    // 10. Procesar partidos y asignar propiedades adicionales sin consultas extra
+    List<Map<String, dynamic>> myMatchesProcessed = [];
+    List<Map<String, dynamic>> publicMatchesProcessed = [];
+    List<Map<String, dynamic>> friendMatchesProcessed = [];
+
+    void _augmentMatch(Map<String, dynamic> match,
+        {required bool isOrganizer, required List<Map<String, dynamic>> target}) {
+      final matchCopy = Map<String, dynamic>.from(match);
+      matchCopy['isOrganizer'] = isOrganizer;
+      matchCopy['is_participant'] = participantMatchIdSet.contains(match['id']);
+      matchCopy['profiles'] = profileMap[match['creador_id']];
+      target.add(matchCopy);
+    }
+
+    // Organizados por el usuario
+    for (final m in organizedMatches) {
+      _augmentMatch(m, isOrganizer: true, target: myMatchesProcessed);
+    }
+    // Partidos donde participa
+    for (final m in participantMatches) {
+      _augmentMatch(m, isOrganizer: false, target: myMatchesProcessed);
+    }
+    // Públicos
+    for (final m in publicMatches) {
+      _augmentMatch(m, isOrganizer: false, target: publicMatchesProcessed);
+    }
+    // Amigos
+    for (final m in friendMatches) {
+      _augmentMatch(m, isOrganizer: false, target: friendMatchesProcessed);
+    }
+
+    // Ordenar por fecha desc
+    int _compareByDate(Map<String, dynamic> a, Map<String, dynamic> b) {
+      final dateA = DateTime.parse(a['fecha']);
+      final dateB = DateTime.parse(b['fecha']);
+      return dateB.compareTo(dateA);
+    }
+
+    myMatchesProcessed.sort(_compareByDate);
+    publicMatchesProcessed.sort(_compareByDate);
+    friendMatchesProcessed.sort(_compareByDate);
+
+    setState(() {
+      _myMatches = myMatchesProcessed;
+      _publicMatches = publicMatchesProcessed;
+      _friendsMatches = friendMatchesProcessed;
+      _isLoading = false;
+      _applyFilters();
+    });
+  } catch (e) {
+    dev.log('Error al cargar partidos: $e', name: 'MatchListScreen');
+    setState(() {
+      _isLoading = false;
+      _error = 'Error al cargar partidos: $e';
+    });
+  }
+}
+
+/* Legacy duplicate implementation - commented out to prevent conflicts
+     try {
       setState(() {
         _isLoading = true;
         _error = null;
@@ -444,7 +603,7 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> with SingleTi
               .from('matches')
               .select('*')
               .eq('publico', false) // Solo partidos privados
-              .filter('creador_id', 'in', friendIds) // Creados por amigos - Método correcto
+              .filter('creador_id', 'in', '(${friendIds.join(',')})') // Creados por amigos - Método correcto
               .order('fecha', ascending: false);
 
           for (final match in friendsMatchesResponse) {
@@ -530,6 +689,7 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> with SingleTi
     }
   }
 
+*/
   void _showInviteFriendsDialog(Map<String, dynamic> match) {
     showDialog(
       context: context,
