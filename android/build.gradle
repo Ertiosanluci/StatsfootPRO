@@ -1,12 +1,12 @@
 buildscript {
-    ext.kotlin_version = '2.1.20'
+    ext.kotlin_version = '1.7.10'
     repositories {
         google()
         mavenCentral()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.2.1'
+        classpath 'com.android.tools.build:gradle:8.3.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -15,6 +15,32 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+    }
+    
+    // Apply Java and Kotlin compatibility settings to all projects
+    plugins.withId('com.android.application') {
+        android {
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_11
+                targetCompatibility JavaVersion.VERSION_11
+            }
+        }
+    }
+    
+    plugins.withId('com.android.library') {
+        android {
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_11
+                targetCompatibility JavaVersion.VERSION_11
+            }
+        }
+    }
+    
+    // For Kotlin projects
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+        kotlinOptions {
+            jvmTarget = "11"
+        }
     }
     
     // Solución para el problema de namespace en uni_links
