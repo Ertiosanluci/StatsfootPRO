@@ -156,7 +156,7 @@ class MatchDetailViewWidget extends StatelessWidget {
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(15),
         image: DecorationImage(
-          image: const AssetImage('assets/habilidades.png'),
+          image: const AssetImage('assets/ic_launcher.png'),
           fit: BoxFit.contain,
           colorFilter: ColorFilter.mode(
             Colors.black.withOpacity(0.3),
