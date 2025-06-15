@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Widget de diálogo para finalizar un partido y seleccionar jugadores MVP
+/// Widget de diálogo para finalizar un partido y seleccionar un único jugador MVP
 class MatchFinishDialog extends StatefulWidget {
   final Map<String, dynamic> matchData;
   final List<Map<String, dynamic>> teamClaro;
@@ -20,14 +20,20 @@ class MatchFinishDialog extends StatefulWidget {
 }
 
 class _MatchFinishDialogState extends State<MatchFinishDialog> {
-  String? _mvpClaroId;
-  String? _mvpOscuroId;
+  String? _selectedMvpId;
+  bool _isFromClaroTeam = false;
   
   @override
   void initState() {
     super.initState();
-    _mvpClaroId = widget.matchData['mvp_team_claro'];
-    _mvpOscuroId = widget.matchData['mvp_team_oscuro'];
+    // Inicializar con cualquier MVP previamente seleccionado
+    _selectedMvpId = widget.matchData['mvp_team_claro'];
+    _isFromClaroTeam = _selectedMvpId != null;
+    
+    if (_selectedMvpId == null) {
+      _selectedMvpId = widget.matchData['mvp_team_oscuro'];
+      _isFromClaroTeam = false;
+    }
   }
   
   @override
@@ -51,13 +57,13 @@ class _MatchFinishDialogState extends State<MatchFinishDialog> {
             // Título
             Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.flag_outlined, 
                   color: Colors.white,
                   size: 24,
                 ),
-                SizedBox(width: 8),
-                Text(
+                const SizedBox(width: 8),
+                const Text(
                   'Finalizar Partido',
                   style: TextStyle(
                     color: Colors.white,
@@ -67,22 +73,22 @@ class _MatchFinishDialogState extends State<MatchFinishDialog> {
                 ),
               ],
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             
             // Mensaje de confirmación
-            Text(
+            const Text(
               '¿Estás seguro de que deseas finalizar el partido?',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.white,
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             
             // Marcador
             Container(
               width: double.infinity,
-              padding: EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.black54,
                 borderRadius: BorderRadius.circular(8),
@@ -93,7 +99,7 @@ class _MatchFinishDialogState extends State<MatchFinishDialog> {
               ),
               child: Column(
                 children: [
-                  Text(
+                  const Text(
                     'Marcador Final',
                     style: TextStyle(
                       fontSize: 14,
@@ -101,7 +107,7 @@ class _MatchFinishDialogState extends State<MatchFinishDialog> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -135,52 +141,154 @@ class _MatchFinishDialogState extends State<MatchFinishDialog> {
               ),
             ),
             
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             
-            // MVP Equipo Claro - Título
+            // MVP del Partido - Título
             Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.emoji_events,
                   color: Colors.amber,
                   size: 20,
                 ),
-                SizedBox(width: 8),
-                Text(
-                  'MVP Equipo Claro:',
+                const SizedBox(width: 8),
+                const Text(
+                  'MVP del Partido:',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.white,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 4),
             
-            // MVP Equipo Claro - Selector
+            const Text(
+              'Selecciona un jugador como el más valioso del partido',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.white70,
+              ),
+            ),
+            
+            const SizedBox(height: 12),
+            
+            // Pestañas para seleccionar equipo
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        _isFromClaroTeam = true;
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _isFromClaroTeam 
+                            ? Colors.blue.shade700 
+                            : Colors.blue.shade900,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(8),
+                          topRight: Radius.circular(8),
+                        ),
+                        border: Border.all(
+                          color: _isFromClaroTeam 
+                              ? Colors.blue.shade300 
+                              : Colors.transparent,
+                          width: 1,
+                        ),
+                      ),
+                      child: const Text(
+                        'Equipo Claro',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        _isFromClaroTeam = false;
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: !_isFromClaroTeam 
+                            ? Colors.red.shade700 
+                            : Colors.blue.shade900,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(8),
+                          topRight: Radius.circular(8),
+                        ),
+                        border: Border.all(
+                          color: !_isFromClaroTeam 
+                              ? Colors.red.shade300 
+                              : Colors.transparent,
+                          width: 1,
+                        ),
+                      ),
+                      child: const Text(
+                        'Equipo Oscuro',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            
+            // MVP Selector
             Container(
               height: 120,
+              decoration: BoxDecoration(
+                color: Colors.black26,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(8),
+                  bottomRight: Radius.circular(8),
+                  topLeft: _isFromClaroTeam ? Radius.zero : Radius.circular(8),
+                  topRight: !_isFromClaroTeam ? Radius.zero : Radius.circular(8),
+                ),
+              ),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                itemCount: widget.teamClaro.length,
+                itemCount: _isFromClaroTeam 
+                    ? widget.teamClaro.length 
+                    : widget.teamOscuro.length,
                 itemBuilder: (context, index) {
-                  final player = widget.teamClaro[index];
+                  final player = _isFromClaroTeam 
+                      ? widget.teamClaro[index] 
+                      : widget.teamOscuro[index];
                   final playerId = player['id'].toString();
-                  final isSelected = _mvpClaroId == playerId;
+                  final isSelected = _selectedMvpId == playerId;
                   
                   return GestureDetector(
                     onTap: () {
                       setState(() {
-                        _mvpClaroId = isSelected ? null : playerId;
+                        _selectedMvpId = isSelected ? null : playerId;
                       });
                     },
                     child: Container(
                       width: 70,
-                      margin: EdgeInsets.symmetric(horizontal: 4),
-                      padding: EdgeInsets.all(8),
+                      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: isSelected 
-                            ? Colors.blue.shade400.withOpacity(0.3)
+                            ? (_isFromClaroTeam 
+                                ? Colors.blue.shade400.withOpacity(0.3)
+                                : Colors.red.shade400.withOpacity(0.3))
                             : Colors.black26,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
@@ -197,7 +305,9 @@ class _MatchFinishDialogState extends State<MatchFinishDialog> {
                           // Avatar
                           CircleAvatar(
                             radius: 20,
-                            backgroundColor: Colors.blue.shade700,
+                            backgroundColor: _isFromClaroTeam 
+                                ? Colors.blue.shade700 
+                                : Colors.red.shade700,
                             child: player['foto_perfil'] != null
                                 ? ClipOval(
                                     child: Image.network(
@@ -211,16 +321,16 @@ class _MatchFinishDialogState extends State<MatchFinishDialog> {
                                     player['nombre'].isNotEmpty
                                         ? player['nombre'][0].toUpperCase()
                                         : '?',
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       color: Colors.white,
                                     ),
                                   ),
                           ),
-                          SizedBox(height: 5),
+                          const SizedBox(height: 5),
                           Flexible(
                             child: Text(
                               player['nombre'] ?? 'Jugador',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,
                               ),
@@ -231,7 +341,7 @@ class _MatchFinishDialogState extends State<MatchFinishDialog> {
                           ),
                           
                           if (isSelected)
-                            Icon(
+                            const Icon(
                               Icons.star,
                               color: Colors.amber,
                               size: 14,
@@ -244,115 +354,7 @@ class _MatchFinishDialogState extends State<MatchFinishDialog> {
               ),
             ),
             
-            SizedBox(height: 16),
-            
-            // MVP Equipo Oscuro - Título
-            Row(
-              children: [
-                Icon(
-                  Icons.emoji_events,
-                  color: Colors.amber,
-                  size: 20,
-                ),
-                SizedBox(width: 8),
-                Text(
-                  'MVP Equipo Oscuro:',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 8),
-            
-            // MVP Equipo Oscuro - Selector
-            Container(
-              height: 120,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: widget.teamOscuro.length,
-                itemBuilder: (context, index) {
-                  final player = widget.teamOscuro[index];
-                  final playerId = player['id'].toString();
-                  final isSelected = _mvpOscuroId == playerId;
-                  
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _mvpOscuroId = isSelected ? null : playerId;
-                      });
-                    },
-                    child: Container(
-                      width: 70,
-                      margin: EdgeInsets.symmetric(horizontal: 4),
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isSelected 
-                            ? Colors.red.shade400.withOpacity(0.3)
-                            : Colors.black26,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: isSelected 
-                              ? Colors.amber
-                              : Colors.white24,
-                          width: isSelected ? 2 : 1,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Avatar
-                          CircleAvatar(
-                            radius: 20,
-                            backgroundColor: Colors.red.shade700,
-                            child: player['foto_perfil'] != null
-                                ? ClipOval(
-                                    child: Image.network(
-                                      player['foto_perfil'],
-                                      width: 36,
-                                      height: 36,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  )
-                                : Text(
-                                    player['nombre'].isNotEmpty
-                                        ? player['nombre'][0].toUpperCase()
-                                        : '?',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                          ),
-                          SizedBox(height: 5),
-                          Flexible(
-                            child: Text(
-                              player['nombre'] ?? 'Jugador',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          
-                          if (isSelected)
-                            Icon(
-                              Icons.star,
-                              color: Colors.amber,
-                              size: 14,
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             
             // Advertencia
             Row(
@@ -362,7 +364,7 @@ class _MatchFinishDialogState extends State<MatchFinishDialog> {
                   color: Colors.orange.shade300,
                   size: 16,
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Flexible(
                   child: Text(
                     'Esta acción no se puede deshacer. Asegúrate de guardar las posiciones antes de finalizar.',
@@ -375,27 +377,27 @@ class _MatchFinishDialogState extends State<MatchFinishDialog> {
               ],
             ),
             
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             
             // Botones
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
-                  child: Text(
+                  child: const Text(
                     'Cancelar',
                     style: TextStyle(color: Colors.white),
                   ),
                   onPressed: () => Navigator.pop(context),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 ElevatedButton.icon(
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.flag,
                     color: Colors.white,
                     size: 18,
                   ),
-                  label: Text(
+                  label: const Text(
                     'Finalizar',
                     style: TextStyle(color: Colors.white),
                   ),
@@ -405,7 +407,12 @@ class _MatchFinishDialogState extends State<MatchFinishDialog> {
                   ),
                   onPressed: () {
                     // Llamar al callback para finalizar el partido
-                    widget.onFinishMatch(_mvpClaroId, _mvpOscuroId);
+                    // Pasamos el MVP seleccionado al equipo correspondiente y null al otro
+                    if (_isFromClaroTeam) {
+                      widget.onFinishMatch(_selectedMvpId, null);
+                    } else {
+                      widget.onFinishMatch(null, _selectedMvpId);
+                    }
                     Navigator.pop(context);
                   },
                 ),
