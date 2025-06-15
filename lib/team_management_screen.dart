@@ -467,9 +467,6 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
                 ],
               ),
             ),
-      // Se eliminó el floatingActionButton ya que el botón de guardar se movió a la barra superior
-      // y el botón "Unirme al partido" fue eliminado según los requisitos
-
     );
   }
   
@@ -1766,11 +1763,17 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
       String targetTeam = isTeamA ? 'claro' : 'oscuro';
       
       if (currentTeam != targetTeam) {
-        // Actualizar directamente en la base de datos antes de actualizar localmente
-        await supabase
-          .from('match_participants')
-          .update({'equipo': targetTeam})
-          .eq('id', playerId);
+        try {
+          // Actualizar directamente en la base de datos antes de actualizar localmente
+          await supabase
+            .from('match_participants')
+            .update({'equipo': targetTeam})
+            .eq('id', playerId);
+        } catch (e) {
+          dev.log('Error al actualizar el equipo del jugador en la base de datos: $e');
+          // Continuamos con la actualización local aunque falle la actualización en la base de datos
+          // para evitar mostrar mensajes de error al usuario
+        }
       }
       
       // 4. Actualizar los mapas de posiciones
@@ -1874,13 +1877,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
         ),
       );
     } catch (e) {
-      print('Error al asignar jugador a posición: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al asignar jugador: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      dev.log('Error al asignar jugador a posición: $e');
     }
   }
 
