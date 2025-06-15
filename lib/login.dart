@@ -463,32 +463,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         ),
                           SizedBox(height: 24),
                         
-                        // Enlace de ¿Olvidaste tu contraseña?
-                        Center(
-                          child: TextButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => PasswordResetRequestScreen(),
-                                ),
-                              );
-                            },
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.white70,
-                              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            ),
-                            child: Text(
-                              "¿Olvidaste tu contraseña?",
-                              style: TextStyle(
-                                fontSize: 14,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ),
-                        ),
-                        
-                        SizedBox(height: 16),
                         
                         // Registro
                         Row(
