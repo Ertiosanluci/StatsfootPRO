@@ -927,17 +927,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
   }
 
   
-  // Método para navegar a la pantalla de historial de votaciones
-  void _navigateToVotingHistory() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => MVPVotingHistoryScreen(
-          matchId: _matchData['id'],
-          matchName: _matchData['nombre'] ?? 'Partido',
-        ),
-      ),
-    );
-  }  // Método para navegar a la pantalla de revelación de resultados MVP
+  // Método para navegar a la pantalla de revelación de resultados MVP
   void _navigateToMVPResultsReveal() async {
     final topPlayers = await _mvpVotingService.getTopVotedPlayers(_matchData['id'] as int);
     
@@ -1178,17 +1168,7 @@ class _MatchDetailsScreenState extends State<MatchDetailsScreen> with SingleTick
             onPressed: _showMVPVotingDialog,
           ),
         
-        // Botón para ver historial de votaciones (solo visible si partido finalizado)
-        if (isPartidoFinalizado)
-          IconButton(
-            icon: const Icon(
-              Icons.how_to_reg_outlined,
-              color: Colors.amber,
-              size: 26,
-            ),
-            tooltip: 'Historial de votaciones MVP',
-            onPressed: _navigateToVotingHistory,
-          ),
+        // Botón para ver historial de votaciones eliminado
         // Mostrar opciones para el creador del partido
         if (!isReadOnly && !_isLoading) ...[
           if (!isPartidoFinalizado)

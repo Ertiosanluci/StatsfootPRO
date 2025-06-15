@@ -955,20 +955,7 @@ Hora: $formattedTime
           backgroundColor: Colors.blue.shade800,
           automaticallyImplyLeading: false,
           actions: [
-            IconButton(
-              icon: CircleAvatar(
-                radius: 16,
-                backgroundColor: Colors.white,
-                child: Icon(
-                  Icons.person,
-                  color: Colors.blue.shade800,
-                  size: 20,
-                ),
-              ),
-              onPressed: () {
-                // Acción para perfil de usuario
-              },
-            ),
+            // Person icon removed
           ],
           leading: Stack(
             alignment: Alignment.center,
