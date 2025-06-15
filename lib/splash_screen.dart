@@ -127,7 +127,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           tag: 'app_logo',
                           child: ClipOval(
                             child: Image.asset(
-                              'assets/habilidades.png',
+                              'assets/ic_launcher.png',
                               fit: BoxFit.cover,
                             ),
                           ),

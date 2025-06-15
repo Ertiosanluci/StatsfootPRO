@@ -22,7 +22,6 @@
 		<string>????</string>
 		<key>CFBundleVersion</key>
 		<string>$(FLUTTER_BUILD_NUMBER)</string>
-		
 		<!-- Configuración para Deep Links -->
 		<key>CFBundleURLTypes</key>
 		<array>
@@ -37,13 +36,11 @@
 				</array>
 			</dict>
 		</array>
-		
 		<!-- Configuración para Universal Links (App Links) -->
 		<key>com.apple.developer.associated-domains</key>
 		<array>
 			<string>applinks:statsfootpro.netlify.app</string>
 		</array>
-		
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>UILaunchStoryboardName</key>

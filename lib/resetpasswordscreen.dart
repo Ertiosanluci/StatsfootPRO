@@ -63,7 +63,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               children: [
                 // Logo de fútbol
                 Image.asset(
-                  'assets/habilidades.png', // Ruta del archivo de imagen (balón de fútbol)
+                  'assets/ic_launcher.png', // Ruta del archivo de imagen (nuevo icono)
                   height: 150,
                   width: 150,
                 ),

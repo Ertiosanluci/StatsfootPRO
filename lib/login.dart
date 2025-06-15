@@ -290,7 +290,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                 ),
                                 child: ClipOval(
                                   child: Image.asset(
-                                    'assets/habilidades.png',
+                                    'assets/ic_launcher.png',
                                     fit: BoxFit.cover,
                                   ),
                                 ),
