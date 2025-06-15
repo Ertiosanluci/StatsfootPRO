@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memoria del Proyecto StatsfootPRO</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            text-align: center;
+            padding: 40px 0;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            margin: -20px -20px 40px -20px;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 5px solid #4CAF50;
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            font-size: 2.2em;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+
+        .section h3 {
+            color: #34495e;
+            font-size: 1.5em;
+            margin: 25px 0 15px 0;
+            padding-left: 20px;
+            border-left: 3px solid #3498db;
+        }
+
+        .section h4 {
+            color: #2c3e50;
+            font-size: 1.2em;
+            margin: 20px 0 10px 0;
+            font-weight: 600;
+        }
+
+        .section p, .section li {
+            margin-bottom: 10px;
+            text-align: justify;
+        }
+
+        .section ul, .section ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .tech-item {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .tech-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .tech-item h4 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+
+        .gantt-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        .gantt-bar {
+            height: 30px;
+            margin: 5px 0;
+            border-radius: 5px;
+            position: relative;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+        }
+
+        .phase1 { background: linear-gradient(90deg, #FF6B6B, #FF8E53); }
+        .phase2 { background: linear-gradient(90deg, #4ECDC4, #44A08D); }
+        .phase3 { background: linear-gradient(90deg, #45B7D1, #96C93D); }
+        .phase4 { background: linear-gradient(90deg, #F093FB, #F5576C); }
+        .phase5 { background: linear-gradient(90deg, #4FACFE, #00F2FE); }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .architecture-diagram {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .layer {
+            background: #f8f9fa;
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px;
+            display: inline-block;
+            min-width: 200px;
+        }
+
+        .layer h4 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+
+        .budget-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .budget-table th, .budget-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .budget-table th {
+            background: #4CAF50;
+            color: white;
+            font-weight: bold;
+        }
+
+        .budget-table tr:hover {
+            background: #f5f5f5;
+        }
+
+        .timeline {
+            position: relative;
+            margin: 30px 0;
+        }
+
+        .timeline-item {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .timeline-item h4 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px;
+            background: #2c3e50;
+            color: white;
+            border-radius: 0 0 15px 15px;
+            margin: 40px -20px -20px -20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>StatsfootPRO</h1>
+            <p>Memoria del Proyecto - Sistema de Gestión y Organización de Partidos de Fútbol Amateur</p>
+        </div>
+
+        <div class="section">
+            <h2>📋 Resumen Ejecutivo</h2>
+            <div class="highlight">
+                <p><strong>StatsfootPRO</strong> es una aplicación móvil multiplataforma desarrollada en Flutter que facilita la organización, gestión y análisis de partidos de fútbol amateur. El proyecto se completó exitosamente en 3 meses (12 semanas) siguiendo una metodología ágil y arquitectura limpia.</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">Meses de Desarrollo</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">12</div>
+                    <div class="stat-label">Semanas Totales</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">5</div>
+                    <div class="stat-label">Fases Completadas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Objetivos Alcanzados</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🎯 Objetivos del Proyecto</h2>
+            
+            <h3>Objetivo Principal</h3>
+            <p>Desarrollar una aplicación móvil multiplataforma que facilite la organización, gestión y análisis de partidos de fútbol amateur, mejorando la experiencia de jugadores aficionados al fútbol.</p>
+            
+            <h3>Objetivos Específicos Alcanzados</h3>
+            <ul>
+                <li>✅ Plataforma que simplifica la organización de partidos entre amigos y equipos amateur</li>
+                <li>✅ Sistema de invitaciones y notificaciones push implementado con OneSignal</li>
+                <li>✅ Funcionalidades de seguimiento estadístico de partidos y jugadores</li>
+                <li>✅ Experiencia de usuario intuitiva con interfaz moderna</li>
+                <li>✅ Sistema seguro de autenticación y recuperación de contraseñas con Supabase</li>
+                <li>✅ Arquitectura escalable que permite futuras expansiones funcionales</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🏗️ Arquitectura y Stack Tecnológico</h2>
+            
+            <h3>Clean Architecture Implementada</h3>
+            <div class="architecture-diagram">
+                <div class="layer">
+                    <h4>Presentation Layer</h4>
+                    <p>UI con Flutter<br>Gestión de estado con Riverpod<br>Páginas y Widgets</p>
+                </div>
+                <div class="layer">
+                    <h4>Domain Layer</h4>
+                    <p>Lógica de negocio<br>Casos de uso<br>Entidades</p>
+                </div>
+                <div class="layer">
+                    <h4>Data Layer</h4>
+                    <p>Repositorios<br>Servicios externos<br>Modelos de datos</p>
+                </div>
+            </div>
+            
+            <h3>Stack Tecnológico</h3>
+            <div class="tech-stack">
+                <div class="tech-item">
+                    <h4>Flutter/Dart</h4>
+                    <p>Framework principal de desarrollo multiplataforma</p>
+                </div>
+                <div class="tech-item">
+                    <h4>Supabase</h4>
+                    <p>Backend as a Service para autenticación y base de datos</p>
+                </div>
+                <div class="tech-item">
+                    <h4>OneSignal</h4>
+                    <p>Servicio de notificaciones push</p>
+                </div>
+                <div class="tech-item">
+                    <h4>Riverpod</h4>
+                    <p>Gestión de estado reactiva</p>
+                </div>
+                <div class="tech-item">
+                    <h4>Freezed</h4>
+                    <p>Manejo de estados de UI</p>
+                </div>
+                <div class="tech-item">
+                    <h4>GitHub</h4>
+                    <p>Control de versiones y gestión de proyecto</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📅 Cronograma y Fases del Proyecto</h2>
+            
+            <div class="gantt-container">
+                <h3>Diagrama de Gantt - Desarrollo Completado</h3>
+                <div class="gantt-bar phase1" style="width: 25%;">Fase 1: Planificación y Diseño (Sem 1-3)</div>
+                <div class="gantt-bar phase2" style="width: 25%;">Fase 2: Desarrollo Core (Sem 3-6)</div>
+                <div class="gantt-bar phase3" style="width: 25%;">Fase 3: Funcionalidades Principales (Sem 6-9)</div>
+                <div class="gantt-bar phase4" style="width: 17%;">Fase 4: Pruebas y Optimización (Sem 10-11)</div>
+                <div class="gantt-bar phase5" style="width: 8%;">Fase 5: Lanzamiento (Sem 12)</div>
+            </div>
+            
+            <div class="timeline">
+                <div class="timeline-item">
+                    <h4>Fase 1: Planificación y Diseño (Semanas 1-3)</h4>
+                    <ul>
+                        <li>Análisis de requerimientos y arquitectura</li>
+                        <li>Diseño UI/UX y wireframes</li>
+                        <li>Definición de stack tecnológico</li>
+                    </ul>
+                </div>
+                
+                <div class="timeline-item">
+                    <h4>Fase 2: Desarrollo Core (Semanas 3-6)</h4>
+                    <ul>
+                        <li>Configuración Supabase y arquitectura base</li>
+                        <li>Sistema de autenticación completo</li>
+                        <li>Gestión de perfiles de usuario</li>
+                        <li>Sistema de recuperación de contraseña</li>
+                    </ul>
+                </div>
+                
+                <div class="timeline-item">
+                    <h4>Fase 3: Funcionalidades Principales (Semanas 6-9)</h4>
+                    <ul>
+                        <li>Creación y gestión de partidos</li>
+                        <li>Sistema de invitaciones</li>
+                        <li>Notificaciones push con OneSignal</li>
+                        <li>Estadísticas básicas</li>
+                    </ul>
+                </div>
+                
+                <div class="timeline-item">
+                    <h4>Fase 4: Pruebas y Optimización (Semanas 10-11)</h4>
+                    <ul>
+                        <li>Testing y debugging</li>
+                        <li>Optimización de UX</li>
+                        <li>Documentación técnica</li>
+                        <li>Corrección de errores críticos</li>
+                    </ul>
+                </div>
+                
+                <div class="timeline-item">
+                    <h4>Fase 5: Lanzamiento (Semana 12)</h4>
+                    <ul>
+                        <li>Despliegue final</li>
+                        <li>Documentación completa</li>
+                        <li>Manual de usuario</li>
+                        <li>Preparación para producción</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>⚙️ Funcionalidades Implementadas</h2>
+            
+            <h3>Sistema de Autenticación</h3>
+            <ul>
+                <li><strong>Registro y Login:</strong> Integración completa con Supabase Auth</li>
+                <li><strong>Recuperación de Contraseña:</strong> Sistema completo con redirección web y validación de tokens</li>
+                <li><strong>Gestión de Sesiones:</strong> Manejo seguro de tokens y estados de autenticación</li>
+                <li><strong>Perfiles de Usuario:</strong> Gestión completa de información personal</li>
+            </ul>
+            
+            <h3>Gestión de Partidos</h3>
+            <ul>
+                <li><strong>Creación de Partidos:</strong> Formulario completo con fecha, hora, ubicación y descripción</li>
+                <li><strong>Lista de Partidos:</strong> Visualización organizada con filtros y búsqueda</li>
+                <li><strong>Detalles del Partido:</strong> Información completa con participantes y estadísticas</li>
+                <li><strong>Formateo de Fechas:</strong> Presentación optimizada en formato dd/MM/yyyy HH:mm</li>
+            </ul>
+            
+            <h3>Sistema de Invitaciones</h3>
+            <ul>
+                <li><strong>Invitar Amigos:</strong> Sistema completo de invitaciones a partidos</li>
+                <li><strong>Gestión de Respuestas:</strong> Aceptar/rechazar invitaciones con actualización en tiempo real</li>
+                <li><strong>Notificaciones Push:</strong> Integración real con OneSignal API REST</li>
+                <li><strong>Estado de Notificaciones:</strong> Marcado automático como leídas tras interacción</li>
+            </ul>
+            
+            <h3>Interfaz de Usuario</h3>
+            <ul>
+                <li><strong>Diseño Moderno:</strong> UI con gradientes, animaciones y componentes Material Design</li>
+                <li><strong>Responsive Design:</strong> Adaptación a diferentes tamaños de pantalla</li>
+                <li><strong>Experiencia Intuitiva:</strong> Navegación fluida y feedback visual</li>
+                <li><strong>Soporte Multilingüe:</strong> Interfaz en español con preparación para internacionalización</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🔧 Implementaciones Técnicas Destacadas</h2>
+            
+            <h3>Sistema de Recuperación de Contraseñas</h3>
+            <div class="highlight">
+                <p><strong>Problema Resuelto:</strong> Los tokens de recuperación se consumían dos veces (en la página de redirección y en la app), causando errores de "enlace inválido".</p>
+                <p><strong>Solución:</strong> Se modificó la página de redirección para extraer tokens sin validarlos, pasándolos directamente a la aplicación Flutter que maneja toda la validación usando <code>exchangeCodeForSession</code>.</p>
+            </div>
+            
+            <h3>Notificaciones Push Reales</h3>
+            <div class="highlight">
+                <p><strong>Implementación:</strong> Se integró la API REST de OneSignal para envío real de notificaciones push, reemplazando las simulaciones por logs con llamadas HTTP reales a usuarios específicos mediante <code>playerIds</code> o <code>externalUserId</code>.</p>
+            </div>
+            
+            <h3>Gestión de Base de Datos</h3>
+            <div class="highlight">
+                <p><strong>Correcciones Críticas:</strong> Se corrigieron las referencias a columnas de la tabla de notificaciones, usando <code>data</code> para <code>match_id</code> y <code>user_id</code> en lugar de columnas inexistentes, asegurando la correcta actualización del estado de las notificaciones.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>💰 Presupuesto y Recursos</h2>
+            
+            <table class="budget-table">
+                <thead>
+                    <tr>
+                        <th>Categoría</th>
+                        <th>Monto (EUR)</th>
+                        <th>Porcentaje</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Desarrollo</td>
+                        <td>€22,000</td>
+                        <td>68.75%</td>
+                        <td>✅ Completado</td>
+                    </tr>
+                    <tr>
+                        <td>Diseño</td>
+                        <td>€4,000</td>
+                        <td>12.5%</td>
+                        <td>✅ Completado</td>
+                    </tr>
+                    <tr>
+                        <td>Marketing</td>
+                        <td>€3,000</td>
+                        <td>9.38%</td>
+                        <td>🔄 En progreso</td>
+                    </tr>
+                    <tr>
+                        <td>Infraestructura</td>
+                        <td>€1,500</td>
+                        <td>4.69%</td>
+                        <td>✅ Completado</td>
+                    </tr>
+                    <tr>
+                        <td>Contingencia</td>
+                        <td>€1,500</td>
+                        <td>4.69%</td>
+                        <td>💰 Reservado</td>
+                    </tr>
+                    <tr style="background: #4CAF50; color: white; font-weight: bold;">
+                        <td>TOTAL</td>
+                        <td>€32,000</td>
+                        <td>100%</td>
+                        <td>📊 En presupuesto</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>📊 Resultados y Métricas de Éxito</h2>
+            
+            <h3>Resultados Técnicos Alcanzados</h3>
+            <ul>
+                <li>✅ Aplicación móvil estable y optimizada para iOS y Android</li>
+                <li>✅ Arquitectura Clean implementada correctamente</li>
+                <li>✅ Sistema de autenticación robusto con recuperación de contraseñas</li>
+                <li>✅ Notificaciones push funcionando con OneSignal</li>
+                <li>✅ Base de datos optimizada con Supabase</li>
+                <li>✅ Interfaz de usuario moderna y responsive</li>
+            </ul>
+            
+            <h3>Funcionalidades Core Completadas</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Autenticación</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Gestión Partidos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Invitaciones</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Notificaciones</div>
+                </div>
+            </div>
+            
+            <h3>Métricas de Calidad</h3>
+            <ul>
+                <li><strong>Cobertura de Funcionalidades:</strong> 100% de los objetivos principales</li>
+                <li><strong>Arquitectura:</strong> Clean Architecture implementada correctamente</li>
+                <li><strong>Seguridad:</strong> Autenticación segura con Supabase</li>
+                <li><strong>UX/UI:</strong> Diseño moderno y responsive</li>
+                <li><strong>Performance:</strong> Optimizada para dispositivos móviles</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🚀 Conclusiones y Logros</h2>
+            
+            <h3>Logros Principales</h3>
+            <div class="highlight">
+                <ul>
+                    <li><strong>Proyecto Completado a Tiempo:</strong> 12 semanas según cronograma planificado</li>
+                    <li><strong>Todas las Funcionalidades Core Implementadas:</strong> 100% de objetivos alcanzados</li>
+                    <li><strong>Arquitectura Escalable:</strong> Clean Architecture permite futuras expansiones</li>
+                    <li><strong>Stack Tecnológico Moderno:</strong> Flutter, Supabase, OneSignal integrados exitosamente</li>
+                    <li><strong>Problemas Técnicos Resueltos:</strong> Recuperación de contraseñas, notificaciones push reales</li>
+                </ul>
+            </div>
+            
+            <h3>Valor Entregado</h3>
+            <ul>
+                <li><strong>Para Usuarios:</strong> Aplicación intuitiva que simplifica la organización de partidos amateur</li>
+                <li><strong>Para el Negocio:</strong> Base sólida para futuras funcionalidades premium y monetización</li>
+                <li><strong>Para el Desarrollo:</strong> Código limpio, documentado y mantenible</li>
+                <li><strong>Para la Comunidad:</strong> Herramienta que fomenta la práctica deportiva amateur</li>
+            </ul>
+            
+            <h3>Lecciones Aprendidas</h3>
+            <ul>
+                <li>La importancia de una arquitectura limpia desde el inicio del proyecto</li>
+                <li>La necesidad de testing exhaustivo en integraciones con servicios externos</li>
+                <li>El valor de la documentación continua durante el desarrollo</li>
+                <li>La importancia del manejo correcto de tokens y sesiones en aplicaciones móviles</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🔮 Recomendaciones Futuras</h2>
+            
+            <h3>Expansiones Recomendadas</h3>
+            <ul>
+                <li><strong>Sistema de Ligas:</strong> Implementar torneos y competiciones organizadas</li>
+                <li><strong>Estadísticas Avanzadas:</strong> Análisis detallado de rendimiento con visualizaciones</li>
+                <li><strong>Integración con Canchas:</strong> Sistema de reserva de espacios deportivos</li>
+                <li><strong>Funcionalidades Premium:</strong> Modelo de monetización con características avanzadas</li>
+                <li><strong>Expansión Deportiva:</strong> Soporte para otros deportes de equipo</li>
+            </ul>
+            
+            <h3>Mejoras Técnicas</h3>
+            <ul>
+                <li>Implementación de testing automatizado completo</li>
+                <li>Optimización adicional de performance</li>
+                <li>Implementación de analytics y métricas de uso</li>
+                <li>Sistema de backup y recuperación de datos</li>
+                <li>Integración con servicios de mapas para ubicaciones</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <h3>StatsfootPRO</h3>
+            <p>Proyecto completado exitosamente - Junio 2025</p>
+            <p>Desarrollado con Flutter, Supabase y OneSignal</p>
+            <p><em>"Conectando la pasión por el fútbol amateur"</em></p>
+        </div>
+    </div>
+</body>
+</html>

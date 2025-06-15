@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StatsfootPRO - Documentación del Proyecto</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateX(-50px) translateY(-50px); }
+            100% { transform: translateX(50px) translateY(50px); }
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .intro {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .intro h2 {
+            color: #333;
+            font-size: 2.2em;
+            margin-bottom: 15px;
+        }
+
+        .intro p {
+            color: #666;
+            font-size: 1.1em;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .docs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .doc-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .doc-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .doc-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            border-color: #4CAF50;
+        }
+
+        .doc-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .doc-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: white;
+        }
+
+        .doc-card h3 {
+            color: #333;
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            line-height: 1.3;
+        }
+
+        .doc-card p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .doc-link {
+            display: inline-flex;
+            align-items: center;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .doc-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        }
+
+        .doc-link::after {
+            content: '→';
+            margin-left: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        .doc-link:hover::after {
+            transform: translateX(3px);
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .footer p {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .project-info {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .project-info h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        .project-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.2em;
+            }
+            
+            .docs-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .project-stats {
+                gap: 20px;
+            }
+            
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>⚽ StatsfootPRO</h1>
+            <p>Documentación Completa del Proyecto</p>
+        </header>
+
+        <div class="content">
+            <div class="intro">
+                <h2>Bienvenido a la Documentación</h2>
+                <p>
+                    Esta es la documentación completa del proyecto StatsfootPRO, una aplicación móvil 
+                    desarrollada en Flutter para la gestión y organización de partidos de fútbol amateur. 
+                    Aquí encontrarás toda la información técnica, manuales de usuario y documentación 
+                    del proyecto desarrollado durante 12 semanas.
+                </p>
+            </div>
+
+            <div class="project-info">
+                <h3>📊 Resumen del Proyecto</h3>
+                <p>Aplicación móvil multiplataforma para la organización de partidos de fútbol amateur</p>
+                <div class="project-stats">
+                    <div class="stat">
+                        <span class="stat-number">12</span>
+                        <span class="stat-label">Semanas de Desarrollo</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">5</span>
+                        <span class="stat-label">Fases Completadas</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">100%</span>
+                        <span class="stat-label">Objetivos Alcanzados</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="docs-grid">
+                <div class="doc-card">
+                    <div class="doc-icon">📋</div>
+                    <h3>Memoria del Proyecto</h3>
+                    <p>
+                        Documento completo con objetivos, justificación, metodología, recursos utilizados 
+                        y resultados obtenidos durante el desarrollo del proyecto.
+                    </p>
+                    <a href="1_memoria_proyecto.html" class="doc-link">Ver Memoria</a>
+                </div>
+
+                <div class="doc-card">
+                    <div class="doc-icon">🔧</div>
+                    <h3>Manual Técnico</h3>
+                    <p>
+                        Documentación técnica detallada incluyendo arquitectura, instalación, configuración 
+                        y guías para desarrolladores.
+                    </p>
+                    <a href="2_Manual_tecnico.html" class="doc-link">Ver Manual Técnico</a>
+                </div>
+
+                <div class="doc-card">
+                    <div class="doc-icon">👤</div>
+                    <h3>Manual de Usuario</h3>
+                    <p>
+                        Guía completa para usuarios finales con instrucciones paso a paso para utilizar 
+                        todas las funcionalidades de la aplicación.
+                    </p>
+                    <a href="3_manual_usuario.html" class="doc-link">Ver Manual de Usuario</a>
+                </div>
+
+                <div class="doc-card">
+                    <div class="doc-icon">🎯</div>
+                    <h3>Presentación Final</h3>
+                    <p>
+                        Presentación ejecutiva del proyecto con resumen de características principales, 
+                        logros alcanzados y demostración de funcionalidades.
+                    </p>
+                    <a href="4_presentacion_final.html" class="doc-link">Ver Presentación</a>
+                </div>
+
+                <div class="doc-card">
+                    <div class="doc-icon">📅</div>
+                    <h3>Diagrama de Gantt</h3>
+                    <p>
+                        Cronograma visual detallado del proyecto mostrando todas las fases, tareas 
+                        completadas y hitos alcanzados durante las 12 semanas de desarrollo.
+                    </p>
+                    <a href="5_Diagrama_de_Gantt.html" class="doc-link">Ver Cronograma</a>
+                </div>
+
+                <div class="doc-card">
+                    <div class="doc-icon">⭐</div>
+                    <h3>Evaluación del Proyecto</h3>
+                    <p>
+                        Análisis completo de resultados, métricas de éxito, lecciones aprendidas 
+                        y recomendaciones para futuras mejoras del proyecto.
+                    </p>
+                    <a href="6_evaluacion_proyecto.html" class="doc-link">Ver Evaluación</a>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p><strong>StatsfootPRO</strong> - Sistema de Gestión de Partidos de Fútbol Amateur</p>
+            <p>Desarrollado con Flutter, Supabase y OneSignal | Documentación generada en Junio 2025</p>
+        </footer>
+    </div>
+
+    <script>
+        // Animación suave para las tarjetas
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.doc-card');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry, index) => {
+                    if (entry.isIntersecting) {
+                        setTimeout(() => {
+                            entry.target.style.opacity = '1';
+                            entry.target.style.transform = 'translateY(0)';
+                        }, index * 100);
+                    }
+                });
+            });
+
+            cards.forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(card);
+            });
+        });
+
+        // Efecto de hover mejorado
+        document.querySelectorAll('.doc-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-8px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cronograma y Diagrama de Gantt – StatsfootPRO</title>
+  <style>
+    :root {
+      --primary: #0066cc;
+      --secondary: #004a99;
+      --accent: #ffca28;
+      --success: #4caf50;
+      --warning: #ff9800;
+      --danger: #f44336;
+      --background: #fafafa;
+      --surface: #ffffff;
+      --text: #333333;
+      --text-secondary: #666666;
+      --border: #e0e0e0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--background);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: #ffffff;
+      padding: 2rem 1rem;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    header h1 {
+      margin: 0 0 0.5rem 0;
+      font-size: 2.2rem;
+      font-weight: 700;
+    }
+
+    header p {
+      margin: 0;
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .section {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .section h2 {
+      color: var(--primary);
+      margin-top: 0;
+      margin-bottom: 1.5rem;
+      font-size: 1.8rem;
+      border-bottom: 3px solid var(--accent);
+      padding-bottom: 0.5rem;
+    }
+
+    .gantt-container {
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+
+    .gantt-chart {
+      min-width: 800px;
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.9rem;
+    }
+
+    .gantt-chart th,
+    .gantt-chart td {
+      border: 1px solid var(--border);
+      padding: 0.5rem;
+      text-align: center;
+    }
+
+    .gantt-chart th {
+      background: var(--primary);
+      color: white;
+      font-weight: 600;
+    }
+
+    .gantt-chart .task-name {
+      text-align: left;
+      font-weight: 600;
+      background: #f8f9fa;
+      min-width: 200px;
+    }
+
+    .gantt-bar {
+      height: 20px;
+      border-radius: 10px;
+      position: relative;
+      margin: 2px 0;
+    }
+
+    .phase-1 { background: linear-gradient(90deg, #e3f2fd, #2196f3); }
+    .phase-2 { background: linear-gradient(90deg, #f3e5f5, #9c27b0); }
+    .phase-3 { background: linear-gradient(90deg, #e8f5e8, #4caf50); }
+    .phase-4 { background: linear-gradient(90deg, #fff3e0, #ff9800); }
+    .phase-5 { background: linear-gradient(90deg, #ffebee, #f44336); }
+
+    .milestone {
+      background: var(--accent) !important;
+      border: 2px solid #f57f17;
+    }
+
+    .timeline-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid var(--primary);
+    }
+
+    .timeline-date {
+      font-weight: 600;
+      color: var(--primary);
+      min-width: 120px;
+    }
+
+    .timeline-content {
+      flex: 1;
+      margin-left: 1rem;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e0e0e0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 0.5rem 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--success), #66bb6a);
+      transition: width 0.3s ease;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 0 0.5rem;
+      }
+      
+      .section {
+        padding: 1rem;
+      }
+      
+      header h1 {
+        font-size: 1.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Cronograma y Diagrama de Gantt</h1>
+    <p>StatsfootPRO – Desarrollo completado en 3 meses</p>
+  </header>
+
+  <div class="container">
+    <!-- Resumen del Proyecto -->
+    <div class="section">
+      <h2>Resumen del Proyecto</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number">3</div>
+          <div class="stat-label">Meses de Desarrollo</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">12</div>
+          <div class="stat-label">Semanas Totales</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">5</div>
+          <div class="stat-label">Fases Principales</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">100%</div>
+          <div class="stat-label">Completado</div>
+        </div>
+      </div>
+      
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 100%;"></div>
+      </div>
+      <p style="text-align: center; margin-top: 0.5rem; color: var(--success); font-weight: 600;">
+        ✅ Proyecto completado exitosamente
+      </p>
+    </div>
+
+    <!-- Diagrama de Gantt -->
+    <div class="section">
+      <h2>Diagrama de Gantt</h2>
+      
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-color phase-1"></div>
+          <span>Fase 1: Planificación</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color phase-2"></div>
+          <span>Fase 2: Desarrollo Core</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color phase-3"></div>
+          <span>Fase 3: Funcionalidades</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color phase-4"></div>
+          <span>Fase 4: Pruebas</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color phase-5"></div>
+          <span>Fase 5: Lanzamiento</span>
+        </div>
+      </div>
+
+      <div class="gantt-container">
+        <table class="gantt-chart">
+          <thead>
+            <tr>
+              <th>Tarea</th>
+              <th>Sem 1</th>
+              <th>Sem 2</th>
+              <th>Sem 3</th>
+              <th>Sem 4</th>
+              <th>Sem 5</th>
+              <th>Sem 6</th>
+              <th>Sem 7</th>
+              <th>Sem 8</th>
+              <th>Sem 9</th>
+              <th>Sem 10</th>
+              <th>Sem 11</th>
+              <th>Sem 12</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="task-name">Análisis y Arquitectura</td>
+              <td><div class="gantt-bar phase-1"></div></td>
+              <td><div class="gantt-bar phase-1"></div></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td class="task-name">Diseño UI/UX</td>
+              <td></td>
+              <td><div class="gantt-bar phase-1"></div></td>
+              <td><div class="gantt-bar phase-1"></div></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td class="task-name">Configuración Supabase</td>
+              <td></td>
+              <td></td>
+              <td><div class="gantt-bar phase-2"></div></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td class="task-name">Sistema de Autenticación</td>
+              <td></td>
+              <td></td>
+              <td><div class="gantt-bar phase-2"></div></td>
+              <td><div class="gantt-bar phase-2"></div></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td class="task-name">Gestión de Perfiles</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td><div class="gantt-bar phase-2"></div></td>
+              <td><div class="gantt-bar phase-2"></div></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td class="task-name">Recuperación de Contraseña</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td><div class="gantt-bar phase-2"></div></td>
+              <td><div class="gantt-bar phase-2"></div></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td class="task-name">Creación de Partidos</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td><div class="gantt-bar phase-3"></div></td>
+              <td><div class="gantt-bar phase-3"></div></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td class="task-name">Sistema de Invitaciones</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td><div class="gantt-bar phase-3"></div></td>
+              <td><div class="gantt-bar phase-3"></div></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td class="task-name">Notificaciones Push (OneSignal)</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td><div class="gantt-bar phase-3"></div></td>
+              <td><div class="gantt-bar phase-3"></div></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td class="task-name">Estadísticas Básicas</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td><div class="gantt-bar phase-3"></div></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td class="task-name">Pruebas y Optimización</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td><div class="gantt-bar phase-4"></div></td>
+              <td><div class="gantt-bar phase-4"></div></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td class="task-name">Documentación</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td><div class="gantt-bar phase-4"></div></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td class="task-name">Despliegue y Lanzamiento</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td><div class="gantt-bar phase-5"></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Cronograma Detallado -->
+    <div class="section">
+      <h2>Cronograma Detallado por Fases</h2>
+      
+      <h3>Fase 1: Planificación y Diseño (Semanas 1-3)</h3>
+      <div class="timeline-item">
+        <div class="timeline-date">Semana 1</div>
+        <div class="timeline-content">
+          <strong>Análisis de Requerimientos</strong><br>
+          Definición de funcionalidades, arquitectura Clean Architecture, selección de tecnologías (Flutter, Supabase, OneSignal)
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">Semana 2-3</div>
+        <div class="timeline-content">
+          <strong>Diseño UI/UX</strong><br>
+          Creación de wireframes, diseño de interfaces, definición de flujos de usuario, paleta de colores y tipografías
+        </div>
+      </div>
+
+      <h3>Fase 2: Desarrollo Core (Semanas 3-6)</h3>
+      <div class="timeline-item">
+        <div class="timeline-date">Semana 3</div>
+        <div class="timeline-content">
+          <strong>Configuración Base</strong><br>
+          Setup de proyecto Flutter, configuración de Supabase, estructura de carpetas según Clean Architecture
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">Semana 4</div>
+        <div class="timeline-content">
+          <strong>Sistema de Autenticación</strong><br>
+          Implementación de login, registro, validaciones, integración con Supabase Auth
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">Semana 5</div>
+        <div class="timeline-content">
+          <strong>Gestión de Perfiles</strong><br>
+          Pantallas de perfil de usuario, edición de datos, configuraciones básicas
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">Semana 6</div>
+        <div class="timeline-content">
+          <strong>Recuperación de Contraseña</strong><br>
+          Sistema completo de reset de contraseña con email, página de redirección, deep links
+        </div>
+      </div>
+
+      <h3>Fase 3: Funcionalidades Principales (Semanas 6-9)</h3>
+      <div class="timeline-item">
+        <div class="timeline-date">Semana 6-7</div>
+        <div class="timeline-content">
+          <strong>Gestión de Partidos</strong><br>
+          Creación de partidos, formularios, validaciones, almacenamiento en base de datos
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">Semana 7-8</div>
+        <div class="timeline-content">
+          <strong>Sistema de Invitaciones</strong><br>
+          Invitar amigos, confirmaciones de asistencia, gestión de participantes
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">Semana 8-9</div>
+        <div class="timeline-content">
+          <strong>Notificaciones Push</strong><br>
+          Integración con OneSignal, envío de notificaciones automáticas, configuración de preferencias
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">Semana 9</div>
+        <div class="timeline-content">
+          <strong>Estadísticas Básicas</strong><br>
+          Pantallas de estadísticas, gráficos básicos, historial de partidos
+        </div>
+      </div>
+
+      <h3>Fase 4: Pruebas y Optimización (Semanas 10-11)</h3>
+      <div class="timeline-item">
+        <div class="timeline-date">Semana 10</div>
+        <div class="timeline-content">
+          <strong>Testing y Debugging</strong><br>
+          Pruebas funcionales, corrección de bugs, optimización de rendimiento
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">Semana 11</div>
+        <div class="timeline-content">
+          <strong>Optimización UX</strong><br>
+          Mejoras de interfaz, ajustes de usabilidad, documentación técnica y manual de usuario
+        </div>
+      </div>
+
+      <h3>Fase 5: Lanzamiento (Semana 12)</h3>
+      <div class="timeline-item">
+        <div class="timeline-date">Semana 12</div>
+        <div class="timeline-content">
+          <strong>Despliegue Final</strong><br>
+          Preparación para producción, configuración final de servicios, documentación completa
+        </div>
+      </div>
+    </div>
+
+    <!-- Hitos Principales -->
+    <div class="section">
+      <h2>Hitos Principales Alcanzados</h2>
+      <div class="timeline-item">
+        <div class="timeline-date">✅ Semana 3</div>
+        <div class="timeline-content">
+          <strong>Arquitectura Base Completada</strong><br>
+          Clean Architecture implementada, Supabase configurado
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">✅ Semana 6</div>
+        <div class="timeline-content">
+          <strong>Sistema de Usuarios Funcional</strong><br>
+          Autenticación, perfiles y recuperación de contraseña operativos
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">✅ Semana 9</div>
+        <div class="timeline-content">
+          <strong>Funcionalidades Core Implementadas</strong><br>
+          Partidos, invitaciones y notificaciones push funcionando
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">✅ Semana 11</div>
+        <div class="timeline-content">
+          <strong>Aplicación Lista para Producción</strong><br>
+          Testing completado, optimizaciones aplicadas
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">✅ Semana 12</div>
+        <div class="timeline-content">
+          <strong>Proyecto Finalizado</strong><br>
+          Documentación completa, aplicación desplegada
+        </div>
+      </div>
+    </div>
+
+    <!-- Tecnologías Utilizadas -->
+    <div class="section">
+      <h2>Stack Tecnológico Implementado</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number">Flutter</div>
+          <div class="stat-label">Framework Principal</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">Supabase</div>
+          <div class="stat-label">Backend & Auth</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">OneSignal</div>
+          <div class="stat-label">Push Notifications</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">Riverpod</div>
+          <div class="stat-label">State Management</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer style="text-align: center; padding: 2rem; color: #666;">
+    <p>© 2025 StatsfootPRO – Cronograma de Desarrollo Completado</p>
+  </footer>
+</body>
+</html>

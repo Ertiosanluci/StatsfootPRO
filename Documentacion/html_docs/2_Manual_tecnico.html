@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StatsFootPRO - Documentación Técnica</title>
+    <style>
+        :root {
+            --primary-color: #0057FF;
+            --secondary-color: #00C1D4;
+            --accent-color: #FF6B00;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --bg-light: #f8f9fa;
+            --border-color: #e9ecef;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background-color: #fff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header-content h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .header-content p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: var(--accent-color);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        nav {
+            background: var(--bg-light);
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--text-dark);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        main {
+            padding: 2rem 0;
+        }
+
+        .section {
+            margin-bottom: 3rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: var(--bg-light);
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-header h2 {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-content {
+            padding: 2rem;
+        }
+
+        .requirement-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .requirement-card {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            background: var(--bg-light);
+        }
+
+        .requirement-card h4 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .requirement-list {
+            list-style: none;
+        }
+
+        .requirement-list li {
+            padding: 0.3rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .requirement-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--success-color);
+            font-weight: bold;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            position: relative;
+        }
+
+        .code-block::before {
+            content: attr(data-lang);
+            position: absolute;
+            top: 0.5rem;
+            right: 1rem;
+            background: var(--accent-color);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+        }
+
+        .step-list {
+            counter-reset: step-counter;
+        }
+
+        .step-item {
+            counter-increment: step-counter;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            border-left: 4px solid var(--primary-color);
+            background: var(--bg-light);
+            border-radius: 0 8px 8px 0;
+            position: relative;
+        }
+
+        .step-item::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: -15px;
+            top: 1rem;
+            background: var(--primary-color);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .step-item h4 {
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+            border-left: 4px solid;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        .config-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        .config-table th,
+        .config-table td {
+            border: 1px solid var(--border-color);
+            padding: 0.8rem;
+            text-align: left;
+        }
+
+        .config-table th {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+        }
+
+        .config-table tr:nth-child(even) {
+            background: var(--bg-light);
+        }
+
+        .architecture-diagram {
+            text-align: center;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: var(--bg-light);
+            border-radius: 10px;
+        }
+
+        .diagram-box {
+            display: inline-block;
+            padding: 1rem 2rem;
+            margin: 0.5rem;
+            background: white;
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .arrow {
+            font-size: 1.5rem;
+            color: var(--secondary-color);
+            margin: 0 1rem;
+        }
+
+        footer {
+            background: var(--text-dark);
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .requirement-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <h1>StatsFootPRO</h1>
+                <p>Documentación Técnica - Manual de Instalación, Configuración y Mantenimiento</p>
+                <span class="version-badge">Versión 1.0.0</span>
+            </div>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <div class="nav-links">
+                <a href="#requisitos">Requisitos</a>
+                <a href="#instalacion">Instalación</a>
+                <a href="#configuracion">Configuración</a>
+                <a href="#arquitectura">Arquitectura</a>
+                <a href="#despliegue">Despliegue</a>
+                <a href="#mantenimiento">Mantenimiento</a>
+                <a href="#troubleshooting">Resolución de Problemas</a>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            <!-- Requisitos del Sistema -->
+            <section id="requisitos" class="section">
+                <div class="section-header">
+                    <h2>📋 Requisitos del Sistema</h2>
+                    <p>Especificaciones técnicas necesarias para el desarrollo y despliegue</p>
+                </div>
+                <div class="section-content">
+                    <div class="requirement-grid">
+                        <div class="requirement-card">
+                            <h4>🖥️ Entorno de Desarrollo</h4>
+                            <ul class="requirement-list">
+                                <li>Flutter SDK 3.16.0 o superior</li>
+                                <li>Dart SDK 3.2.0 o superior</li>
+                                <li>Android Studio / VS Code</li>
+                                <li>Git 2.30 o superior</li>
+                                <li>Node.js 18.0+ (para herramientas web)</li>
+                            </ul>
+                        </div>
+                        <div class="requirement-card">
+                            <h4>📱 Dispositivos de Prueba</h4>
+                            <ul class="requirement-list">
+                                <li>Android 6.0+ (API nivel 23)</li>
+                                <li>iOS 12.0 o superior</li>
+                                <li>RAM mínima: 2GB</li>
+                                <li>Almacenamiento: 100MB libres</li>
+                                <li>Conexión a Internet estable</li>
+                            </ul>
+                        </div>
+                        <div class="requirement-card">
+                            <h4>☁️ Servicios Externos</h4>
+                            <ul class="requirement-list">
+                                <li>Cuenta Supabase (Plan Pro recomendado)</li>
+                                <li>Cuenta OneSignal (Plan gratuito)</li>
+                                <li>Cuenta Netlify (Plan gratuito)</li>
+                                <li>Cuenta Google Play Console</li>
+                                <li>Cuenta Apple Developer Program</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Instalación -->
+            <section id="instalacion" class="section">
+                <div class="section-header">
+                    <h2>⚙️ Proceso de Instalación</h2>
+                    <p>Guía paso a paso para configurar el entorno de desarrollo</p>
+                </div>
+                <div class="section-content">
+                    <div class="alert alert-info">
+                        <strong>Nota:</strong> Asegúrate de tener permisos de administrador en tu sistema antes de comenzar.
+                    </div>
+
+                    <div class="step-list">
+                        <div class="step-item">
+                            <h4>Instalación de Flutter SDK</h4>
+                            <p>Descarga e instala Flutter desde el sitio oficial:</p>
+                            <div class="code-block" data-lang="bash">
+# Windows (usando Git)
+git clone https://github.com/flutter/flutter.git -b stable
+export PATH="$PATH:`pwd`/flutter/bin"
+
+# Verificar instalación
+flutter doctor
+                            </div>
+                        </div>
+
+                        <div class="step-item">
+                            <h4>Configuración del Entorno</h4>
+                            <p>Configura las variables de entorno y herramientas necesarias:</p>
+                            <div class="code-block" data-lang="bash">
+# Agregar Flutter al PATH (Windows)
+setx PATH "%PATH%;C:\flutter\bin"
+
+# Instalar dependencias de Android
+flutter doctor --android-licenses
+                            </div>
+                        </div>
+
+                        <div class="step-item">
+                            <h4>Clonación del Repositorio</h4>
+                            <p>Obtén el código fuente del proyecto:</p>
+                            <div class="code-block" data-lang="bash">
+git clone https://github.com/usuario/StatsfootPRO.git
+cd StatsfootPRO
+flutter pub get
+                            </div>
+                        </div>
+
+                        <div class="step-item">
+                            <h4>Configuración de Dependencias</h4>
+                            <p>Instala las dependencias específicas del proyecto:</p>
+                            <div class="code-block" data-lang="yaml">
+# pubspec.yaml - Dependencias principales
+dependencies:
+  flutter:
+    sdk: flutter
+  supabase_flutter: ^2.0.0
+  riverpod: ^2.4.0
+  auto_route: ^7.8.4
+  onesignal_flutter: ^5.0.0
+  intl: ^0.19.0
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Configuración -->
+            <section id="configuracion" class="section">
+                <div class="section-header">
+                    <h2>🔧 Configuración del Proyecto</h2>
+                    <p>Configuración de servicios externos y variables de entorno</p>
+                </div>
+                <div class="section-content">
+                    <h3>Variables de Entorno</h3>
+                    <p>Crea un archivo <code>.env</code> en la raíz del proyecto:</p>
+                    <div class="code-block" data-lang="env">
+# Supabase Configuration
+SUPABASE_URL=https://tu-proyecto.supabase.co
+SUPABASE_ANON_KEY=tu_clave_anonima_aqui
+
+# OneSignal Configuration
+ONESIGNAL_APP_ID=tu_app_id_onesignal
+ONESIGNAL_API_KEY=tu_api_key_onesignal
+
+# Netlify Configuration
+NETLIFY_SITE_URL=https://tu-sitio.netlify.app
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <strong>Importante:</strong> Nunca subas el archivo .env al repositorio. Añádelo a .gitignore.
+                    </div>
+
+                    <h3>Configuración de Supabase</h3>
+                    <table class="config-table">
+                        <thead>
+                            <tr>
+                                <th>Tabla</th>
+                                <th>Descripción</th>
+                                <th>Campos Principales</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>users</td>
+                                <td>Información de usuarios</td>
+                                <td>id, email, full_name, created_at</td>
+                            </tr>
+                            <tr>
+                                <td>matches</td>
+                                <td>Partidos creados</td>
+                                <td>id, title, date, location, creator_id</td>
+                            </tr>
+                            <tr>
+                                <td>match_participants</td>
+                                <td>Participantes de partidos</td>
+                                <td>match_id, user_id, status, joined_at</td>
+                            </tr>
+                            <tr>
+                                <td>notifications</td>
+                                <td>Sistema de notificaciones</td>
+                                <td>id, user_id, type, data, read_at</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Configuración de OneSignal</h3>
+                    <div class="step-list">
+                        <div class="step-item">
+                            <h4>Configuración Android</h4>
+                            <div class="code-block" data-lang="gradle">
+// android/app/build.gradle
+android {
+    compileSdkVersion 34
+    defaultConfig {
+        minSdkVersion 23
+        targetSdkVersion 34
+    }
+}
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <h4>Configuración iOS</h4>
+                            <div class="code-block" data-lang="xml">
+<!-- ios/Runner/Info.plist -->
+<key>UIBackgroundModes</key>
+<array>
+    <string>remote-notification</string>
+</array>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Arquitectura -->
+            <section id="arquitectura" class="section">
+                <div class="section-header">
+                    <h2>🏗️ Arquitectura del Sistema</h2>
+                    <p>Estructura y patrones de diseño implementados</p>
+                </div>
+                <div class="section-content">
+                    <div class="architecture-diagram">
+                        <div class="diagram-box">Presentation Layer</div>
+                        <div class="arrow">↓</div>
+                        <div class="diagram-box">Domain Layer</div>
+                        <div class="arrow">↓</div>
+                        <div class="diagram-box">Data Layer</div>
+                        <div class="arrow">↓</div>
+                        <div class="diagram-box">External Services</div>
+                    </div>
+
+                    <h3>Estructura de Carpetas</h3>
+                    <div class="code-block" data-lang="text">
+lib/
+├── core/                 # Utilidades y configuraciones
+│   ├── constants/
+│   ├── extensions/
+│   └── utils/
+├── data/                 # Capa de datos
+│   ├── models/
+│   ├── repositories/
+│   └── services/
+├── domain/               # Lógica de negocio
+│   ├── entities/
+│   └── repositories/
+├── presentation/         # Interfaz de usuario
+│   ├── controllers/
+│   ├── pages/
+│   └── widgets/
+└── main.dart
+                    </div>
+
+                    <h3>Patrones Implementados</h3>
+                    <ul class="requirement-list">
+                        <li><strong>Clean Architecture:</strong> Separación clara de responsabilidades</li>
+                        <li><strong>Repository Pattern:</strong> Abstracción de fuentes de datos</li>
+                        <li><strong>Provider Pattern:</strong> Gestión de estado con Riverpod</li>
+                        <li><strong>Dependency Injection:</strong> Inyección con GetIt</li>
+                        <li><strong>SOLID Principles:</strong> Código mantenible y escalable</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Despliegue -->
+            <section id="despliegue" class="section">
+                <div class="section-header">
+                    <h2>🚀 Proceso de Despliegue</h2>
+                    <p>Compilación y distribución de la aplicación</p>
+                </div>
+                <div class="section-content">
+                    <h3>Compilación para Android</h3>
+                    <div class="code-block" data-lang="bash">
+# Generar APK de debug
+flutter build apk --debug
+
+# Generar APK de release
+flutter build apk --release
+
+# Generar App Bundle (recomendado para Play Store)
+flutter build appbundle --release
+                    </div>
+
+                    <h3>Compilación para iOS</h3>
+                    <div class="code-block" data-lang="bash">
+# Compilar para dispositivo iOS
+flutter build ios --release
+
+# Generar archivo IPA
+flutter build ipa --release
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>CI/CD:</strong> El proyecto incluye GitHub Actions para automatizar el proceso de compilación y despliegue.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Mantenimiento -->
+            <section id="mantenimiento" class="section">
+                <div class="section-header">
+                    <h2>🔧 Mantenimiento y Monitoreo</h2>
+                    <p>Tareas de mantenimiento y herramientas de monitoreo</p>
+                </div>
+                <div class="section-content">
+                    <h3>Tareas de Mantenimiento Regular</h3>
+                    <div class="step-list">
+                        <div class="step-item">
+                            <h4>Actualización de Dependencias</h4>
+                            <div class="code-block" data-lang="bash">
+# Verificar dependencias obsoletas
+flutter pub outdated
+
+# Actualizar dependencias
+flutter pub upgrade
+
+# Verificar compatibilidad
+flutter analyze
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <h4>Monitoreo de Base de Datos</h4>
+                            <p>Revisar regularmente las métricas de Supabase:</p>
+                            <ul class="requirement-list">
+                                <li>Uso de almacenamiento</li>
+                                <li>Número de consultas por minuto</li>
+                                <li>Tiempo de respuesta promedio</li>
+                                <li>Errores de autenticación</li>
+                            </ul>
+                        </div>
+                        <div class="step-item">
+                            <h4>Respaldo de Datos</h4>
+                            <div class="code-block" data-lang="bash">
+# Exportar datos de Supabase
+supabase db dump --file backup_$(date +%Y%m%d).sql
+
+# Programar respaldos automáticos
+crontab -e
+0 2 * * * /path/to/backup_script.sh
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Resolución de Problemas -->
+            <section id="troubleshooting" class="section">
+                <div class="section-header">
+                    <h2>🔍 Resolución de Problemas</h2>
+                    <p>Problemas comunes y sus soluciones</p>
+                </div>
+                <div class="section-content">
+                    <h3>Problemas de Compilación</h3>
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> "Flutter SDK not found"
+                        <br><strong>Solución:</strong> Verificar que Flutter esté en el PATH del sistema.
+                    </div>
+
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> "Gradle build failed"
+                        <br><strong>Solución:</strong> Limpiar el proyecto con <code>flutter clean</code> y ejecutar <code>flutter pub get</code>.
+                    </div>
+
+                    <h3>Problemas de Conexión</h3>
+                    <div class="alert alert-warning">
+                        <strong>Error:</strong> "Supabase connection timeout"
+                        <br><strong>Solución:</strong> Verificar las credenciales en el archivo .env y la conectividad de red.
+                    </div>
+
+                    <h3>Logs y Debugging</h3>
+                    <div class="code-block" data-lang="bash">
+# Ver logs en tiempo real
+flutter logs
+
+# Ejecutar en modo debug
+flutter run --debug
+
+# Analizar rendimiento
+flutter run --profile
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 StatsFootPRO. Documentación Técnica v1.0.0</p>
+            <p>Desarrollado con Flutter y ❤️ para la comunidad del fútbol amateur</p>
+        </div>
+    </footer>
+</body>
+</html>
