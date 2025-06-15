@@ -1281,6 +1281,9 @@ Hora: $formattedTime
         emptySubtitle = 'No se encontraron partidos';
     }
     
+    // Determinar si estamos en versión web para ajustar el ancho
+    final bool isWeb = MediaQuery.of(context).size.width > 600;
+    
     return RefreshIndicator(
       onRefresh: _fetchMatches,
       child: matches.isEmpty
@@ -1315,19 +1318,32 @@ Hora: $formattedTime
                 ],
               ),
             )
-          : ListView.builder(
-              padding: EdgeInsets.all(16),
-              itemCount: matches.length,
-              itemBuilder: (context, index) {
-                final match = matches[index];
-                
-                // Determinar si el usuario actual es organizador de este partido específico
-                // Usar el campo isOrganizer que añadimos al cargar los datos
-                final bool isUserOrganizerOfMatch = match['isOrganizer'] == true;
-                
-                return _buildMatchCard(match, isOrganizer: isUserOrganizerOfMatch);
-              },
-            ),
+          : isWeb
+              // Versión web con ancho limitado
+              ? Center(
+                  child: Container(
+                    constraints: BoxConstraints(maxWidth: 800),
+                    child: ListView.builder(
+                      padding: EdgeInsets.all(16),
+                      itemCount: matches.length,
+                      itemBuilder: (context, index) {
+                        final match = matches[index];
+                        final bool isUserOrganizerOfMatch = match['isOrganizer'] == true;
+                        return _buildMatchCard(match, isOrganizer: isUserOrganizerOfMatch);
+                      },
+                    ),
+                  ),
+                )
+              // Versión móvil sin cambios
+              : ListView.builder(
+                  padding: EdgeInsets.all(16),
+                  itemCount: matches.length,
+                  itemBuilder: (context, index) {
+                    final match = matches[index];
+                    final bool isUserOrganizerOfMatch = match['isOrganizer'] == true;
+                    return _buildMatchCard(match, isOrganizer: isUserOrganizerOfMatch);
+                  },
+                ),
     );
   }
   Widget _buildMatchCard(Map<String, dynamic> match, {required bool isOrganizer}) {
