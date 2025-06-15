@@ -639,7 +639,11 @@ class _FriendStatisticsScreenState extends State<FriendStatisticsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Estadísticas de ${widget.friendName}'),
+        title: Text(
+          'Estadísticas de ${widget.friendName}',
+          style: const TextStyle(color: Colors.white),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
         backgroundColor: Colors.blue.shade800,
         elevation: 0,

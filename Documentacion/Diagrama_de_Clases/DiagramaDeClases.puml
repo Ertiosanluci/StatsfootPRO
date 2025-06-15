@@ -1,0 +1,514 @@
+@startuml DiagramaDeClases
+
+' Configuración para mejor visualización
+skinparam dpi 300
+skinparam classAttributeIconSize 0
+skinparam monochrome false
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam backgroundColor white
+skinparam classBackgroundColor #F8F9FA
+skinparam classBorderColor #DEE2E6
+skinparam arrowColor #6C757D
+skinparam stereotypeCBackgroundColor #E9ECEF
+skinparam titleFontSize 18
+skinparam headerFontSize 14
+skinparam footerFontSize 12
+skinparam pageMargin 10
+skinparam nodesep 40
+skinparam ranksep 60
+skinparam padding 2
+skinparam handwritten false
+
+title StatsfootPRO - Diagrama de Clases
+
+' Definición de paquetes principales
+package "Core" {
+  class AppInitializer {
+    +initialize(): Future<void>
+    +initializeSupabase(): Future<void>
+    +initializeOneSignal(): Future<void>
+  }
+}
+
+package "Domain" {
+  ' Entidades principales
+  package "Entities" {
+    class User {
+      +id: String
+      +username: String
+      +email: String
+      +avatarUrl: String?
+    }
+    
+    class Match {
+      +id: String
+      +name: String
+      +date: DateTime
+      +location: String
+      +status: String
+      +code: String
+    }
+    
+    class Player {
+      +id: String
+      +userId: String
+      +name: String
+      +position: String?
+    }
+    
+    class Notification {
+      +id: String
+      +userId: String
+      +type: String
+      +title: String
+      +message: String
+      +isRead: bool
+    }
+    
+    class FriendRequest {
+      +id: String
+      +senderId: String
+      +receiverId: String
+      +status: String
+    }
+  }
+  
+  ' Interfaces de repositorios
+  package "Repositories" {
+    interface UserRepository {
+      +getCurrentUser(): Future<User?>
+      +getUserById(String): Future<User?>
+      +updateUser(User): Future<void>
+    }
+    
+    interface MatchRepository {
+      +getMatches(): Future<List<Match>>
+      +getMatchById(String): Future<Match?>
+      +createMatch(Match): Future<Match>
+      +joinMatch(String, String, String): Future<bool>
+    }
+    
+    interface NotificationRepository {
+      +getNotifications(): Future<List<Notification>>
+      +markAsRead(String): Future<void>
+      +createNotification(Notification): Future<void>
+    }
+    
+    interface FriendRepository {
+      +getFriends(): Future<List<User>>
+      +sendRequest(String): Future<void>
+      +acceptRequest(String): Future<void>
+      +rejectRequest(String): Future<void>
+    }
+  }
+}
+
+package "Data" {
+  ' Implementaciones de repositorios
+  package "Repositories" {
+    class UserRepositoryImpl {
+      -_supabase: SupabaseClient
+      +getCurrentUser(): Future<User?>
+      +getUserById(String): Future<User?>
+      +updateUser(User): Future<void>
+    }
+    
+    class MatchRepositoryImpl {
+      -_supabase: SupabaseClient
+      +getMatches(): Future<List<Match>>
+      +getMatchById(String): Future<Match?>
+      +createMatch(Match): Future<Match>
+    }
+    
+    class NotificationRepositoryImpl {
+      -_supabase: SupabaseClient
+      +getNotifications(): Future<List<Notification>>
+      +markAsRead(String): Future<void>
+    }
+    
+    class FriendRepositoryImpl {
+      -_supabase: SupabaseClient
+      +getFriends(): Future<List<User>>
+      +sendRequest(String): Future<void>
+    }
+  }
+  
+  ' Servicios
+  package "Services" {
+    class MatchService {
+      -_supabase: SupabaseClient
+      +loadMatchDetails(String): Future<Map<String, dynamic>>
+      +loadMatchTeams(String): Future<Map<String, List<Map>>>
+      +findMatchByCode(String): Future<Map?>
+      +createMatch(String, DateTime, String): Future<Map?>
+    }
+    
+    class OneSignalService {
+      -_oneSignalAppId: String
+      +initialize(): Future<void>
+      +sendNotification(String, String, String): Future<void>
+      +getPlayerId(): Future<String?>
+    }
+    
+    class PushNotificationService {
+      -_supabaseClient: SupabaseClient
+      +initialize(): Future<void>
+      -_setupNotificationHandlers(): void
+      +getPlayerId(): Future<String?>
+    }
+  }
+}
+
+package "Presentation" {
+  ' Pantallas principales
+  package "Screens" {
+    class LoginScreen {
+      -_email: TextEditingController
+      -_password: TextEditingController
+      +build(BuildContext): Widget
+      -_login(): Future<void>
+    }
+    
+    class PasswordResetScreen {
+      -_password: TextEditingController
+      -_confirmPassword: TextEditingController
+      +build(BuildContext): Widget
+      -_resetPassword(): Future<void>
+      -_exchangeCodeForSession(String): Future<void>
+    }
+    
+    class MatchListScreen {
+      +createState(): _MatchListScreenState
+    }
+    
+    class JoinMatchScreen {
+      -_matchId: String
+      +build(BuildContext): Widget
+      -_joinMatch(): Future<void>
+      -_declineInvitation(): Future<void>
+    }
+  }
+  
+  ' Controladores
+  package "Controllers" {
+    class NotificationController {
+      -_notifications: List<Notification>
+      +loadNotifications(): Future<void>
+      +markAsRead(String): Future<void>
+    }
+    
+    class FriendController {
+      -_friends: List<User>
+      +loadFriends(): Future<void>
+      +sendFriendRequest(String): Future<void>
+    }
+  }
+}
+
+' Relaciones entre clases
+' Implementaciones de repositorios
+UserRepository <|.. UserRepositoryImpl
+MatchRepository <|.. MatchRepositoryImpl
+NotificationRepository <|.. NotificationRepositoryImpl
+FriendRepository <|.. FriendRepositoryImpl
+
+' Relaciones de servicios
+UserRepositoryImpl --> OneSignalService
+MatchRepositoryImpl --> MatchService
+NotificationRepositoryImpl --> PushNotificationService
+
+' Relaciones de pantallas y controladores
+LoginScreen --> UserRepository
+PasswordResetScreen --> UserRepository
+MatchListScreen --> MatchRepository
+JoinMatchScreen --> MatchRepository
+JoinMatchScreen --> NotificationRepository
+
+' Relaciones de controladores
+NotificationController --> NotificationRepository
+FriendController --> FriendRepository
+
+' Inicialización
+AppInitializer --> PushNotificationService
+AppInitializer --> OneSignalService
+
+@enduml
+    class User {
+      +id: String
+      +username: String
+      +email: String
+      +avatarUrl: String?
+      +oneSignalId: String?
+    }
+    
+    class Match {
+      +id: String
+      +name: String
+      +date: DateTime
+      +location: String
+      +status: String
+      +code: String
+      +teamClaroScore: int
+      +teamOscuroScore: int
+    }
+    
+    class Player {
+      +id: String
+      +userId: String
+      +name: String
+      +position: String?
+      +number: int?
+    }
+    
+    class Notification {
+      +id: String
+      +userId: String
+      +type: String
+      +title: String
+      +message: String
+      +data: Map<String, dynamic>
+      +isRead: bool
+      +createdAt: DateTime
+    }
+    
+    class FriendRequest {
+      +id: String
+      +senderId: String
+      +receiverId: String
+      +status: String
+      +createdAt: DateTime
+    }
+    
+    class PlayerStats {
+      +id: String
+      +playerId: String
+      +matchId: String
+      +goals: int
+      +assists: int
+      +ownGoals: int
+    }
+  }
+  
+  ' Repository Interfaces
+  package "Repositories" {
+    interface UserRepository {
+      +getCurrentUser(): Future<User?>
+      +getUserById(String): Future<User?>
+      +updateUser(User): Future<void>
+      +searchUsers(String): Future<List<User>>
+    }
+    
+    interface MatchRepository {
+      +getMatches(): Future<List<Match>>
+      +getMatchById(String): Future<Match?>
+      +createMatch(Match): Future<Match>
+      +updateMatch(Match): Future<void>
+      +getMatchTeams(String): Future<Map<String, List<Player>>>
+      +findMatchByCode(String): Future<Match?>
+      +joinMatch(String, String, String): Future<bool>
+    }
+    
+    interface NotificationRepository {
+      +getNotifications(): Future<List<Notification>>
+      +markAsRead(String): Future<void>
+      +createNotification(Notification): Future<void>
+    }
+    
+    interface FriendRepository {
+      +getFriends(): Future<List<User>>
+      +getSentRequests(): Future<List<FriendRequest>>
+      +getReceivedRequests(): Future<List<FriendRequest>>
+      +sendRequest(String): Future<void>
+      +acceptRequest(String): Future<void>
+      +rejectRequest(String): Future<void>
+      +removeFriend(String): Future<void>
+    }
+    
+    interface PlayerStatsRepository {
+      +getPlayerStats(String): Future<List<PlayerStats>>
+      +getMatchStats(String): Future<List<PlayerStats>>
+      +updateStats(PlayerStats): Future<void>
+    }
+  }
+}
+
+package "Data" {
+  ' Repository Implementations
+  package "Repositories" {
+    class UserRepositoryImpl {
+      -_supabase: SupabaseClient
+      +getCurrentUser(): Future<User?>
+      +getUserById(String): Future<User?>
+      +updateUser(User): Future<void>
+      +searchUsers(String): Future<List<User>>
+    }
+    
+    class MatchRepositoryImpl {
+      -_supabase: SupabaseClient
+      +getMatches(): Future<List<Match>>
+      +getMatchById(String): Future<Match?>
+      +createMatch(Match): Future<Match>
+      +updateMatch(Match): Future<void>
+      +getMatchTeams(String): Future<Map<String, List<Player>>>
+      +findMatchByCode(String): Future<Match?>
+      +joinMatch(String, String, String): Future<bool>
+    }
+    
+    class NotificationRepositoryImpl {
+      -_supabase: SupabaseClient
+      +getNotifications(): Future<List<Notification>>
+      +markAsRead(String): Future<void>
+      +createNotification(Notification): Future<void>
+    }
+    
+    class FriendRepositoryImpl {
+      -_supabase: SupabaseClient
+      +getFriends(): Future<List<User>>
+      +getSentRequests(): Future<List<FriendRequest>>
+      +getReceivedRequests(): Future<List<FriendRequest>>
+      +sendRequest(String): Future<void>
+      +acceptRequest(String): Future<void>
+      +rejectRequest(String): Future<void>
+      +removeFriend(String): Future<void>
+    }
+    
+    class PlayerStatsRepositoryImpl {
+      -_supabase: SupabaseClient
+      +getPlayerStats(String): Future<List<PlayerStats>>
+      +getMatchStats(String): Future<List<PlayerStats>>
+      +updateStats(PlayerStats): Future<void>
+    }
+  }
+  
+  ' Services
+  package "Services" {
+    class MatchService {
+      -_supabase: SupabaseClient
+      +loadMatchDetails(String): Future<Map<String, dynamic>>
+      +loadMatchTeams(String): Future<Map<String, List<Map<String, dynamic>>>>
+      +findMatchByCode(String): Future<Map<String, dynamic>?>
+      +joinMatch(int, int, String): Future<bool>
+      +createMatch(String, DateTime, String): Future<Map<String, dynamic>?>
+      -_generateMatchCode(): String
+    }
+    
+    class OneSignalService {
+      -_oneSignalAppId: String
+      +initialize(): Future<void>
+      +sendNotification(String, String, String, Map<String, dynamic>): Future<void>
+      +sendTestNotification(): Future<void>
+      +getPlayerId(): Future<String?>
+      +logout(): Future<void>
+    }
+    
+    class PushNotificationService {
+      -_supabaseClient: SupabaseClient
+      +initialize(): Future<void>
+      -_setupNotificationHandlers(): void
+      -_loginUser(): Future<void>
+      -_savePlayerIdToSupabase(): Future<void>
+      +getPlayerId(): Future<String?>
+      +logout(): Future<void>
+    }
+    
+    class PlayerStatsService {
+      -_supabase: SupabaseClient
+      +getPlayerStats(int): Future<List<Map<String, dynamic>>>
+      +getPlayerStatsByMatch(int, int): Future<Map<String, dynamic>?>
+      +updatePlayerStats(int, int, Map<String, dynamic>): Future<void>
+    }
+  }
+  
+  ' Models
+  package "Models" {
+    class UserModel {
+      +id: String
+      +username: String
+      +email: String
+      +avatarUrl: String?
+      +oneSignalId: String?
+      +toEntity(): User
+      +fromEntity(User): UserModel
+      +fromJson(Map<String, dynamic>): UserModel
+      +toJson(): Map<String, dynamic>
+    }
+    
+    class MatchModel {
+      +id: String
+      +name: String
+      +date: DateTime
+      +location: String
+      +status: String
+      +code: String
+      +teamClaroScore: int
+      +teamOscuroScore: int
+      +toEntity(): Match
+      +fromEntity(Match): MatchModel
+      +fromJson(Map<String, dynamic>): MatchModel
+      +toJson(): Map<String, dynamic>
+    }
+    
+    class NotificationModel {
+      +id: String
+      +userId: String
+      +type: String
+      +title: String
+      +message: String
+      +data: Map<String, dynamic>
+      +isRead: bool
+      +createdAt: DateTime
+      +toEntity(): Notification
+      +fromEntity(Notification): NotificationModel
+      +fromJson(Map<String, dynamic>): NotificationModel
+      +toJson(): Map<String, dynamic>
+    }
+  }
+}
+
+' Relaciones entre clases
+' Core
+AppInitializer --> PushNotificationService: initializes
+AppInitializer --> OneSignalService: initializes
+
+' Presentation -> Domain
+SplashScreen --> UserRepository: uses
+LoginScreen --> UserRepository: uses
+RegisterScreen --> UserRepository: uses
+PasswordResetScreen --> UserRepository: uses
+MatchListScreen --> MatchRepository: uses
+CreateMatchScreen --> MatchRepository: uses
+JoinMatchScreen --> MatchRepository: uses
+JoinMatchScreen --> NotificationRepository: uses
+PlayerStatsGraphScreen --> PlayerStatsRepository: uses
+
+' Controllers -> Repositories
+NotificationController --> NotificationRepository: uses
+FriendController --> FriendRepository: uses
+
+' Domain -> Data
+UserRepository <|.. UserRepositoryImpl: implements
+MatchRepository <|.. MatchRepositoryImpl: implements
+NotificationRepository <|.. NotificationRepositoryImpl: implements
+FriendRepository <|.. FriendRepositoryImpl: implements
+PlayerStatsRepository <|.. PlayerStatsRepositoryImpl: implements
+
+' Data Services -> Models
+MatchService --> MatchModel: uses
+OneSignalService --> NotificationModel: uses
+PushNotificationService --> UserModel: uses
+PlayerStatsService --> PlayerStats: uses
+
+' Repository Implementations -> Services
+UserRepositoryImpl --> OneSignalService: uses
+MatchRepositoryImpl --> MatchService: uses
+NotificationRepositoryImpl --> PushNotificationService: uses
+PlayerStatsRepositoryImpl --> PlayerStatsService: uses
+
+' Models -> Entities
+UserModel --> User: maps to/from
+MatchModel --> Match: maps to/from
+NotificationModel --> Notification: maps to/from
+
+@enduml

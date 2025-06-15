@@ -265,7 +265,11 @@ class _PlayerStatsGraphScreenState extends State<PlayerStatsGraphScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mis Estadísticas'),
+        title: const Text(
+          'Mis Estadísticas',
+          style: TextStyle(color: Colors.white),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(

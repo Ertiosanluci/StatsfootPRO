@@ -24,12 +24,14 @@ class MVPVotingHistoryScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
             ),
             Text(
               matchName,
               style: TextStyle(
                 fontSize: 14,
+                color: Colors.white,
               ),
             ),
           ],
