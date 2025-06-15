@@ -1769,14 +1769,13 @@ Hora: $formattedTime
                               onPressed: () => _shareMatchLink(match),
                               color: Colors.indigo,
                             ),
-                            // Añadir botón de eliminar partido para el organizador
-                            if (!isPast) // Solo si el partido no ha pasado
-                              _buildActionButton(
-                                icon: Icons.delete,
-                                label: 'Eliminar',
-                                onPressed: () => _deleteMatch(match),
-                                color: Colors.red,
-                              ),
+                            // Añadir botón de eliminar partido para el organizador (ahora permitido para partidos pasados también)
+                            _buildActionButton(
+                              icon: Icons.delete,
+                              label: 'Eliminar',
+                              onPressed: () => _deleteMatch(match),
+                              color: Colors.red,
+                            ),
                           ]
                         : match['is_participant'] == true // Si el usuario es participante pero no organizador
                           ? [
