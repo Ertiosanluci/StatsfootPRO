@@ -19,7 +19,7 @@ class FootballField extends StatelessWidget {
           decoration: const BoxDecoration(
             color: Color(0xFF2E7D32), // Verde campo de fútbol
             image: DecorationImage(
-              image: AssetImage('assets/ic_launcher.png'),
+              image: AssetImage('assets/habilidades.png'),
               fit: BoxFit.cover,
               opacity: 0.1,
             ),

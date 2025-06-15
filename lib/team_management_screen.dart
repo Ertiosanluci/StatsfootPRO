@@ -644,7 +644,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> with Single
                     ],
                     // Efecto de textura de césped
                     image: DecorationImage(
-                      image: AssetImage('assets/ic_launcher.png'), // Usamos una imagen existente como textura
+                      image: AssetImage('assets/habilidades.png'), // Usamos una imagen existente como textura
                       fit: BoxFit.cover,
                       opacity: 0.05, // Muy sutil para no distraer
                     ),
